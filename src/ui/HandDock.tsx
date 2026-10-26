@@ -114,7 +114,8 @@ export function useBuilder(hand: CardId[], hasTrap: boolean, canBuild: boolean, 
         }
         const el = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-card]') as HTMLElement | null
         const id = el ? Number(el.dataset.card) : null
-        if (id != null && id !== peekRef.current) { setPeek(id); setDrag({ ...d, id, x: e.clientX, y: e.clientY }); sfx.tap() }
+        if (id != null && id !== peekRef.current) { setPeek(id); sfx.tap() }
+        setDrag({ ...d, id: id ?? d.id, x: e.clientX, y: e.clientY }) // копия едет за пальцем
         return
       }
       const far = Math.hypot(e.clientX - d.sx, e.clientY - d.sy) > 10
@@ -245,11 +246,15 @@ export default function HandDock({ b, waitText }: { b: Builder; waitText?: strin
           // увеличенная копия над картой: по центру карты, не вылезает за края веера
           const i = inHand.indexOf(shownPeek)
           const PW = Math.min(CW * (wide ? 1.5 : 1.9), wide ? 360 : 250), PH = PW * 1.413
-          const cx = startX + i * step + CW / 2
+          // долгое нажатие (палец): низ копии чуть выше пальца и по центру пальца — палец не закрывает текст;
+          // наведение мышью: над самой картой
+          const fan = fanRef.current?.getBoundingClientRect()
+          const finger = b.peek != null && drag && fan ? { x: drag.x - fan.left, y: drag.y - fan.top } : null
+          const cx = finger ? finger.x : startX + i * step + CW / 2
           const left = Math.max(0, Math.min(fanW - PW, cx - PW / 2))
-          const bottomY = 10 + (i - mid) ** 2 * dropK + CH * 0.62
+          const bottomY = finger ? finger.y - 18 : 10 + (i - mid) ** 2 * dropK + CH * 0.62
           return (
-            <div className="fan-peek" style={{ width: PW, left, top: bottomY - PH }}>
+            <div className="fan-peek" style={{ width: PW, left, top: Math.max(bottomY - PH, fan ? 6 - fan.top : -Infinity) }}>
               <img src={img(shownPeek)} alt="" draggable={false} />
             </div>
           )
