@@ -396,3 +396,4 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .pl-name { flex: 1; text-align: left; background: none; border: 0; padding: 10px 4px; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pl-del { background: none; border: 0; color: var(--dim); font-size: 16px; padding: 8px 10px; }
 .add-music { cursor: pointer; }
+.btn.disabled { filter: grayscale(.8) brightness(.7); pointer-events: none; }

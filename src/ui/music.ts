@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { assetUrl } from '../assets'
 
-export interface Track { title: string; file?: string; url?: string; local?: string }
+export interface Track { title: string; file?: string; url?: string; local?: string; lib?: string }
 interface MusicState { tracks: Track[]; index: number; on: boolean; volume: number; playing: boolean }
 
 const KEY = 'esw-music'
@@ -17,19 +17,21 @@ const emit = () => {
 const set = (p: Partial<MusicState>) => { st = { ...st, ...p }; emit() }
 
 // ---------- свои песни: IndexedDB ----------
-const DB = 'esw-music', STORE = 'tracks'
+const DB = 'esw-music', STORE = 'tracks', LIB = 'lib' // tracks — свои песни; lib — скачанные песни общей библиотеки
 function db(): Promise<IDBDatabase> {
   return new Promise((res, rej) => {
-    const r = indexedDB.open(DB, 1)
-    r.onupgradeneeded = () => r.result.createObjectStore(STORE, { keyPath: 'id' })
+    const r = indexedDB.open(DB, 2)
+    r.onupgradeneeded = () => {
+      for (const n of [STORE, LIB]) if (!r.result.objectStoreNames.contains(n)) r.result.createObjectStore(n, { keyPath: 'id' })
+    }
     r.onsuccess = () => res(r.result)
     r.onerror = () => rej(r.error)
   })
 }
-async function tx<T>(mode: IDBTransactionMode, f: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+async function tx<T>(mode: IDBTransactionMode, f: (s: IDBObjectStore) => IDBRequest<T>, store = STORE): Promise<T> {
   const d = await db()
   return new Promise((res, rej) => {
-    const q = f(d.transaction(STORE, mode).objectStore(STORE))
+    const q = f(d.transaction(store, mode).objectStore(store))
     q.onsuccess = () => res(q.result)
     q.onerror = () => rej(q.error)
   })
@@ -81,8 +83,50 @@ function loadAll() {
     } catch { /* нет IndexedDB */ }
     const tracks = [...site, ...mine]
     set({ tracks, index: st.index % Math.max(1, tracks.length) })
+    void startLibrary()
   })()
   return loaded
+}
+
+// Заменить список песен, не сбивая играющую.
+function setTracks(tracks: Track[]) {
+  const cur = st.tracks[st.index]
+  const i = cur ? tracks.findIndex(t => t.url === cur.url && t.file === cur.file) : -1
+  set({ tracks, index: i >= 0 ? i : Math.min(st.index, Math.max(0, tracks.length - 1)) })
+}
+
+// Общая библиотека (Firestore): песни скачиваются один раз и хранятся на устройстве.
+async function startLibrary() {
+  let lib: typeof import('../net/library')
+  try { lib = await import('../net/library'); if (!lib.libraryReady()) return; await lib.ready() } catch { return }
+  let busy = false, latest: import('../net/library').LibSong[] = []
+  const apply = async () => {
+    if (busy) return
+    busy = true
+    try {
+      const ids = new Set(latest.map(s => s.id))
+      for (const t of st.tracks) if (t.lib && !ids.has(t.lib)) { if (t.url) URL.revokeObjectURL(t.url); void tx('readwrite', s => s.delete(t.lib!), LIB).catch(() => {}) }
+      let tracks = st.tracks.filter(t => !t.lib || ids.has(t.lib))
+      setTracks(tracks)
+      for (const s of latest) {
+        if (tracks.some(t => t.lib === s.id)) continue
+        let blob: Blob | undefined
+        try { blob = (await tx<{ blob: Blob } | undefined>('readonly', x => x.get(s.id) as IDBRequest<{ blob: Blob } | undefined>, LIB))?.blob } catch { /* нет кэша */ }
+        if (!blob) {
+          try { blob = await lib.downloadSong(s) } catch { continue }
+          void tx('readwrite', x => x.put({ id: s.id, blob }), LIB).catch(() => {})
+        }
+        const order = latest.map(x => x.id)
+        const libTracks = [...tracks.filter(t => t.lib), { title: s.title, url: URL.createObjectURL(blob), lib: s.id }]
+          .sort((a, b) => order.indexOf(a.lib!) - order.indexOf(b.lib!))
+        tracks = [...libTracks, ...tracks.filter(t => !t.lib)]
+        setTracks(tracks)
+        sync()
+      }
+    } finally { busy = false }
+    if (latest.some(s => !st.tracks.some(t => t.lib === s.id))) void apply() // пришли новые, пока качали
+  }
+  lib.watchLibrary(songs => { latest = songs; void apply() })
 }
 // браузеры запускают звук только после касания
 if (typeof window !== 'undefined') window.addEventListener('pointerdown', () => { if (wanted && st.on && !st.playing) sync() })

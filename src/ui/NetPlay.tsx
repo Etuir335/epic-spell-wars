@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { ensureUser, netConfigured } from '../net/firebase'
 import { MAX_SEATS, createRoom, joinRoom, leaveRoom, listOpenRooms, quickMatch, startGame, updateMember, updateRoom, type BotSeat, type Room } from '../net/room'
 import { useNetGame } from '../net/useNetGame'
+import { claimAdmin, deleteSong, uploadSong, watchLibrary, type LibSong } from '../net/library'
 import { shareInvite, tgUser } from '../telegram'
 import { Portrait } from './cards'
 import Game from './Game'
@@ -31,7 +32,7 @@ export default function NetPlay({ onBack, startCode }: { onBack: () => void; sta
   }, [])
   useEffect(() => save(PROFILE, profile), [profile])
 
-  const [view, setView] = useState<'menu' | 'list'>('menu')
+  const [view, setView] = useState<'menu' | 'list' | 'music'>('menu')
   const [pub, setPub] = useState(true)
   const name = profile.name.trim()
   const enter = async (how: 'create' | 'join' | 'quick', c0?: string) => {
@@ -41,6 +42,10 @@ export default function NetPlay({ onBack, startCode }: { onBack: () => void; sta
       let c = c0 ?? joinCode.trim().toUpperCase()
       if (how === 'create') c = await createRoom(uid, name, profile.portrait, { public: pub })
       else if (how === 'quick') c = await quickMatch(uid, name, profile.portrait)
+      else if (c.length === 6) { // 6 символов — код админа (проверяет база), комнаты — 5
+        if (await claimAdmin(c)) { setView('music'); setJoinCode(''); return }
+        throw new Error('Неверный код')
+      }
       else await joinRoom(c, uid, name, profile.portrait)
       save(ROOM, c); setCode(c)
     } catch (e) { setErr((e as Error).message) } finally { setBusy(false) }
@@ -50,6 +55,7 @@ export default function NetPlay({ onBack, startCode }: { onBack: () => void; sta
   if (!netConfigured()) return <Shell onBack={onBack}><p className="hint">Сетевая игра ещё не настроена (нет ключей Firebase).</p></Shell>
   if (!uid) return <Shell onBack={onBack}><p className="hint">{err || 'Подключаемся…'}</p></Shell>
   if (code) return <RoomView code={code} uid={uid} onLeave={leave} onBack={onBack} />
+  if (view === 'music') return <MusicAdmin onBack={() => setView('menu')} />
   if (view === 'list') return <RoomList onBack={() => setView('menu')} busy={busy} err={err} canJoin={!!name} onJoin={c => enter('join', c)} />
 
   return (
@@ -74,8 +80,8 @@ export default function NetPlay({ onBack, startCode }: { onBack: () => void; sta
         <small className="hint">{pub ? 'Комнату увидят все в списке и в быстрой игре.' : 'Войти можно только по коду или ссылке-приглашению.'}</small>
       </div>
       <div className="join-row">
-        <input value={joinCode} maxLength={5} placeholder="КОД" onChange={e => setJoinCode(e.target.value.toUpperCase())} />
-        <button className="btn" disabled={busy || joinCode.trim().length !== 5 || !name} onClick={() => enter('join')}>Войти</button>
+        <input value={joinCode} maxLength={6} placeholder="КОД" onChange={e => setJoinCode(e.target.value.toUpperCase())} />
+        <button className="btn" disabled={busy || joinCode.trim().length < 5 || (!name && joinCode.trim().length === 5)} onClick={() => enter('join')}>Войти</button>
       </div>
       {busy && <p className="hint center">Ищем…</p>}
       {err && <p className="err">{err}</p>}
@@ -257,6 +263,47 @@ function RoomView({ code, uid, onLeave, onBack }: { code: string; uid: string; o
       <button className="btn wide ghost" onClick={() => { if (g.isHost) void updateRoom(code, { open: false, startAt: null }); void leaveRoom(code, uid); onLeave() }}>Выйти из комнаты</button>
       {pick && me && <PortraitPicker value={me.portrait} onPick={p => { void updateMember(code, uid, { portrait: p }); setPick(false) }} onClose={() => setPick(false)} />}
       {toast && <div className="toast">{toast}</div>}
+    </Shell>
+  )
+}
+
+// Музыка игры (админ): общая библиотека песен — играет у всех в бою.
+function MusicAdmin({ onBack }: { onBack: () => void }) {
+  const [songs, setSongs] = useState<LibSong[] | null>(null)
+  const [status, setStatus] = useState('')
+  const [busy, setBusy] = useState(false)
+  useEffect(() => watchLibrary(setSongs), [])
+  const upload = async (files: FileList) => {
+    setBusy(true)
+    const list = [...files]
+    try {
+      for (let k = 0; k < list.length; k++) {
+        const f = list[k]
+        if (f.size > 25_000_000) { setStatus(`«${f.name}» больше 25 МБ — пропущена`); continue }
+        await uploadSong(f, (p, n) => setStatus(`Загружаю ${k + 1}/${list.length}: ${f.name} — ${Math.round((p / n) * 100)}%`))
+      }
+      setStatus('Готово ✓ Песни уже играют у всех в бою.')
+    } catch (e) { setStatus('Ошибка: ' + (e as Error).message) } finally { setBusy(false) }
+  }
+  const mb = (n: number) => (n / 1_000_000).toFixed(1) + ' МБ'
+  const total = (songs ?? []).reduce((a, s) => a + s.size, 0)
+  return (
+    <Shell onBack={onBack} title="Музыка игры">
+      <p className="hint">Песни отсюда играют у всех игроков во время боя (у каждого скачиваются один раз).</p>
+      <label className={`btn gold wide add-music${busy ? ' disabled' : ''}`}>＋ Загрузить песни
+        <input type="file" accept="audio/*,.mp3,.m4a,.ogg,.wav,.flac" multiple hidden disabled={busy} onChange={e => { if (e.target.files?.length) void upload(e.target.files); e.target.value = '' }} />
+      </label>
+      {status && <p className="hint center">{status}</p>}
+      <h3 className="lobby-h">Библиотека ({songs?.length ?? '…'}, {mb(total)})</h3>
+      <div className="playlist">
+        {songs?.map(s => (
+          <div key={s.id} className="pl-row">
+            <span className="pl-name">{s.title} <small className="hint">{mb(s.size)}</small></span>
+            <button className="pl-del" disabled={busy} onClick={() => { if (confirm(`Удалить «${s.title}»?`)) void deleteSong(s.id) }} title="Удалить">✕</button>
+          </div>
+        ))}
+        {songs?.length === 0 && <p className="hint">Пока пусто.</p>}
+      </div>
     </Shell>
   )
 }
