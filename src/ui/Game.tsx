@@ -13,6 +13,7 @@ import { assetUrl, cardUrl } from '../assets'
 import HandDock, { SpellSlots, useBuilder } from './HandDock'
 import { simpleBotMove } from './simpleBot'
 import { isMuted, setMuted, sfx } from './sound'
+import { music, useMusic } from './music'
 import type { GameStore } from './store'
 
 const noHover = () => {}
@@ -60,7 +61,8 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
   const [localViewer, setViewer] = useState(humans[0] ?? -1)
   const viewer = net ? net.seat : localViewer
   const [toast, setToast] = useState<string | null>(null)
-  const [sheet, setSheet] = useState<null | 'log' | 'menu' | { player: number }>(null)
+  const [sheet, setSheet] = useState<null | 'log' | 'menu' | 'music' | { player: number }>(null)
+  const mus = useMusic()
   const [mute, setMute] = useState(isMuted())
   const [hovered, setHovered] = useState<CardRef | null>(null)
   const desk = useIsDesktop()
@@ -136,7 +138,8 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
         <button onClick={() => setSheet('menu')}>☰</button>
         <h2>Игра {s.game} · Раунд {s.round}</h2>
         {net && <button className="room-chip" onClick={net.onInvite} title="Пригласить друзей">{net.code}</button>}
-        <button onClick={() => { setMuted(!mute); setMute(!mute) }}>{mute ? '🔇' : '🔊'}</button>
+        {mus.tracks.length > 0 && <button className={mus.on ? '' : 'off'} onClick={() => setSheet('music')} title="Музыка">🎵</button>}
+        <button onClick={() => { setMuted(!mute); setMute(!mute) }} title="Звуки">{mute ? '🔇' : '🔊'}</button>
         <button onClick={() => setSheet('log')}>📜</button>
       </div>
 
@@ -185,6 +188,24 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
           <div className="sheet log-sheet">
             <h3>Журнал</h3>
             {[...s.log].reverse().map((l, i) => <div key={i}>{l}</div>)}
+          </div>
+        </div>
+      )}
+      {sheet === 'music' && (
+        <div className="sheet-back" onClick={() => setSheet(null)}>
+          <div className="sheet music-sheet" onClick={e => e.stopPropagation()}>
+            <h3>Музыка</h3>
+            <div className="seg wide-seg">
+              <button className={mus.on ? 'on' : ''} onClick={() => !mus.on && music.toggle()}>Включена</button>
+              <button className={!mus.on ? 'on' : ''} onClick={() => mus.on && music.toggle()}>Выключена</button>
+            </div>
+            <div className="track">
+              <button className="btn" onClick={music.prev} title="Предыдущая">⏮</button>
+              <div className="track-name"><small>{mus.index + 1} / {mus.tracks.length}</small><b>{mus.track?.title ?? '—'}</b></div>
+              <button className="btn" onClick={music.next} title="Следующая">⏭</button>
+            </div>
+            <label className="vol">Громкость <input type="range" min={0} max={1} step={0.05} value={mus.volume} onChange={e => music.volume(+e.target.value)} /></label>
+            <button className="btn wide ghost" onClick={() => setSheet(null)}>Закрыть</button>
           </div>
         </div>
       )}

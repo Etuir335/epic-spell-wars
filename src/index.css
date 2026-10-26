@@ -382,3 +382,11 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .room-row .btn { flex: none; }
 .countdown { text-align: center; background: linear-gradient(#4a3416, #2a1d0c); border: 1px solid #ffc53166; border-radius: 12px; padding: 10px; margin-bottom: 8px; font-size: 16px; }
 .countdown b { font-family: var(--title); font-weight: 400; font-size: 26px; color: var(--gold); }
+/* музыка */
+.top-bar button.off { opacity: .45; }
+.music-sheet .track { display: flex; align-items: center; gap: 10px; margin: 14px 0; }
+.track-name { flex: 1; min-width: 0; text-align: center; }
+.track-name small { display: block; color: var(--dim); }
+.track-name b { display: block; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vol { display: flex; align-items: center; gap: 10px; font-size: 15px; margin-bottom: 8px; }
+.vol input { flex: 1; accent-color: var(--gold); }
