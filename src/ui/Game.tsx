@@ -138,7 +138,7 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
         <button onClick={() => setSheet('menu')}>☰</button>
         <h2>Игра {s.game} · Раунд {s.round}</h2>
         {net && <button className="room-chip" onClick={net.onInvite} title="Пригласить друзей">{net.code}</button>}
-        {mus.tracks.length > 0 && <button className={mus.on ? '' : 'off'} onClick={() => setSheet('music')} title="Музыка">🎵</button>}
+        <button className={mus.on && mus.tracks.length ? '' : 'off'} onClick={() => setSheet('music')} title="Музыка">🎵</button>
         <button onClick={() => { setMuted(!mute); setMute(!mute) }} title="Звуки">{mute ? '🔇' : '🔊'}</button>
         <button onClick={() => setSheet('log')}>📜</button>
       </div>
@@ -205,6 +205,19 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
               <button className="btn" onClick={music.next} title="Следующая">⏭</button>
             </div>
             <label className="vol">Громкость <input type="range" min={0} max={1} step={0.05} value={mus.volume} onChange={e => music.volume(+e.target.value)} /></label>
+            <div className="playlist">
+              {mus.tracks.map((tr, i) => (
+                <div key={`${tr.local ?? tr.file ?? ""}-${i}`} className={`pl-row${i === mus.index ? ' cur' : ''}`}>
+                  <button className="pl-name" onClick={() => music.play(i)}>{i === mus.index && mus.playing ? '▶ ' : ''}{tr.title}</button>
+                  {tr.local && <button className="pl-del" onClick={() => void music.remove(i)} title="Убрать">✕</button>}
+                </div>
+              ))}
+              {!mus.tracks.length && <p className="hint">Песен пока нет. Добавь свои — они останутся только на этом устройстве.</p>}
+            </div>
+            <label className="btn wide add-music">＋ Добавить песни с устройства
+              <input type="file" accept="audio/*,.mp3,.m4a,.ogg,.wav,.flac" multiple hidden onChange={e => { if (e.target.files) void music.add(e.target.files); e.target.value = '' }} />
+            </label>
+            <small className="hint">Песни хранятся только на твоём телефоне или ПК и не выкладываются в интернет.</small>
             <button className="btn wide ghost" onClick={() => setSheet(null)}>Закрыть</button>
           </div>
         </div>
