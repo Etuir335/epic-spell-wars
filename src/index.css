@@ -373,3 +373,12 @@ h1, h2, h3, h4 { margin: 0; font-family: var(--title); font-weight: 400; letter-
 body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 img { -webkit-user-drag: none; -webkit-touch-callout: none; }
 input, textarea { -webkit-user-select: text; user-select: text; }
+.btn.big { font-size: 21px; padding: 16px; }
+.hint.center { text-align: center; }
+.net-box { background: #0004; border: 1px solid #ffffff14; border-radius: 14px; padding: 10px; margin: 10px 0; display: flex; flex-direction: column; gap: 6px; }
+.wide-seg { display: flex; width: 100%; }
+.wide-seg button { flex: 1; }
+.room-kind { margin-bottom: 8px; text-align: center; }
+.room-row .btn { flex: none; }
+.countdown { text-align: center; background: linear-gradient(#4a3416, #2a1d0c); border: 1px solid #ffc53166; border-radius: 12px; padding: 10px; margin-bottom: 8px; font-size: 16px; }
+.countdown b { font-family: var(--title); font-weight: 400; font-size: 26px; color: var(--gold); }
