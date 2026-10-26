@@ -1,0 +1,8 @@
+node_modules
+dist
+*.local
+.cache
+.vscode/*
+.idea
+# исходники мода и правила (большие, сайту не нужны)
+/materials/

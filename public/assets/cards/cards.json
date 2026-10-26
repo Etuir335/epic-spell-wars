@@ -1,0 +1,1016 @@
+[
+ {
+  "id": "spells:0",
+  "deck": "spells",
+  "index": 0,
+  "copies": 8,
+  "image": "assets/cards/spells/0.webp"
+ },
+ {
+  "id": "spells:1",
+  "deck": "spells",
+  "index": 1,
+  "copies": 2,
+  "image": "assets/cards/spells/1.webp"
+ },
+ {
+  "id": "spells:2",
+  "deck": "spells",
+  "index": 2,
+  "copies": 2,
+  "image": "assets/cards/spells/2.webp"
+ },
+ {
+  "id": "spells:3",
+  "deck": "spells",
+  "index": 3,
+  "copies": 2,
+  "image": "assets/cards/spells/3.webp"
+ },
+ {
+  "id": "spells:4",
+  "deck": "spells",
+  "index": 4,
+  "copies": 2,
+  "image": "assets/cards/spells/4.webp"
+ },
+ {
+  "id": "spells:5",
+  "deck": "spells",
+  "index": 5,
+  "copies": 2,
+  "image": "assets/cards/spells/5.webp"
+ },
+ {
+  "id": "spells:6",
+  "deck": "spells",
+  "index": 6,
+  "copies": 2,
+  "image": "assets/cards/spells/6.webp"
+ },
+ {
+  "id": "spells:7",
+  "deck": "spells",
+  "index": 7,
+  "copies": 2,
+  "image": "assets/cards/spells/7.webp"
+ },
+ {
+  "id": "spells:8",
+  "deck": "spells",
+  "index": 8,
+  "copies": 2,
+  "image": "assets/cards/spells/8.webp"
+ },
+ {
+  "id": "spells:9",
+  "deck": "spells",
+  "index": 9,
+  "copies": 2,
+  "image": "assets/cards/spells/9.webp"
+ },
+ {
+  "id": "spells:10",
+  "deck": "spells",
+  "index": 10,
+  "copies": 2,
+  "image": "assets/cards/spells/10.webp"
+ },
+ {
+  "id": "spells:11",
+  "deck": "spells",
+  "index": 11,
+  "copies": 2,
+  "image": "assets/cards/spells/11.webp"
+ },
+ {
+  "id": "spells:12",
+  "deck": "spells",
+  "index": 12,
+  "copies": 2,
+  "image": "assets/cards/spells/12.webp"
+ },
+ {
+  "id": "spells:13",
+  "deck": "spells",
+  "index": 13,
+  "copies": 2,
+  "image": "assets/cards/spells/13.webp"
+ },
+ {
+  "id": "spells:14",
+  "deck": "spells",
+  "index": 14,
+  "copies": 2,
+  "image": "assets/cards/spells/14.webp"
+ },
+ {
+  "id": "spells:15",
+  "deck": "spells",
+  "index": 15,
+  "copies": 2,
+  "image": "assets/cards/spells/15.webp"
+ },
+ {
+  "id": "spells:16",
+  "deck": "spells",
+  "index": 16,
+  "copies": 2,
+  "image": "assets/cards/spells/16.webp"
+ },
+ {
+  "id": "spells:17",
+  "deck": "spells",
+  "index": 17,
+  "copies": 2,
+  "image": "assets/cards/spells/17.webp"
+ },
+ {
+  "id": "spells:18",
+  "deck": "spells",
+  "index": 18,
+  "copies": 2,
+  "image": "assets/cards/spells/18.webp"
+ },
+ {
+  "id": "spells:19",
+  "deck": "spells",
+  "index": 19,
+  "copies": 2,
+  "image": "assets/cards/spells/19.webp"
+ },
+ {
+  "id": "spells:20",
+  "deck": "spells",
+  "index": 20,
+  "copies": 2,
+  "image": "assets/cards/spells/20.webp"
+ },
+ {
+  "id": "spells:21",
+  "deck": "spells",
+  "index": 21,
+  "copies": 2,
+  "image": "assets/cards/spells/21.webp"
+ },
+ {
+  "id": "spells:22",
+  "deck": "spells",
+  "index": 22,
+  "copies": 2,
+  "image": "assets/cards/spells/22.webp"
+ },
+ {
+  "id": "spells:23",
+  "deck": "spells",
+  "index": 23,
+  "copies": 2,
+  "image": "assets/cards/spells/23.webp"
+ },
+ {
+  "id": "spells:24",
+  "deck": "spells",
+  "index": 24,
+  "copies": 2,
+  "image": "assets/cards/spells/24.webp"
+ },
+ {
+  "id": "spells:25",
+  "deck": "spells",
+  "index": 25,
+  "copies": 2,
+  "image": "assets/cards/spells/25.webp"
+ },
+ {
+  "id": "spells:26",
+  "deck": "spells",
+  "index": 26,
+  "copies": 2,
+  "image": "assets/cards/spells/26.webp"
+ },
+ {
+  "id": "spells:27",
+  "deck": "spells",
+  "index": 27,
+  "copies": 2,
+  "image": "assets/cards/spells/27.webp"
+ },
+ {
+  "id": "spells:28",
+  "deck": "spells",
+  "index": 28,
+  "copies": 2,
+  "image": "assets/cards/spells/28.webp"
+ },
+ {
+  "id": "spells:29",
+  "deck": "spells",
+  "index": 29,
+  "copies": 2,
+  "image": "assets/cards/spells/29.webp"
+ },
+ {
+  "id": "spells:30",
+  "deck": "spells",
+  "index": 30,
+  "copies": 2,
+  "image": "assets/cards/spells/30.webp"
+ },
+ {
+  "id": "spells:31",
+  "deck": "spells",
+  "index": 31,
+  "copies": 2,
+  "image": "assets/cards/spells/31.webp"
+ },
+ {
+  "id": "spells:32",
+  "deck": "spells",
+  "index": 32,
+  "copies": 2,
+  "image": "assets/cards/spells/32.webp"
+ },
+ {
+  "id": "spells:33",
+  "deck": "spells",
+  "index": 33,
+  "copies": 2,
+  "image": "assets/cards/spells/33.webp"
+ },
+ {
+  "id": "spells:34",
+  "deck": "spells",
+  "index": 34,
+  "copies": 2,
+  "image": "assets/cards/spells/34.webp"
+ },
+ {
+  "id": "spells:35",
+  "deck": "spells",
+  "index": 35,
+  "copies": 2,
+  "image": "assets/cards/spells/35.webp"
+ },
+ {
+  "id": "spells:36",
+  "deck": "spells",
+  "index": 36,
+  "copies": 2,
+  "image": "assets/cards/spells/36.webp"
+ },
+ {
+  "id": "spells:37",
+  "deck": "spells",
+  "index": 37,
+  "copies": 2,
+  "image": "assets/cards/spells/37.webp"
+ },
+ {
+  "id": "spells:38",
+  "deck": "spells",
+  "index": 38,
+  "copies": 2,
+  "image": "assets/cards/spells/38.webp"
+ },
+ {
+  "id": "spells:39",
+  "deck": "spells",
+  "index": 39,
+  "copies": 2,
+  "image": "assets/cards/spells/39.webp"
+ },
+ {
+  "id": "spells:40",
+  "deck": "spells",
+  "index": 40,
+  "copies": 2,
+  "image": "assets/cards/spells/40.webp"
+ },
+ {
+  "id": "spells:41",
+  "deck": "spells",
+  "index": 41,
+  "copies": 2,
+  "image": "assets/cards/spells/41.webp"
+ },
+ {
+  "id": "spells:42",
+  "deck": "spells",
+  "index": 42,
+  "copies": 2,
+  "image": "assets/cards/spells/42.webp"
+ },
+ {
+  "id": "spells:43",
+  "deck": "spells",
+  "index": 43,
+  "copies": 2,
+  "image": "assets/cards/spells/43.webp"
+ },
+ {
+  "id": "spells:44",
+  "deck": "spells",
+  "index": 44,
+  "copies": 2,
+  "image": "assets/cards/spells/44.webp"
+ },
+ {
+  "id": "spells:45",
+  "deck": "spells",
+  "index": 45,
+  "copies": 2,
+  "image": "assets/cards/spells/45.webp"
+ },
+ {
+  "id": "spells:46",
+  "deck": "spells",
+  "index": 46,
+  "copies": 2,
+  "image": "assets/cards/spells/46.webp"
+ },
+ {
+  "id": "spells:47",
+  "deck": "spells",
+  "index": 47,
+  "copies": 2,
+  "image": "assets/cards/spells/47.webp"
+ },
+ {
+  "id": "spells:48",
+  "deck": "spells",
+  "index": 48,
+  "copies": 2,
+  "image": "assets/cards/spells/48.webp"
+ },
+ {
+  "id": "spells:49",
+  "deck": "spells",
+  "index": 49,
+  "copies": 2,
+  "image": "assets/cards/spells/49.webp"
+ },
+ {
+  "id": "spells:50",
+  "deck": "spells",
+  "index": 50,
+  "copies": 2,
+  "image": "assets/cards/spells/50.webp"
+ },
+ {
+  "id": "spells:51",
+  "deck": "spells",
+  "index": 51,
+  "copies": 2,
+  "image": "assets/cards/spells/51.webp"
+ },
+ {
+  "id": "spells:52",
+  "deck": "spells",
+  "index": 52,
+  "copies": 2,
+  "image": "assets/cards/spells/52.webp"
+ },
+ {
+  "id": "spells:53",
+  "deck": "spells",
+  "index": 53,
+  "copies": 2,
+  "image": "assets/cards/spells/53.webp"
+ },
+ {
+  "id": "spells:54",
+  "deck": "spells",
+  "index": 54,
+  "copies": 2,
+  "image": "assets/cards/spells/54.webp"
+ },
+ {
+  "id": "spells:55",
+  "deck": "spells",
+  "index": 55,
+  "copies": 2,
+  "image": "assets/cards/spells/55.webp"
+ },
+ {
+  "id": "spells:56",
+  "deck": "spells",
+  "index": 56,
+  "copies": 2,
+  "image": "assets/cards/spells/56.webp"
+ },
+ {
+  "id": "spells:57",
+  "deck": "spells",
+  "index": 57,
+  "copies": 2,
+  "image": "assets/cards/spells/57.webp"
+ },
+ {
+  "id": "spells:58",
+  "deck": "spells",
+  "index": 58,
+  "copies": 2,
+  "image": "assets/cards/spells/58.webp"
+ },
+ {
+  "id": "spells:59",
+  "deck": "spells",
+  "index": 59,
+  "copies": 2,
+  "image": "assets/cards/spells/59.webp"
+ },
+ {
+  "id": "spells:60",
+  "deck": "spells",
+  "index": 60,
+  "copies": 2,
+  "image": "assets/cards/spells/60.webp"
+ },
+ {
+  "id": "spells:61",
+  "deck": "spells",
+  "index": 61,
+  "copies": 2,
+  "image": "assets/cards/spells/61.webp"
+ },
+ {
+  "id": "spells:62",
+  "deck": "spells",
+  "index": 62,
+  "copies": 2,
+  "image": "assets/cards/spells/62.webp"
+ },
+ {
+  "id": "spells:63",
+  "deck": "spells",
+  "index": 63,
+  "copies": 2,
+  "image": "assets/cards/spells/63.webp"
+ },
+ {
+  "id": "treasures:0",
+  "deck": "treasures",
+  "index": 0,
+  "copies": 1,
+  "image": "assets/cards/treasures/0.webp"
+ },
+ {
+  "id": "treasures:1",
+  "deck": "treasures",
+  "index": 1,
+  "copies": 1,
+  "image": "assets/cards/treasures/1.webp"
+ },
+ {
+  "id": "treasures:2",
+  "deck": "treasures",
+  "index": 2,
+  "copies": 1,
+  "image": "assets/cards/treasures/2.webp"
+ },
+ {
+  "id": "treasures:3",
+  "deck": "treasures",
+  "index": 3,
+  "copies": 1,
+  "image": "assets/cards/treasures/3.webp"
+ },
+ {
+  "id": "treasures:4",
+  "deck": "treasures",
+  "index": 4,
+  "copies": 1,
+  "image": "assets/cards/treasures/4.webp"
+ },
+ {
+  "id": "treasures:5",
+  "deck": "treasures",
+  "index": 5,
+  "copies": 1,
+  "image": "assets/cards/treasures/5.webp"
+ },
+ {
+  "id": "treasures:6",
+  "deck": "treasures",
+  "index": 6,
+  "copies": 1,
+  "image": "assets/cards/treasures/6.webp"
+ },
+ {
+  "id": "treasures:7",
+  "deck": "treasures",
+  "index": 7,
+  "copies": 1,
+  "image": "assets/cards/treasures/7.webp"
+ },
+ {
+  "id": "treasures:8",
+  "deck": "treasures",
+  "index": 8,
+  "copies": 1,
+  "image": "assets/cards/treasures/8.webp"
+ },
+ {
+  "id": "treasures:9",
+  "deck": "treasures",
+  "index": 9,
+  "copies": 1,
+  "image": "assets/cards/treasures/9.webp"
+ },
+ {
+  "id": "treasures:10",
+  "deck": "treasures",
+  "index": 10,
+  "copies": 1,
+  "image": "assets/cards/treasures/10.webp"
+ },
+ {
+  "id": "treasures:11",
+  "deck": "treasures",
+  "index": 11,
+  "copies": 1,
+  "image": "assets/cards/treasures/11.webp"
+ },
+ {
+  "id": "treasures:12",
+  "deck": "treasures",
+  "index": 12,
+  "copies": 1,
+  "image": "assets/cards/treasures/12.webp"
+ },
+ {
+  "id": "treasures:13",
+  "deck": "treasures",
+  "index": 13,
+  "copies": 1,
+  "image": "assets/cards/treasures/13.webp"
+ },
+ {
+  "id": "treasures:14",
+  "deck": "treasures",
+  "index": 14,
+  "copies": 1,
+  "image": "assets/cards/treasures/14.webp"
+ },
+ {
+  "id": "treasures:15",
+  "deck": "treasures",
+  "index": 15,
+  "copies": 1,
+  "image": "assets/cards/treasures/15.webp"
+ },
+ {
+  "id": "treasures:16",
+  "deck": "treasures",
+  "index": 16,
+  "copies": 1,
+  "image": "assets/cards/treasures/16.webp"
+ },
+ {
+  "id": "treasures:17",
+  "deck": "treasures",
+  "index": 17,
+  "copies": 1,
+  "image": "assets/cards/treasures/17.webp"
+ },
+ {
+  "id": "treasures:18",
+  "deck": "treasures",
+  "index": 18,
+  "copies": 1,
+  "image": "assets/cards/treasures/18.webp"
+ },
+ {
+  "id": "treasures:19",
+  "deck": "treasures",
+  "index": 19,
+  "copies": 1,
+  "image": "assets/cards/treasures/19.webp"
+ },
+ {
+  "id": "treasures:20",
+  "deck": "treasures",
+  "index": 20,
+  "copies": 1,
+  "image": "assets/cards/treasures/20.webp"
+ },
+ {
+  "id": "treasures:21",
+  "deck": "treasures",
+  "index": 21,
+  "copies": 1,
+  "image": "assets/cards/treasures/21.webp"
+ },
+ {
+  "id": "treasures:22",
+  "deck": "treasures",
+  "index": 22,
+  "copies": 1,
+  "image": "assets/cards/treasures/22.webp"
+ },
+ {
+  "id": "treasures:23",
+  "deck": "treasures",
+  "index": 23,
+  "copies": 1,
+  "image": "assets/cards/treasures/23.webp"
+ },
+ {
+  "id": "treasures:24",
+  "deck": "treasures",
+  "index": 24,
+  "copies": 1,
+  "image": "assets/cards/treasures/24.webp"
+ },
+ {
+  "id": "treasures:25",
+  "deck": "treasures",
+  "index": 25,
+  "copies": 1,
+  "image": "assets/cards/treasures/25.webp"
+ },
+ {
+  "id": "dead:0",
+  "deck": "dead",
+  "index": 0,
+  "copies": 2,
+  "image": "assets/cards/dead/0.webp"
+ },
+ {
+  "id": "dead:1",
+  "deck": "dead",
+  "index": 1,
+  "copies": 2,
+  "image": "assets/cards/dead/1.webp"
+ },
+ {
+  "id": "dead:2",
+  "deck": "dead",
+  "index": 2,
+  "copies": 3,
+  "image": "assets/cards/dead/2.webp"
+ },
+ {
+  "id": "dead:3",
+  "deck": "dead",
+  "index": 3,
+  "copies": 3,
+  "image": "assets/cards/dead/3.webp"
+ },
+ {
+  "id": "dead:4",
+  "deck": "dead",
+  "index": 4,
+  "copies": 3,
+  "image": "assets/cards/dead/4.webp"
+ },
+ {
+  "id": "dead:5",
+  "deck": "dead",
+  "index": 5,
+  "copies": 3,
+  "image": "assets/cards/dead/5.webp"
+ },
+ {
+  "id": "dead:6",
+  "deck": "dead",
+  "index": 6,
+  "copies": 4,
+  "image": "assets/cards/dead/6.webp"
+ },
+ {
+  "id": "dead:7",
+  "deck": "dead",
+  "index": 7,
+  "copies": 5,
+  "image": "assets/cards/dead/7.webp"
+ },
+ {
+  "id": "wizards:0",
+  "deck": "wizards",
+  "index": 0,
+  "copies": 1,
+  "image": "assets/cards/wizards/0.webp",
+  "back": "assets/cards/wizards/0_back.webp"
+ },
+ {
+  "id": "wizards:1",
+  "deck": "wizards",
+  "index": 1,
+  "copies": 1,
+  "image": "assets/cards/wizards/1.webp",
+  "back": "assets/cards/wizards/1_back.webp"
+ },
+ {
+  "id": "wizards:2",
+  "deck": "wizards",
+  "index": 2,
+  "copies": 1,
+  "image": "assets/cards/wizards/2.webp",
+  "back": "assets/cards/wizards/2_back.webp"
+ },
+ {
+  "id": "wizards:3",
+  "deck": "wizards",
+  "index": 3,
+  "copies": 1,
+  "image": "assets/cards/wizards/3.webp",
+  "back": "assets/cards/wizards/3_back.webp"
+ },
+ {
+  "id": "wizards:4",
+  "deck": "wizards",
+  "index": 4,
+  "copies": 1,
+  "image": "assets/cards/wizards/4.webp",
+  "back": "assets/cards/wizards/4_back.webp"
+ },
+ {
+  "id": "wizards:5",
+  "deck": "wizards",
+  "index": 5,
+  "copies": 1,
+  "image": "assets/cards/wizards/5.webp",
+  "back": "assets/cards/wizards/5_back.webp"
+ },
+ {
+  "id": "wizards:6",
+  "deck": "wizards",
+  "index": 6,
+  "copies": 1,
+  "image": "assets/cards/wizards/6.webp",
+  "back": "assets/cards/wizards/6_back.webp"
+ },
+ {
+  "id": "wizards:7",
+  "deck": "wizards",
+  "index": 7,
+  "copies": 1,
+  "image": "assets/cards/wizards/7.webp",
+  "back": "assets/cards/wizards/7_back.webp"
+ },
+ {
+  "id": "wizards:8",
+  "deck": "wizards",
+  "index": 8,
+  "copies": 1,
+  "image": "assets/cards/wizards/8.webp",
+  "back": "assets/cards/wizards/8_back.webp"
+ },
+ {
+  "id": "wizards:9",
+  "deck": "wizards",
+  "index": 9,
+  "copies": 1,
+  "image": "assets/cards/wizards/9.webp",
+  "back": "assets/cards/wizards/9_back.webp"
+ },
+ {
+  "id": "wizards:10",
+  "deck": "wizards",
+  "index": 10,
+  "copies": 1,
+  "image": "assets/cards/wizards/10.webp",
+  "back": "assets/cards/wizards/10_back.webp"
+ },
+ {
+  "id": "wizards:11",
+  "deck": "wizards",
+  "index": 11,
+  "copies": 1,
+  "image": "assets/cards/wizards/11.webp",
+  "back": "assets/cards/wizards/11_back.webp"
+ },
+ {
+  "id": "wizards:12",
+  "deck": "wizards",
+  "index": 12,
+  "copies": 1,
+  "image": "assets/cards/wizards/12.webp",
+  "back": "assets/cards/wizards/12_back.webp"
+ },
+ {
+  "id": "wizards:13",
+  "deck": "wizards",
+  "index": 13,
+  "copies": 1,
+  "image": "assets/cards/wizards/13.webp",
+  "back": "assets/cards/wizards/13_back.webp"
+ },
+ {
+  "id": "wizards:14",
+  "deck": "wizards",
+  "index": 14,
+  "copies": 1,
+  "image": "assets/cards/wizards/14.webp",
+  "back": "assets/cards/wizards/14_back.webp"
+ },
+ {
+  "id": "wizards:15",
+  "deck": "wizards",
+  "index": 15,
+  "copies": 1,
+  "image": "assets/cards/wizards/15.webp",
+  "back": "assets/cards/wizards/15_back.webp"
+ },
+ {
+  "id": "wizards:16",
+  "deck": "wizards",
+  "index": 16,
+  "copies": 1,
+  "image": "assets/cards/wizards/16.webp",
+  "back": "assets/cards/wizards/16_back.webp"
+ },
+ {
+  "id": "wizards:17",
+  "deck": "wizards",
+  "index": 17,
+  "copies": 1,
+  "image": "assets/cards/wizards/17.webp",
+  "back": "assets/cards/wizards/17_back.webp"
+ },
+ {
+  "id": "wizards:18",
+  "deck": "wizards",
+  "index": 18,
+  "copies": 1,
+  "image": "assets/cards/wizards/18.webp",
+  "back": "assets/cards/wizards/18_back.webp"
+ },
+ {
+  "id": "wizards:19",
+  "deck": "wizards",
+  "index": 19,
+  "copies": 1,
+  "image": "assets/cards/wizards/19.webp",
+  "back": "assets/cards/wizards/19_back.webp"
+ },
+ {
+  "id": "wizards:20",
+  "deck": "wizards",
+  "index": 20,
+  "copies": 1,
+  "image": "assets/cards/wizards/20.webp",
+  "back": "assets/cards/wizards/20_back.webp"
+ },
+ {
+  "id": "wizards:21",
+  "deck": "wizards",
+  "index": 21,
+  "copies": 1,
+  "image": "assets/cards/wizards/21.webp",
+  "back": "assets/cards/wizards/21_back.webp"
+ },
+ {
+  "id": "wizards:22",
+  "deck": "wizards",
+  "index": 22,
+  "copies": 1,
+  "image": "assets/cards/wizards/22.webp",
+  "back": "assets/cards/wizards/22_back.webp"
+ },
+ {
+  "id": "wizards:23",
+  "deck": "wizards",
+  "index": 23,
+  "copies": 1,
+  "image": "assets/cards/wizards/23.webp",
+  "back": "assets/cards/wizards/23_back.webp"
+ },
+ {
+  "id": "wizards:24",
+  "deck": "wizards",
+  "index": 24,
+  "copies": 1,
+  "image": "assets/cards/wizards/24.webp",
+  "back": "assets/cards/wizards/24_back.webp"
+ },
+ {
+  "id": "wizards:25",
+  "deck": "wizards",
+  "index": 25,
+  "copies": 1,
+  "image": "assets/cards/wizards/25.webp",
+  "back": "assets/cards/wizards/25_back.webp"
+ },
+ {
+  "id": "wizards:26",
+  "deck": "wizards",
+  "index": 26,
+  "copies": 1,
+  "image": "assets/cards/wizards/26.webp",
+  "back": "assets/cards/wizards/26_back.webp"
+ },
+ {
+  "id": "wizards:27",
+  "deck": "wizards",
+  "index": 27,
+  "copies": 1,
+  "image": "assets/cards/wizards/27.webp",
+  "back": "assets/cards/wizards/27_back.webp"
+ },
+ {
+  "id": "wizards:28",
+  "deck": "wizards",
+  "index": 28,
+  "copies": 1,
+  "image": "assets/cards/wizards/28.webp",
+  "back": "assets/cards/wizards/28_back.webp"
+ },
+ {
+  "id": "wizards:29",
+  "deck": "wizards",
+  "index": 29,
+  "copies": 1,
+  "image": "assets/cards/wizards/29.webp",
+  "back": "assets/cards/wizards/29_back.webp"
+ },
+ {
+  "id": "wizards:30",
+  "deck": "wizards",
+  "index": 30,
+  "copies": 1,
+  "image": "assets/cards/wizards/30.webp",
+  "back": "assets/cards/wizards/30_back.webp"
+ },
+ {
+  "id": "wizards:31",
+  "deck": "wizards",
+  "index": 31,
+  "copies": 1,
+  "image": "assets/cards/wizards/31.webp",
+  "back": "assets/cards/wizards/31_back.webp"
+ },
+ {
+  "id": "wizards:32",
+  "deck": "wizards",
+  "index": 32,
+  "copies": 1,
+  "image": "assets/cards/wizards/32.webp",
+  "back": "assets/cards/wizards/32_back.webp"
+ },
+ {
+  "id": "wizards:33",
+  "deck": "wizards",
+  "index": 33,
+  "copies": 1,
+  "image": "assets/cards/wizards/33.webp",
+  "back": "assets/cards/wizards/33_back.webp"
+ },
+ {
+  "id": "wizards:34",
+  "deck": "wizards",
+  "index": 34,
+  "copies": 1,
+  "image": "assets/cards/wizards/34.webp",
+  "back": "assets/cards/wizards/34_back.webp"
+ },
+ {
+  "id": "wizards:35",
+  "deck": "wizards",
+  "index": 35,
+  "copies": 1,
+  "image": "assets/cards/wizards/35.webp",
+  "back": "assets/cards/wizards/35_back.webp"
+ },
+ {
+  "id": "wizards:36",
+  "deck": "wizards",
+  "index": 36,
+  "copies": 1,
+  "image": "assets/cards/wizards/36.webp",
+  "back": "assets/cards/wizards/36_back.webp"
+ },
+ {
+  "id": "wizards:37",
+  "deck": "wizards",
+  "index": 37,
+  "copies": 1,
+  "image": "assets/cards/wizards/37.webp",
+  "back": "assets/cards/wizards/37_back.webp"
+ },
+ {
+  "id": "wizards:38",
+  "deck": "wizards",
+  "index": 38,
+  "copies": 1,
+  "image": "assets/cards/wizards/38.webp",
+  "back": "assets/cards/wizards/38_back.webp"
+ },
+ {
+  "id": "wizards:39",
+  "deck": "wizards",
+  "index": 39,
+  "copies": 1,
+  "image": "assets/cards/wizards/39.webp",
+  "back": "assets/cards/wizards/39_back.webp"
+ },
+ {
+  "id": "wizards:40",
+  "deck": "wizards",
+  "index": 40,
+  "copies": 1,
+  "image": "assets/cards/wizards/40.webp",
+  "back": "assets/cards/wizards/40_back.webp"
+ }
+]
