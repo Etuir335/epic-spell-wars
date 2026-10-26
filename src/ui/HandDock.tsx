@@ -86,10 +86,18 @@ export function useBuilder(hand: CardId[], hasTrap: boolean, canBuild: boolean, 
   placeRef.current = place
   const unplaceRef = useRef(unplace)
   unplaceRef.current = unplace
+  // Нажатие: короткое — открыть карту; долгое (без движения) — крупная копия, пока держишь; с движением — тащить.
+  const [peek, setPeek] = useState<CardId | null>(null)
+  const pressTimer = useRef(0)
+  const peekRef = useRef<CardId | null>(null)
+  peekRef.current = peek
+  const canBuildRef = useRef(canBuild)
+  canBuildRef.current = canBuild
   const down = (id: CardId, from: Drag['from']) => (e: RPE) => {
     e.preventDefault()
-    if (!canBuild && from === 'hand') { sfx.tap(); setInspect(id); return }
     setDrag({ id, from, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, over: null, started: false })
+    clearTimeout(pressTimer.current)
+    if (from === 'hand') pressTimer.current = window.setTimeout(() => { if (!dragRef.current?.started) setPeek(id) }, 280)
   }
   const dragging = drag != null
   useEffect(() => {
@@ -97,7 +105,10 @@ export function useBuilder(hand: CardId[], hasTrap: boolean, canBuild: boolean, 
     const move = (e: PointerEvent) => {
       const d = dragRef.current
       if (!d) return
-      const started = d.started || Math.hypot(e.clientX - d.sx, e.clientY - d.sy) > 10
+      const far = Math.hypot(e.clientX - d.sx, e.clientY - d.sy) > 10
+      if (far && !canBuildRef.current) { clearTimeout(pressTimer.current); setPeek(null); setDrag(null); return } // вне сбора — не тащим
+      const started = d.started || far
+      if (started) { clearTimeout(pressTimer.current); setPeek(null) }
       let over: Slot | null = null
       if (started) {
         const el = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-slot]') as HTMLElement | null
@@ -107,13 +118,16 @@ export function useBuilder(hand: CardId[], hasTrap: boolean, canBuild: boolean, 
     }
     const up = () => {
       const d = dragRef.current
+      clearTimeout(pressTimer.current)
+      const peeked = peekRef.current != null
+      setPeek(null)
       setDrag(null)
-      if (!d) return
+      if (!d || peeked) return // отпустил после долгого нажатия — просто убрать копию
       if (!d.started) { sfx.tap(); setInspect(d.id); return }
       if (d.over && fits(d.id, d.over)) placeRef.current(d.id, d.over)
       else if (d.from !== 'hand') unplaceRef.current(d.id) // утащили карту с места — вернуть в руку
     }
-    const cancel = () => setDrag(null)
+    const cancel = () => { clearTimeout(pressTimer.current); setPeek(null); setDrag(null) }
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
     window.addEventListener('pointercancel', cancel)
@@ -124,7 +138,7 @@ export function useBuilder(hand: CardId[], hasTrap: boolean, canBuild: boolean, 
     }
   }, [dragging])
 
-  return { slots, goLast, setGoLast, drag, inspect, setInspect, inHand, canBuild, place, unplace, autoSlot, down }
+  return { slots, goLast, setGoLast, drag, inspect, setInspect, inHand, canBuild, place, unplace, autoSlot, down, peek }
 }
 export type Builder = ReturnType<typeof useBuilder>
 
@@ -194,6 +208,7 @@ export default function HandDock({ b, waitText }: { b: Builder; waitText?: strin
   const maxDrop = mid * mid * dropK
 
   const insp = b.inspect
+  const shownPeek = b.peek ?? (hov != null && !drag ? hov : null) // долгое нажатие (телефон) или наведение (мышь)
   return (
     <div className="dock">
       {!canBuild && waitText && <div className="wait">{waitText}</div>}
@@ -205,7 +220,7 @@ export default function HandDock({ b, waitText }: { b: Builder; waitText?: strin
           const dragging = drag?.started && drag.id === id
           return (
             // .fan-card — неподвижная «зона мыши»; увеличенная копия рисуется отдельно (.fan-peek) и мышь не перехватывает
-            <div key={id} className={`fan-card${dragging ? ' ghosted' : ''}${hov === id && !drag ? ' hov' : ''}`} onPointerDown={b.down(id, 'hand')}
+            <div key={id} className={`fan-card${dragging ? ' ghosted' : ''}${(hov === id && !drag) || b.peek === id ? ' hov' : ''}`} onPointerDown={b.down(id, 'hand')} onContextMenu={e => e.preventDefault()}
               onMouseEnter={() => { if (!canHover || drag) return; setHov(id); hover(id === TRAP ? { deck: 'treasures', index: T.trap } : { deck: 'spells', index: Math.floor(id / 10) }) }}
               onMouseLeave={() => { if (!canHover) return; setHov(h => (h === id ? null : h)); hover(null) }}
               style={{ width: CW, left: startX + i * step, top: 10 + drop, transform: `rotate(${rot}deg)`, zIndex: i }}>
@@ -214,16 +229,16 @@ export default function HandDock({ b, waitText }: { b: Builder; waitText?: strin
             </div>
           )
         })}
-        {hov != null && !drag && inHand.includes(hov) && (() => {
+        {shownPeek != null && inHand.includes(shownPeek) && (() => {
           // увеличенная копия над картой: по центру карты, не вылезает за края веера
-          const i = inHand.indexOf(hov)
+          const i = inHand.indexOf(shownPeek)
           const PW = Math.min(CW * (wide ? 1.5 : 1.9), wide ? 360 : 250), PH = PW * 1.413
           const cx = startX + i * step + CW / 2
           const left = Math.max(0, Math.min(fanW - PW, cx - PW / 2))
           const bottomY = 10 + (i - mid) ** 2 * dropK + CH * 0.62
           return (
             <div className="fan-peek" style={{ width: PW, left, top: bottomY - PH }}>
-              <img src={img(hov)} alt="" draggable={false} />
+              <img src={img(shownPeek)} alt="" draggable={false} />
             </div>
           )
         })()}

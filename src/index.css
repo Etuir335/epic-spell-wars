@@ -369,3 +369,7 @@ h1, h2, h3, h4 { margin: 0; font-family: var(--title); font-weight: 400; letter-
 .room-code span { font-size: 14px; color: var(--text); }
 .lobby-h { margin: 10px 0 8px; color: var(--gold); font-size: 17px; }
 .seat-main .seg { flex-wrap: wrap; }
+/* игра — не документ: текст не выделяется, долгое нажатие не вызывает меню телефона (в полях ввода — можно) */
+body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+img { -webkit-user-drag: none; -webkit-touch-callout: none; }
+input, textarea { -webkit-user-select: text; user-select: text; }
