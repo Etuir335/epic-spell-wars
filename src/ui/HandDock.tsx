@@ -105,6 +105,18 @@ export function useBuilder(hand: CardId[], hasTrap: boolean, canBuild: boolean, 
     const move = (e: PointerEvent) => {
       const d = dragRef.current
       if (!d) return
+      // карта зажата (увеличена): палец влево-вправо — листаем руку; вверх — тащим увеличенную карту в заклинание
+      if (peekRef.current != null && !d.started) {
+        if (canBuildRef.current && d.sy - e.clientY > 60) {
+          setPeek(null)
+          setDrag({ ...d, x: e.clientX, y: e.clientY, started: true, over: null })
+          return
+        }
+        const el = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-card]') as HTMLElement | null
+        const id = el ? Number(el.dataset.card) : null
+        if (id != null && id !== peekRef.current) { setPeek(id); setDrag({ ...d, id, x: e.clientX, y: e.clientY }); sfx.tap() }
+        return
+      }
       const far = Math.hypot(e.clientX - d.sx, e.clientY - d.sy) > 10
       if (far && !canBuildRef.current) { clearTimeout(pressTimer.current); setPeek(null); setDrag(null); return } // вне сбора — не тащим
       const started = d.started || far
@@ -220,7 +232,7 @@ export default function HandDock({ b, waitText }: { b: Builder; waitText?: strin
           const dragging = drag?.started && drag.id === id
           return (
             // .fan-card — неподвижная «зона мыши»; увеличенная копия рисуется отдельно (.fan-peek) и мышь не перехватывает
-            <div key={id} className={`fan-card${dragging ? ' ghosted' : ''}${(hov === id && !drag) || b.peek === id ? ' hov' : ''}`} onPointerDown={b.down(id, 'hand')} onContextMenu={e => e.preventDefault()}
+            <div key={id} data-card={id} className={`fan-card${dragging ? ' ghosted' : ''}${(hov === id && !drag) || b.peek === id ? ' hov' : ''}`} onPointerDown={b.down(id, 'hand')} onContextMenu={e => e.preventDefault()}
               onMouseEnter={() => { if (!canHover || drag) return; setHov(id); hover(id === TRAP ? { deck: 'treasures', index: T.trap } : { deck: 'spells', index: Math.floor(id / 10) }) }}
               onMouseLeave={() => { if (!canHover) return; setHov(h => (h === id ? null : h)); hover(null) }}
               style={{ width: CW, left: startX + i * step, top: 10 + drop, transform: `rotate(${rot}deg)`, zIndex: i }}>
