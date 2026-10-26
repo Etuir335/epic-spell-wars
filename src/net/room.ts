@@ -30,6 +30,9 @@ export interface Room {
   hostName?: string
   seenAt?: number // «пульс» хоста — живые комнаты в списке
   startAt?: number | null // автостарт быстрой игры
+  // таймер хода (ставит хост): кого ждём (ключ ожидания) и до какого времени
+  turnKey?: string | null
+  turnEnd?: number | null
 }
 export const MAX_SEATS = 6
 export const ALIVE_MS = 70_000 // комната без пульса хоста дольше — считается брошенной

@@ -53,7 +53,61 @@ function useBots(s: GameState, dispatch: GameStore['dispatch'], ready: boolean) 
 }
 
 // Сетевой режим: своё место за столом (seat; −1 — зритель), ботами и «следующей игрой» управляет хост.
-export interface NetInfo { seat: number; isHost: boolean; code: string; onInvite: () => void }
+// Таймер хода: хост ставит в комнате ключ ожидания и срок (turnKey/turnEnd), по сроку пропускает ход.
+export interface NetInfo {
+  seat: number; isHost: boolean; code: string; onInvite: () => void
+  turnKey?: string | null; turnEnd?: number | null
+  setTurn: (key: string | null, end: number | null) => void
+  onLeave: () => void
+}
+
+// время на заклинание и на ответ (для проверки в dev-сборке: localStorage esw-turn-sec = секунд)
+const devTurn = import.meta.env.DEV ? Number((() => { try { return localStorage.getItem('esw-turn-sec') } catch { return null } })()) * 1000 : 0
+const BUILD_MS = devTurn || 75_000, ASK_MS = devTurn || 45_000
+
+// Кого ждём из людей и ключ ожидания: раунд целиком (выкладка) или конкретный вопрос.
+function turnWait(s: GameState) {
+  const humans = waitingFor(s).filter(id => !s.players[id].bot)
+  const key = !humans.length ? null : s.pending ? `q${s.game}-${s.seq}` : `b${s.game}-${s.round}`
+  return { humans, key }
+}
+
+// Хост: ставит срок хода, когда его анимации доиграли (ready), и по сроку пропускает ход всем, кто не успел.
+function useTurnTimer(s: GameState, dispatch: GameStore['dispatch'], ready: boolean, net?: NetInfo) {
+  const sRef = useRef(s)
+  sRef.current = s
+  const { key } = turnWait(s)
+  const host = !!net?.isHost
+  useEffect(() => {
+    if (!net || !host) return
+    if (!key) { if (net.turnKey) net.setTurn(null, null); return }
+    let end = net.turnKey === key && net.turnEnd ? net.turnEnd : 0
+    if (!end) {
+      if (!ready) return
+      end = Date.now() + (key[0] === 'q' ? ASK_MS : BUILD_MS)
+      net.setTurn(key, end)
+    }
+    const t = setTimeout(() => {
+      const cur = turnWait(sRef.current)
+      if (cur.key === key) for (const id of cur.humans) dispatch({ type: 'skip', player: id })
+    }, Math.max(0, end - Date.now()))
+    return () => clearTimeout(t)
+  }, [key, host, ready, net?.turnKey, net?.turnEnd]) // eslint-disable-line react-hooks/exhaustive-deps -- net пересоздаётся каждый рендер
+}
+
+// Секунд до конца хода (для всех; null — таймера нет).
+function useTurnLeft(s: GameState, net?: NetInfo) {
+  const { key } = turnWait(s)
+  const end = net && key && net.turnKey === key ? net.turnEnd ?? null : null
+  const [now, setNow] = useState(Date.now())
+  useEffect(() => {
+    if (!end) return
+    setNow(Date.now())
+    const t = setInterval(() => setNow(Date.now()), 500)
+    return () => clearInterval(t)
+  }, [end])
+  return end ? Math.max(0, Math.ceil((end - now) / 1000)) : null
+}
 
 export default function Game({ store, onExit, net }: { store: GameStore; onExit: () => void; net?: NetInfo }) {
   const s = store.state
@@ -69,6 +123,9 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
   const canHover = typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches // на телефоне касание — не наведение
   const dir = useDirector(s)
   useBots(s, store.dispatch, dir.done && (!net || net.isHost))
+  useTurnTimer(s, store.dispatch, dir.done, net)
+  const turnLeft = useTurnLeft(s, net)
+  const [confirmLeave, setConfirmLeave] = useState(false)
   const arenaRef = useRef<HTMLDivElement>(null)
 
   const shown = shownLives(s, dir.pos)
@@ -76,6 +133,7 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
   const handoff = !net && humans.length > 1 && need.length > 0 && !need.includes(viewer) ? need[0] : null
   const me = viewer >= 0 ? s.players[viewer] : null
   const myAct = !!me && need.includes(viewer) && handoff == null
+  const botMe = !!net && !!me?.bot // за меня играет бот (пропал или ушёл)
 
   // звук «твой ход» и тряска арены на эпичном раскрытии
   const prevAct = useRef(false)
@@ -95,15 +153,17 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
     if (err) { setToast(err); setTimeout(() => setToast(null), 2500) }
   }
 
-  const iBuild = !!me && dir.done && s.phase === 'build' && me.alive && !me.spell && handoff == null
+  const iBuild = !!me && !botMe && dir.done && s.phase === 'build' && me.alive && !me.spell && handoff == null
   const builder = useBuilder(me?.hand ?? [], !!me?.treasures.includes(T.trap), iBuild, `${s.game}-${s.round}-${viewer}`)
-  const myQ = me && dir.done && s.pending && s.pending.player === viewer && handoff == null ? s.pending : null
+  const myQ = me && !botMe && dir.done && s.pending && s.pending.player === viewer && handoff == null ? s.pending : null
   const over = dir.done && (s.phase === 'gameover' || s.phase === 'tournament')
   const others = s.players.filter(p => p.id !== viewer)
   const waitNames = s.players.filter(q => q.alive && !q.spell).map(q => q.name)
+  const clock = turnLeft != null ? ` · ⏳ ${turnLeft} с` : ''
   const idle = !dir.done ? '' : s.phase === 'build'
-    ? (me?.spell && me.alive ? `Ждём: ${waitNames.join(', ')}` : me?.alive ? 'Собери заклинание из 1–3 карт' : `Раунд ${s.round}`)
-    : s.pending ? `${s.players[s.pending.player].name} думает…` : ''
+    ? (me?.spell && me.alive ? `Ждём: ${waitNames.join(', ')}${clock}` : me?.alive && !botMe ? `Собери заклинание из 1–3 карт${clock}` : `Раунд ${s.round}`)
+    : s.pending ? `${s.players[s.pending.player].name} думает…${clock}` : ''
+  const hurry = myAct && turnLeft != null && turnLeft <= 20 // мне пора: скоро пропуск хода
 
   // низ экрана: я и рука (на ПК — отдельной полосой на всю ширину под колонками)
   const bottom = (
@@ -119,7 +179,12 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
       <>
         <MyBar s={s} p={me} life={shown[viewer].life} alive={shown[viewer].alive} casting={dir.scene.caster === viewer && !dir.done}
           onClick={() => setSheet({ player: viewer })} />
-        {me.alive && (
+        {botMe ? (
+          <div className="wait bot-me">
+            <span>🤖 {me.away === 'afk' ? 'Ты пропустил 3 хода подряд — за тебя играет бот.' : 'За тебя играет бот.'}</span>
+            {me.away === 'afk' && <button className="btn gold" onClick={() => { sfx.tap(); act({ type: 'seat', player: viewer, bot: null }) }}>Вернуться в игру</button>}
+          </div>
+        ) : me.alive && (
           <HandDock b={builder}
             waitText={dir.done && s.phase === 'build' && me.spell ? '✓ Заклинание выложено' : undefined} />
         )}
@@ -160,12 +225,15 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
         </div>
       )}
 
+      {hurry && <div className="turn-hurry">⏳ {turnLeft} с — не успеешь, ход пропустится</div>}
+
       {!desk && bottom}
 
       {myQ && (
         <div className="sheet-back q">
           <div className="sheet">
             <h3>{myQ.prompt}</h3>
+            {turnLeft != null && <p className={`q-timer${turnLeft <= 15 ? ' hot' : ''}`}>⏳ {turnLeft} с</p>}
             <div className={myQ.options.some(o => o.card) ? 'q-cards' : 'q-opts'}>
               {myQ.options.map(o => o.card
                 ? <Card key={String(o.v)} c={o.card} size="m" onClick={() => act({ type: 'choose', player: viewer, value: o.v })} />
@@ -223,11 +291,19 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
         </div>
       )}
       {sheet === 'menu' && (
-        <div className="sheet-back" onClick={() => setSheet(null)}>
-          <div className="sheet">
+        <div className="sheet-back" onClick={() => { setSheet(null); setConfirmLeave(false) }}>
+          <div className="sheet" onClick={e => e.stopPropagation()}>
             <h3>Меню</h3>
-            <button className="btn wide" onClick={onExit}>Выйти в меню (турнир сохранится)</button>
-            <button className="btn wide ghost" onClick={() => setSheet(null)}>Назад к бою</button>
+            {!net && <button className="btn wide" onClick={onExit}>Выйти в меню (турнир сохранится)</button>}
+            {net && !confirmLeave && <>
+              {!net.isHost && <button className="btn wide" onClick={onExit}>Свернуть в меню (место остаётся за тобой)</button>}
+              <button className="btn wide danger" onClick={() => setConfirmLeave(true)}>Покинуть партию</button>
+            </>}
+            {net && confirmLeave && <>
+              <p className="hint center">Твоё место займёт бот, вернуться в эту партию будет нельзя.{net.isHost ? ' Хостом станет другой игрок.' : ''}</p>
+              <button className="btn wide danger" onClick={net.onLeave}>Да, покинуть</button>
+            </>}
+            <button className="btn wide ghost" onClick={() => { setSheet(null); setConfirmLeave(false) }}>Назад к бою</button>
           </div>
         </div>
       )}
@@ -271,7 +347,7 @@ function LeftPanel({ s, pos, shown, viewer, caster, onPick }: {
           <div key={p.id} className={`side-pl${caster === p.id ? ' casting' : ''}${shown[p.id].alive ? '' : ' dead'}`} onClick={() => onPick(p.id)}>
             <Portrait i={p.portrait} size={42} dead={!shown[p.id].alive} />
             <div className="side-pl-main">
-              <b>{p.bot ? '🤖 ' : ''}{p.name}{p.id === viewer ? ' (ты)' : ''}</b>
+              <b>{p.bot ? '🤖 ' : ''}{p.name}{p.id === viewer ? ' (ты)' : ''}{awayText(p)}</b>
               <span>{shown[p.id].alive ? <>❤ <em>{shown[p.id].life}</em></> : '☠ дохлый'} {p.medals > 0 && '🏅'.repeat(p.medals)}</span>
               <div className="side-tr">
                 {p.treasures.map(t => <Card key={t} c={{ deck: 'treasures', index: t }} size="s" caption={false} />)}
@@ -306,6 +382,8 @@ function RightPanel({ hovered }: { hovered: CardRef | null }) {
   )
 }
 
+const awayText = (p: PlayerState) => (p.away === 'left' ? ' (ушёл)' : p.away === 'afk' ? ' (пропал)' : '')
+
 function Backs({ n }: { n: number }) {
   return <div className="backs">{Array.from({ length: n }, (_, i) => <i key={i} />)}</div>
 }
@@ -321,7 +399,7 @@ function Seat({ s, p, life, alive, casting, count, onClick }: {
         <span className="orb">{alive ? life : '☠'}</span>
         {p.medals > 0 && <span className="medal">{'🏅'.repeat(p.medals)}</span>}
       </div>
-      <div className="seat-name">{p.bot ? '🤖 ' : ''}{p.name}</div>
+      <div className="seat-name">{p.bot ? '🤖 ' : ''}{p.name}{p.away && <small className="away">{awayText(p)}</small>}</div>
       <div className="seat-info">
         {p.treasures.length > 0 && <span>💰{p.treasures.length}</span>}
         {alive && s.phase === 'build' && (p.spell ? <span className="ready">✓</span> : <span className="think">…</span>)}

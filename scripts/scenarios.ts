@@ -1,6 +1,7 @@
 // Точечные проверки правил на подготовленных ситуациях. Запуск: node scripts/scenarios.ts
 import { create, reduce } from '../src/game/engine.ts'
 import { T } from '../src/game/core.ts'
+import { legalActions } from '../src/game/legal.ts'
 import type { Action, CardId, GameState } from '../src/game/types.ts'
 
 type Slot = 'source' | 'quality' | 'delivery'
@@ -153,6 +154,68 @@ console.log('Сокровища')
   s = submit(s, 0, [[51, 'source'], [23, 'delivery']], { goLast: true })
   ok(turns(s).join(',') === 'И1,И0', '«Ранец отрыва»: сбросить и ходить последним', s)
   ok(s.treasureDiscard.includes(T.jetpack), 'ранец в сбросе сокровищ')
+}
+
+console.log('Сеть: пропуск хода, бот вместо игрока')
+{
+  // все, кроме pid, ходят первым допустимым действием, пока не придёт черёд pid (выкладка или вопрос ему)
+  const others = (st: GameState, pid: number) => {
+    for (let g = 0; g < 500; g++) {
+      if (st.phase !== 'build' && !st.pending) return st
+      if (st.pending?.player === pid) return st
+      const who = st.pending ? st.pending.player : st.players.find(p => p.id !== pid && p.alive && !p.spell)?.id
+      if (who == null) return st
+      st = reduce(st, legalActions(st, who)[0])
+    }
+    return st
+  }
+  const skip = (st: GameState, pid: number) => reduce(st, { type: 'skip', player: pid })
+  let s = game(3)
+  for (const p of s.players) p.life = 50
+  s = others(s, 2)
+  s = skip(s, 2)
+  ok(s.players[2].skips === 1 && !s.players[2].bot && s.log.some(l => l.includes('ход пропущен')), 'пропуск по таймеру: счётчик 1, в журнале', s)
+  ok(!s.log.some(l => l.startsWith('▶ Ходит И2')), 'пропустивший не ходит в этом раунде', s)
+  let threw = false
+  try { skip(s, 2) } catch { threw = true }
+  ok(threw || s.pending?.player === 2, 'дважды за раунд выкладку не пропустить')
+  for (let r = 0; r < 6 && !s.players[2].bot; r++) {
+    while (s.pending && s.pending.player !== 2) s = reduce(s, legalActions(s, s.pending.player)[0])
+    s = others(s, 2)
+    if (s.phase === 'build' || s.pending?.player === 2) s = skip(s, 2)
+  }
+  ok(s.players[2].bot === 2 && s.players[2].away === 'afk', 'после 3 пропусков подряд за игрока играет бот', s)
+  s = reduce(s, { type: 'seat', player: 2, bot: null })
+  ok(!s.players[2].bot && !s.players[2].away && !s.players[2].skips, 'игрок вернулся — место снова его', s)
+  const l = reduce(s, { type: 'seat', player: 1, bot: 2, away: 'left' })
+  ok(l.players[1].bot === 2 && l.players[1].away === 'left', 'ушёл — место занял бот', l)
+  threw = false
+  try { reduce(l, { type: 'seat', player: 1, bot: null }) } catch { threw = true }
+  ok(threw, 'ушедший не возвращается')
+}
+{
+  // свой ход сбрасывает счётчик; пропуск вопроса отвечает за игрока и не теряет счётчик при перезапуске шага
+  let s = game(3)
+  for (const p of s.players) p.life = 50
+  s = reduce(s, { type: 'skip', player: 0 })
+  let asked = false, reset = false
+  for (let g = 0; g < 400 && s.phase !== 'gameover'; g++) {
+    if (s.pending) {
+      if (s.pending.player === 0 && !asked) {
+        const before = s.players[0].skips ?? 0, seq = s.seq
+        const t = reduce(s, { type: 'skip', player: 0 })
+        ok(t.seq > seq && t.pending?.base !== s.pending.base && (t.players[0].skips ?? 0) === before + 1, 'пропуск вопроса: ответ дан, счётчик +1', t)
+        asked = true; s = t; continue
+      }
+      s = reduce(s, legalActions(s, s.pending.player)[0]); continue
+    }
+    if (s.phase !== 'build') break
+    const who = s.players.find(p => p.alive && !p.spell)!.id
+    s = reduce(s, legalActions(s, who)[0])
+    if (who === 0 && !reset) { reset = true; ok(!s.players[0].skips, 'свой ход сбрасывает счётчик пропусков', s) }
+    if (asked && reset) break
+  }
+  if (!asked) ok(true, '(вопрос игроку не попался — пропуск вопроса не проверен)')
 }
 
 console.log(fails ? `\nОШИБОК: ${fails}` : '\nВсё OK')

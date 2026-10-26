@@ -19,6 +19,8 @@ export interface PlayerState {
   portrait: number // 0..40 — планшет колдуна
   bot?: number // 1..3 — уровень бота
   uid?: string // сетевая игра: чьё это место (анонимный uid Firebase)
+  away?: 'left' | 'afk' // сетевая игра: место занял бот — игрок ушёл или пропустил подряд 3 хода (afk может вернуться)
+  skips?: number // сетевая игра: ходов подряд пропущено по таймеру
   life: number
   alive: boolean
   hand: CardId[]
@@ -112,5 +114,9 @@ export type Action =
   | { type: 'submit'; player: number; cards: { id: CardId; slot: Exclude<SpellType, 'wild'> }[]; goLast?: boolean }
   | { type: 'choose'; player: number; value: number | string | null }
   | { type: 'nextGame' }
+  // сетевая игра: время на ход вышло (хост) — заклинание не выложено / ответ выбран случайно
+  | { type: 'skip'; player: number }
+  // сетевая игра: место занимает бот (игрок ушёл / пропал) или игрок возвращается (bot: null)
+  | { type: 'seat'; player: number; bot: number | null; away?: 'left' | 'afk' }
 
 export type { School, SpellType }

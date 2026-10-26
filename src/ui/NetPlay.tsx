@@ -196,10 +196,28 @@ function RoomView({ code, uid, onLeave, onBack }: { code: string; uid: string; o
   if (g.room === null) return <Shell onBack={onLeave}><p className="hint">Комнаты {code} нет.</p><button className="btn wide" onClick={onLeave}>Назад</button></Shell>
 
   if (g.room.status === 'game' && store) {
-    const seat = store.state.players.findIndex(p => p.uid === uid)
+    const s = store.state
+    const seat = s.players.findIndex(p => p.uid === uid)
+    const room = g.room
+    // Покинуть партию: место занимает бот; хост сначала передаёт комнату другому человеку за столом.
+    const leaveGame = async () => {
+      if (seat >= 0 && s.phase !== 'tournament' && s.players[seat].away !== 'left') g.dispatch({ type: 'seat', player: seat, bot: 2, away: 'left' })
+      if (g.isHost) {
+        const here = (p: (typeof s.players)[number]) => !!p.uid && p.uid !== uid && p.away !== 'left' && g.members.some(m => m.uid === p.uid)
+        const next = s.players.find(p => here(p) && !p.bot) ?? s.players.find(here)
+        await updateRoom(code, next ? { host: next.uid! } : { open: false }).catch(() => {})
+      }
+      await leaveRoom(code, uid).catch(() => {})
+      onLeave()
+    }
     return (
       <>
-        <Game store={store} onExit={onBack} net={{ seat, isHost: g.isHost, code, onInvite: invite }} />
+        <Game store={store} onExit={s.phase === 'tournament' ? () => void leaveGame() : onBack}
+          net={{
+            seat, isHost: g.isHost, code, onInvite: invite, turnKey: room.turnKey, turnEnd: room.turnEnd,
+            setTurn: (turnKey, turnEnd) => void updateRoom(code, { turnKey, turnEnd }).catch(() => {}),
+            onLeave: () => void leaveGame(),
+          }} />
         {toast && <div className="toast">{toast}</div>}
       </>
     )

@@ -19,11 +19,14 @@ export interface NetGame {
   clearRemoteError: () => void
 }
 
-// Может ли участник действовать за это место: своё место; хост — ещё и за ботов; «следующая игра» — хост.
+// Может ли участник действовать за это место: своё место (пока за него не играет бот); хост — ещё и за ботов;
+// «следующая игра» и пропуск хода по таймеру — хост; отдать место боту или вернуть себе — сам игрок (или хост).
 export function canAct(s: GameState, uid: string, isHost: boolean, a: Action) {
-  if (a.type === 'nextGame') return isHost
+  if (a.type === 'nextGame' || a.type === 'skip') return isHost
   const p = s.players[a.player]
-  return !!p && (p.uid === uid || (isHost && !!p.bot))
+  if (!p) return false
+  if (a.type === 'seat') return p.uid === uid || isHost
+  return p.bot ? isHost : p.uid === uid
 }
 
 export function useNetGame(code: string, uid: string): NetGame {
@@ -93,7 +96,7 @@ export function useNetGame(code: string, uid: string): NetGame {
   const dispatch = useCallback((a: Action): string | null => {
     const cur = stateRef.current.s
     if (!cur) return 'Турнир ещё не начался'
-    if (!canAct(cur, uid, isHost, a)) return a.type === 'nextGame' ? 'Следующую игру начинает хост' : 'Это не ваш ход'
+    if (!canAct(cur, uid, isHost, a)) return a.type === 'nextGame' ? 'Следующую игру начинает хост' : cur.players[a.player]?.bot ? 'Сейчас за тебя играет бот' : 'Это не ваш ход'
     const r = tryReduce(cur, a)
     if ('error' in r) return r.error
     if (isHost) {

@@ -276,8 +276,10 @@ export function reduce(state: GameState, a: Action): GameState {
     if (a.value == null ? !pd.optional : !pd.options.some(o => o.v === a.value)) throw new Error('Нет такого варианта')
     const base = JSON.parse(pd.base) as GameState
     base.seq = s.seq
+    if (base.players[a.player].skips) base.players[a.player].skips = 0
     return advance(base, [...pd.answers, a.value])
   }
+  if (a.type === 'seat' || a.type === 'skip') return seatAction(s, a)
   if (s.pending) throw new Error('Сначала ответьте на вопрос')
   if (a.type === 'nextGame') {
     if (s.phase !== 'gameover') throw new Error('Игра ещё идёт')
@@ -309,10 +311,57 @@ export function reduce(state: GameState, a: Action): GameState {
       log(s, `${p.name} сбрасывает ${treasureName(T.jetpack)}, чтобы ходить последним.`)
     }
     p.spell = spell
+    if (p.skips) p.skips = 0
     log(s, `${p.name} выкладывает заклинание.`)
     return advance(s, [])
   }
   throw new Error('Неизвестное действие')
+}
+
+// Сетевая игра: пропуск хода по таймеру и смена хозяина места. Меняет и игрока, и состояние «до шага» (pending.base),
+// иначе ответ на вопрос перезапустит шаг со старыми данными.
+const SKIPS_TO_BOT = 3
+function seatAction(s: GameState, a: Extract<Action, { type: 'seat' | 'skip' }>): GameState {
+  const p = s.players[a.player]
+  if (!p) throw new Error('Нет такого места')
+  const patch = (f: (q: PlayerState, g: GameState) => void) => {
+    f(p, s)
+    if (s.pending) {
+      const base = JSON.parse(s.pending.base) as GameState
+      f(base.players[a.player], base)
+      s.pending.base = JSON.stringify(base)
+    }
+  }
+  if (a.type === 'seat') {
+    if (a.bot) {
+      patch((q, g) => { q.bot = a.bot!; q.away = a.away ?? 'left'; q.skips = 0; log(g, q.away === 'left' ? `${q.name} уходит — за него играет бот.` : `${q.name} пропал — за него играет бот.`) })
+    } else {
+      if (!p.away) throw new Error('Место и так твоё')
+      if (p.away === 'left') throw new Error('Ты покинул эту партию')
+      patch((q, g) => { delete q.bot; delete q.away; q.skips = 0; log(g, `${q.name} вернулся в игру.`) })
+    }
+    return s
+  }
+  // skip: время вышло
+  const pd = s.pending
+  const asked = pd?.player === a.player
+  if (!asked && !(s.phase === 'build' && p.alive && !p.spell)) throw new Error('Этот игрок сейчас не ходит')
+  const n = (p.skips ?? 0) + 1
+  patch((q, g) => {
+    q.skips = n
+    log(g, `⏳ ${q.name} не успел — ход пропущен.`)
+    if (n >= SKIPS_TO_BOT) { q.bot = 2; q.away = 'afk'; q.skips = 0; log(g, `${q.name} пропустил ${SKIPS_TO_BOT} хода подряд — за него играет бот.`) }
+  })
+  if (asked) {
+    // ответ за игрока: отказ, если можно, иначе случайный вариант
+    const value = pd!.optional ? null : pd!.options[rand(s, pd!.options.length)].v
+    const base = JSON.parse(pd!.base) as GameState
+    base.seq = s.seq
+    return advance(base, [...pd!.answers, value])
+  }
+  p.spell = [] // заклинание не выложено — в этом раунде колдун не ходит
+  p.acted = true
+  return advance(s, [])
 }
 
 export function tryReduce(s: GameState, a: Action): { state: GameState } | { error: string } {
