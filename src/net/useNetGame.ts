@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { tryReduce } from '../game/engine.ts'
 import type { Action, GameState } from '../game/types.ts'
 import {
-  parseState, rejectAction, removeAction, sendAction, watchActions, watchMembers, watchRoom, writeState,
-  type Member, type QueuedAction, type Room,
+  BEAT_MS, HOST_LOST_MS, beatMember, beatRoom, parseState, rejectAction, removeAction, sendAction, takeHost, watchActions, watchMembers,
+  watchRoom, writeState, type Member, type QueuedAction, type Room,
 } from './room.ts'
 
 export interface NetGame {
@@ -17,6 +17,14 @@ export interface NetGame {
   uid: string
   remoteError: string
   clearRemoteError: () => void
+  tookHost: boolean // хост пропал, и хостом стал этот игрок
+}
+
+// Кто забирает хоста, если он пропал: первый по времени входа живой участник (с пульсом), в партии — не ушедший.
+export function hostHeir(room: Room, members: Member[], s: GameState | null, now: number): string | null {
+  const alive = (m: Member) => !!m.beat && now - m.beat.toMillis() < HOST_LOST_MS
+  const seated = (m: Member) => !s || s.players.some(p => p.uid === m.uid && p.away !== 'left')
+  return members.find(m => m.uid !== room.host && alive(m) && seated(m))?.uid ?? null
 }
 
 // Может ли участник действовать за это место: своё место (пока за него не играет бот); хост — ещё и за ботов;
@@ -41,8 +49,8 @@ export function useNetGame(code: string, uid: string): NetGame {
     const offRoom = watchRoom(code, r => {
       setRoom(r)
       if (!r) return
-      // старые снимки (меньшая версия) не затирают свежее состояние
-      if (r.v >= stateRef.current.v) {
+      // старые снимки (меньшая версия) не затирают свежее состояние; та же версия (пульс, таймер) — не перечитываем
+      if (r.v > stateRef.current.v || (r.state && !stateRef.current.s)) {
         const s = parseState(r)
         stateRef.current = { s, v: r.v }
         setState(s)
@@ -93,6 +101,35 @@ export function useNetGame(code: string, uid: string): NetGame {
     })
   }, [code, isHost, uid])
 
+  // Пульс раз в 10 с: участник — в своей карточке, хост — ещё и в комнате
+  useEffect(() => {
+    const beat = () => {
+      beatMember(code, uid).catch(() => {})
+      if (isHost) beatRoom(code).catch(() => {})
+    }
+    beat()
+    const t = setInterval(beat, BEAT_MS)
+    return () => clearInterval(t)
+  }, [code, uid, isHost])
+
+  // Хост пропал: наследник забирает хоста себе (база проверяет, что пульса нет дольше 40 с)
+  const roomRef = useRef(room), membersRef = useRef(members)
+  roomRef.current = room; membersRef.current = members
+  const [tookHost, setTookHost] = useState(false)
+  useEffect(() => {
+    if (isHost) return
+    const check = () => {
+      const r = roomRef.current
+      if (!r?.beat) return
+      const now = Date.now()
+      if (now - r.beat.toMillis() < HOST_LOST_MS) return
+      if (hostHeir(r, membersRef.current, stateRef.current.s, now) !== uid) return
+      takeHost(code, uid).then(() => setTookHost(true), () => { /* хост ещё жив по часам сервера */ })
+    }
+    const t = setInterval(check, 5000)
+    return () => clearInterval(t)
+  }, [code, uid, isHost])
+
   const dispatch = useCallback((a: Action): string | null => {
     const cur = stateRef.current.s
     if (!cur) return 'Турнир ещё не начался'
@@ -110,5 +147,5 @@ export function useNetGame(code: string, uid: string): NetGame {
     return null
   }, [code, isHost, uid])
 
-  return { state, dispatch, room, members, isHost, uid, remoteError, clearRemoteError: () => setRemoteError('') }
+  return { state, dispatch, room, members, isHost, uid, remoteError, clearRemoteError: () => setRemoteError(''), tookHost }
 }

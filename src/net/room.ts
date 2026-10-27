@@ -3,7 +3,8 @@
 //   esw/<код>/members/<uid>   — участники: имя и портрет (каждый пишет только себя)
 //   esw/<код>/actions/<id>    — очередь действий игроков; хост применяет их через движок и удаляет
 import {
-  addDoc, collection, deleteDoc, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, setDoc, updateDoc, where, type Unsubscribe,
+  addDoc, collection, deleteDoc, doc, getDoc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, where,
+  type Timestamp, type Unsubscribe,
 } from 'firebase/firestore'
 import { create } from '../game/engine.ts'
 import type { Action, GameState } from '../game/types.ts'
@@ -11,7 +12,7 @@ import { getDb } from './firebase.ts'
 
 export const ROOMS = 'esw'
 
-export interface Member { uid: string; name: string; portrait: number; joinedAt: number }
+export interface Member { uid: string; name: string; portrait: number; joinedAt: number; beat?: Timestamp | null }
 export interface BotSeat { id: string; name: string; portrait: number; level: number }
 export interface Room {
   code: string
@@ -33,7 +34,10 @@ export interface Room {
   // таймер хода (ставит хост): кого ждём (ключ ожидания) и до какого времени
   turnKey?: string | null
   turnEnd?: number | null
+  beat?: Timestamp | null // пульс хоста по часам сервера (раз в 10 с): пропал — хоста забирает другой участник
 }
+export const BEAT_MS = 10_000
+export const HOST_LOST_MS = 40_000 // столько же в firestore.rules
 export const MAX_SEATS = 6
 export const ALIVE_MS = 70_000 // комната без пульса хоста дольше — считается брошенной
 export interface QueuedAction { id: string; uid: string; action: Action; clientAt: number; error?: string }
@@ -56,7 +60,7 @@ export async function createRoom(uid: string, name: string, portrait: number, op
       code, host: uid, status: 'lobby', medalsToWin: opts.quick ? 1 : 2, bots: [], state: null, v: 0, createdAt: Date.now(),
       public: pub, quick: !!opts.quick, open: pub, count: 1, hostName: name, seenAt: Date.now(), startAt: null,
     }
-    await setDoc(roomRef(code), room)
+    await setDoc(roomRef(code), { ...room, beat: serverTimestamp() })
     await setDoc(memberRef(code, uid), { uid, name, portrait, joinedAt: Date.now() } satisfies Member)
     return code
   }
@@ -74,6 +78,11 @@ export async function joinRoom(code: string, uid: string, name: string, portrait
 }
 
 export const updateMember = (code: string, uid: string, patch: Partial<Member>) => updateDoc(memberRef(code, uid), patch)
+// Пульс: участник — «я тут»; хост — ещё и в комнате.
+export const beatMember = (code: string, uid: string) => updateDoc(memberRef(code, uid), { beat: serverTimestamp() })
+export const beatRoom = (code: string) => updateDoc(roomRef(code), { beat: serverTimestamp() })
+// Забрать хоста себе (база разрешит, только если пульса хоста нет дольше HOST_LOST_MS).
+export const takeHost = (code: string, uid: string) => updateDoc(roomRef(code), { host: uid, beat: serverTimestamp() })
 export const leaveRoom = (code: string, uid: string) => deleteDoc(memberRef(code, uid))
 export const updateRoom = (code: string, patch: Partial<Room>) => updateDoc(roomRef(code), patch)
 

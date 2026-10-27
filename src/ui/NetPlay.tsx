@@ -155,6 +155,7 @@ function RoomView({ code, uid, onLeave, onBack }: { code: string; uid: string; o
   const store = useMemo(() => (g.state ? { state: g.state, dispatch: g.dispatch } : null), [g.state, g.dispatch])
 
   useEffect(() => { if (g.remoteError) { setToast(g.remoteError); g.clearRemoteError(); setTimeout(() => setToast(''), 3000) } }, [g.remoteError]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (g.tookHost) { setToast('Хост пропал — теперь хост ты 👑'); setTimeout(() => setToast(''), 3500) } }, [g.tookHost])
 
   // Хост: счётчик людей, «открыта ли» комната, пульс (живые комнаты в списке) и автостарт быстрой игры
   const r0 = g.room

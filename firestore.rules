@@ -9,6 +9,12 @@ service cloud.firestore {
       allow create: if request.auth != null && request.resource.data.host == request.auth.uid;
       // менять комнату (боты, медали, состояние партии) и удалять — только хост
       allow update, delete: if request.auth != null && resource.data.host == request.auth.uid;
+      // хост пропал (нет пульса beat дольше 40 с по часам сервера) — участник комнаты забирает хоста себе
+      allow update: if request.auth != null
+        && request.resource.data.host == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['host', 'beat'])
+        && exists(/databases/$(database)/documents/esw/$(code)/members/$(request.auth.uid))
+        && (!('beat' in resource.data) || resource.data.beat == null || request.time > resource.data.beat + duration.value(40, 's'));
 
       // участники: каждый пишет только свою карточку
       match /members/{uid} {
