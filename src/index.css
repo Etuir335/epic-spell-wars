@@ -109,7 +109,8 @@ h1, h2, h3, h4 { margin: 0; font-family: var(--title); font-weight: 400; letter-
 /* ПК: я и рука — полосой на всю ширину под колонками, карты крупнее */
 .desk-dock { grid-column: 1 / -1; grid-row: 2; position: relative; z-index: 5; width: 100%; max-width: 1280px; justify-self: center; }
 .desk-dock .mybar, .desk-dock .wait { max-width: 600px; margin-left: auto; margin-right: auto; }
-.side { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+.side { display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow-y: auto; }
+.side > .panel:not(.grow) { flex-shrink: 0; } /* колдуны и памятка не сжимаются — иначе их низ уезжает под соседнюю панель */
 .panel { background: #120914d9; border: 1px solid #ffc53133; border-radius: 16px; padding: 12px 14px; box-shadow: 0 8px 24px #0009; }
 .panel.grow { flex: 1; min-height: 0; overflow-y: auto; }
 .panel h4 { color: var(--gold); font-size: 17px; margin-bottom: 10px; }
@@ -121,6 +122,7 @@ h1, h2, h3, h4 { margin: 0; font-family: var(--title); font-weight: 400; letter-
 .side-pl-main em { font-style: normal; font-family: var(--title); color: #ff7b6e; font-size: 17px; }
 .side-tr { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; }
 .side-tr .card { width: 32px; border-radius: 4px; }
+.side-tr.many { gap: 3px; } .side-tr.many .card { width: 25px; border-radius: 3px; } /* много сокровищ и дохлых карт — помельче */
 .side-log { font-size: 14px; line-height: 1.4; }
 .side-log div { padding: 3px 0; border-bottom: 1px solid #ffffff0d; color: var(--dim); }
 .side-log .fresh { color: var(--text); font-weight: 600; }

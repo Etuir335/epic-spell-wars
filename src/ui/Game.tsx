@@ -374,7 +374,7 @@ function LeftPanel({ s, pos, shown, viewer, caster, onPick }: {
             <div className="side-pl-main">
               <b>{p.bot ? '🤖 ' : ''}{p.name}{p.id === viewer ? ' (ты)' : ''}{awayText(p)}</b>
               <span>{shown[p.id].alive ? <>❤ <em>{shown[p.id].life}</em></> : '☠ дохлый'} {p.medals > 0 && '🏅'.repeat(p.medals)}</span>
-              <div className="side-tr">
+              <div className={`side-tr${p.treasures.length + p.deadCards.length > 4 ? ' many' : ''}`}>
                 {p.treasures.map(t => <Card key={t} c={{ deck: 'treasures', index: t }} size="s" caption={false} />)}
                 {p.deadCards.map(c => <Card key={'d' + c} c={{ deck: 'dead', index: Math.floor(c / 10) }} size="s" caption={false} />)}
               </div>
