@@ -174,7 +174,9 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
   const builder = useBuilder(me?.hand ?? [], !!me?.treasures.includes(T.trap), iBuild, `${s.game}-${s.round}-${viewer}`)
   const myQ = me && !botMe && !sending && dir.done && s.pending && s.pending.player === viewer && handoff == null ? s.pending : null
   const over = dir.done && (s.phase === 'gameover' || s.phase === 'tournament')
-  const others = s.players.filter(p => p.id !== viewer)
+  // враги по кругу от меня, как в движке (enemies): слева на экране — левый враг, справа — правый
+  const n = s.players.length, from = Math.max(viewer, 0)
+  const others = Array.from({ length: n }, (_, k) => s.players[(from + k) % n]).filter(p => p.id !== viewer)
   const waitNames = s.players.filter(q => q.alive && !q.spell).map(q => q.name)
   const clock = turnLeft != null ? ` · ⏳ ${turnLeft} с` : ''
   const idle = !dir.done ? '' : sending
