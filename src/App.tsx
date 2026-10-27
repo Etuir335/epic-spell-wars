@@ -5,6 +5,7 @@ import { ZoomProvider } from './ui/cards'
 import Game from './ui/Game'
 import Gallery from './ui/Gallery'
 import Setup from './ui/Setup'
+import Tutorial from './ui/Tutorial'
 import { clearLocal, loadLocal, newLocalGame, useLocalGame } from './ui/store'
 import { tgStartRoom, useTelegramBack } from './telegram'
 
@@ -18,6 +19,7 @@ export default function App() {
   useTelegramBack(screen === 'menu' ? null : () => setScreen('menu'))
   const [game, setGame] = useState<GameState | null>(() => loadLocal())
   const [gen, setGen] = useState(0) // новая партия — новый store
+  const [tut, setTut] = useState(false)
 
   return (
     <ZoomProvider>
@@ -32,6 +34,7 @@ export default function App() {
           <button className="btn wide" onClick={() => setScreen('setup')}>Новый турнир</button>
           <button className="btn wide" onClick={() => setScreen('net')}>Игра по сети</button>
           <button className="btn wide ghost" onClick={() => setScreen('gallery')}>Галерея карт</button>
+          <button className="btn wide ghost" onClick={() => setTut(true)}>📖 Как играть</button>
         </div>
       )}
       {screen === 'setup' && (
@@ -43,6 +46,7 @@ export default function App() {
         }} />
       )}
       {screen === 'game' && game && <LocalGame key={gen} initial={game} onExit={s => { setGame(s); setScreen('menu') }} />}
+      {tut && <Tutorial onClose={() => setTut(false)} />}
       {screen === 'gallery' && <Gallery onBack={() => setScreen('menu')} />}
       {screen === 'net' && <Suspense fallback={<div className="screen"><p className="hint">Загрузка…</p></div>}><NetPlay onBack={() => setScreen('menu')} startCode={startRoom} /></Suspense>}
     </ZoomProvider>

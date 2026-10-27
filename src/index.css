@@ -407,3 +407,22 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .q-timer.hot { color: #ff6b5e; }
 .wait.bot-me { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .seat-name .away { font-weight: 400; opacity: .75; }
+
+/* обучение */
+.tut-back { align-items: center; z-index: 60; padding: 16px; }
+.tut { background: linear-gradient(#3a2343, #241529); width: 100%; max-width: 420px; border-radius: 20px; padding: 22px 18px 18px; border: 2px solid #ffc53166;
+  box-shadow: 0 0 40px #ff6a1a55, 0 16px 40px #000c; text-align: center; animation: sheetUp .25s ease-out; }
+.tut-icon { font-size: 52px; line-height: 1; margin-bottom: 8px; filter: drop-shadow(0 4px 10px #000a); }
+.tut h3 { color: var(--gold); font-size: 22px; margin-bottom: 12px; }
+.tut-body { text-align: left; font-size: 16px; line-height: 1.4; min-height: 190px; }
+.tut-body p { margin-bottom: 10px; }
+.tut-body b { color: #ffe2b0; }
+.tut-slots { list-style: none; padding: 0; margin: 4px 0 12px; display: grid; gap: 8px; }
+.tut-slots li { display: flex; align-items: center; gap: 10px; }
+.tut-letter { width: 32px; height: 32px; font-size: 17px; flex: none; }
+.tut-dots { display: flex; justify-content: center; gap: 8px; margin: 10px 0 14px; }
+.tut-dots button { width: 10px; height: 10px; border-radius: 50%; background: #ffffff33; border: none; padding: 0; }
+.tut-dots button.on { background: var(--gold); transform: scale(1.3); }
+.tut-nav { display: flex; gap: 10px; }
+.tut-nav .btn { flex: 1; }
+.tut-nav .btn:first-child { flex: 0 0 auto; min-width: 64px; }

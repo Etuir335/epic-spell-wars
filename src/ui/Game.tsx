@@ -1,5 +1,6 @@
 // Экран партии: враги сверху, арена в центре (режиссёр проигрывает ходы), я и рука веером снизу.
 import { useEffect, useRef, useState } from 'react'
+import Tutorial, { tutorialSeen } from './Tutorial'
 import { DEAD, SPELLS, TREASURES } from '../data/cards'
 import { T } from '../game/core'
 import { waitingFor } from '../game/engine'
@@ -126,6 +127,7 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
   useTurnTimer(s, store.dispatch, dir.done, net)
   const turnLeft = useTurnLeft(s, net)
   const [confirmLeave, setConfirmLeave] = useState(false)
+  const [tut, setTut] = useState(() => !tutorialSeen()) // первый раз — обучение перед боем
   const arenaRef = useRef<HTMLDivElement>(null)
 
   const shown = shownLives(s, dir.pos)
@@ -303,12 +305,14 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
               <p className="hint center">Твоё место займёт бот, вернуться в эту партию будет нельзя.{net.isHost ? ' Хостом станет другой игрок.' : ''}</p>
               <button className="btn wide danger" onClick={net.onLeave}>Да, покинуть</button>
             </>}
+            {!confirmLeave && <button className="btn wide" onClick={() => { setSheet(null); setTut(true) }}>📖 Как играть</button>}
             <button className="btn wide ghost" onClick={() => { setSheet(null); setConfirmLeave(false) }}>Назад к бою</button>
           </div>
         </div>
       )}
       {sheet && typeof sheet === 'object' && <PlayerSheet s={s} p={s.players[sheet.player]} onClose={() => setSheet(null)} />}
       {toast && <div className="toast">{toast}</div>}
+      {tut && <Tutorial onClose={() => setTut(false)} />}
     </div>
     {desk && <RightPanel hovered={hovered} />}
     {desk && <div className="desk-dock">{bottom}</div>}
