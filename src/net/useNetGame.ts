@@ -18,6 +18,7 @@ export interface NetGame {
   remoteError: string
   clearRemoteError: () => void
   tookHost: boolean // хост пропал, и хостом стал этот игрок
+  sendingSince: number | null // мой ход отправлен и ещё не разобран хостом — с какого момента
 }
 
 // Кто забирает хоста, если он пропал: первый по времени входа живой участник (с пульсом), в партии — не ушедший.
@@ -42,6 +43,9 @@ export function useNetGame(code: string, uid: string): NetGame {
   const [members, setMembers] = useState<Member[]>([])
   const [state, setState] = useState<GameState | null>(null)
   const [remoteError, setRemoteError] = useState('')
+  const [sendingSince, setSendingSince] = useState<number | null>(null)
+  const sentAtV = useRef(0) // версия партии, когда отправили ход: «ждём» снимаем, когда придёт новее
+  const clearOnV = useRef(false)
   const stateRef = useRef<{ s: GameState | null; v: number }>({ s: null, v: 0 })
   const isHost = !!room && room.host === uid
 
@@ -50,15 +54,17 @@ export function useNetGame(code: string, uid: string): NetGame {
       setRoom(r)
       if (!r) return
       // старые снимки (меньшая версия) не затирают свежее состояние; та же версия (пульс, таймер) — не перечитываем
-      if (r.v > stateRef.current.v || (r.state && !stateRef.current.s)) {
+      // не-хост сам состояние не пишет — любая другая версия у комнаты правее (например, его запись хостом не прошла)
+      if (r.v > stateRef.current.v || (r.state && !stateRef.current.s) || (r.host !== uid && r.v !== stateRef.current.v)) {
         const s = parseState(r)
         stateRef.current = { s, v: r.v }
         setState(s)
+        if (clearOnV.current) { clearOnV.current = false; setSendingSince(null) }
       }
     })
     const offMembers = watchMembers(code, setMembers)
     return () => { offRoom(); offMembers() }
-  }, [code])
+  }, [code, uid])
 
   // Хост: разбирает очередь действий по порядку
   const busy = useRef(false)
@@ -77,11 +83,20 @@ export function useNetGame(code: string, uid: string): NetGame {
           if (!cur || !canAct(cur, q.uid, false, q.action)) { await rejectAction(code, q.id, 'Это не ваш ход'); continue }
           const r = tryReduce(cur, q.action)
           if ('error' in r) { await rejectAction(code, q.id, r.error); continue }
-          const v = stateRef.current.v + 1
+          const prev = stateRef.current, v = prev.v + 1
           stateRef.current = { s: r.state, v }
           setState(r.state)
-          await writeState(code, r.state, v)
-          await removeAction(code, q.id)
+          try {
+            await writeState(code, r.state, v)
+          } catch (e) { // не записалось (сеть, хоста перехватили) — откат, действие останется в очереди
+            stateRef.current = prev
+            setState(prev.s)
+            done.current.delete(q.id)
+            setRemoteError(`Не удалось сохранить ход: ${(e as Error).message}`)
+            setTimeout(() => void drain(), 3000) // повторим
+            break
+          }
+          await removeAction(code, q.id).catch(() => {})
         }
       } finally {
         busy.current = false
@@ -93,12 +108,19 @@ export function useNetGame(code: string, uid: string): NetGame {
   // Не-хост: ловит отказы хоста на свои действия
   useEffect(() => {
     if (isHost) return
-    return watchActions(code, list => {
+    const off = watchActions(code, list => {
       for (const q of list) if (q.uid === uid && q.error) {
         setRemoteError(q.error)
         removeAction(code, q.id).catch(() => {})
       }
+      const mine = list.filter(q => q.uid === uid && !q.error)
+      if (mine.length) { clearOnV.current = false; setSendingSince(Math.min(...mine.map(q => q.clientAt))); return }
+      // хост разобрал: отказ или новая версия уже пришла — сразу; иначе — когда придёт (но не дольше 3 с)
+      if (list.some(q => q.uid === uid && q.error) || stateRef.current.v > sentAtV.current) { setSendingSince(null); return }
+      clearOnV.current = true
+      setTimeout(() => { if (clearOnV.current) { clearOnV.current = false; setSendingSince(null) } }, 3000)
     })
+    return () => { off(); setSendingSince(null) }
   }, [code, isHost, uid])
 
   // Пульс раз в 10 с: участник — в своей карточке, хост — ещё и в комнате
@@ -137,15 +159,20 @@ export function useNetGame(code: string, uid: string): NetGame {
     const r = tryReduce(cur, a)
     if ('error' in r) return r.error
     if (isHost) {
-      const v = stateRef.current.v + 1
+      const prev = stateRef.current, v = prev.v + 1
       stateRef.current = { s: r.state, v }
       setState(r.state)
-      writeState(code, r.state, v).catch((e: Error) => setRemoteError(`Не удалось сохранить ход: ${e.message}`))
+      writeState(code, r.state, v).catch((e: Error) => {
+        if (stateRef.current.v === v) { stateRef.current = prev; setState(prev.s) } // ход не записан — вернуть кнопки, чтобы повторить
+        setRemoteError(`Не удалось сохранить ход: ${e.message}`)
+      })
     } else {
-      sendAction(code, uid, a).catch((e: Error) => setRemoteError(`Не удалось отправить ход: ${e.message}`))
+      sentAtV.current = stateRef.current.v
+      setSendingSince(t => t ?? Date.now())
+      sendAction(code, uid, a).catch((e: Error) => { setSendingSince(null); setRemoteError(`Не удалось отправить ход: ${e.message}`) })
     }
     return null
   }, [code, isHost, uid])
 
-  return { state, dispatch, room, members, isHost, uid, remoteError, clearRemoteError: () => setRemoteError(''), tookHost }
+  return { state, dispatch, room, members, isHost, uid, remoteError, clearRemoteError: () => setRemoteError(''), tookHost, sendingSince }
 }

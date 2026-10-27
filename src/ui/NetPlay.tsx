@@ -218,6 +218,7 @@ function RoomView({ code, uid, onLeave, onBack }: { code: string; uid: string; o
             seat, isHost: g.isHost, code, onInvite: invite, turnKey: room.turnKey, turnEnd: room.turnEnd,
             setTurn: (turnKey, turnEnd) => void updateRoom(code, { turnKey, turnEnd }).catch(() => {}),
             onLeave: () => void leaveGame(),
+            sendingSince: g.sendingSince,
           }} />
         {toast && <div className="toast">{toast}</div>}
       </>

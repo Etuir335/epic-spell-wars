@@ -60,6 +60,7 @@ export interface NetInfo {
   turnKey?: string | null; turnEnd?: number | null
   setTurn: (key: string | null, end: number | null) => void
   onLeave: () => void
+  sendingSince?: number | null // мой ход ушёл хосту и ещё не разобран
 }
 
 // время на заклинание и на ответ (для проверки в dev-сборке: localStorage esw-turn-sec = секунд)
@@ -110,6 +111,18 @@ function useTurnLeft(s: GameState, net?: NetInfo) {
   return end ? Math.max(0, Math.ceil((end - now) / 1000)) : null
 }
 
+// Прошло ли ms с момента since (для «хост не отвечает»).
+function useSlow(since: number | null, ms: number) {
+  const [slow, setSlow] = useState(false)
+  useEffect(() => {
+    setSlow(false)
+    if (since == null) return
+    const t = setTimeout(() => setSlow(true), Math.max(0, since + ms - Date.now()))
+    return () => clearTimeout(t)
+  }, [since, ms])
+  return slow
+}
+
 export default function Game({ store, onExit, net }: { store: GameStore; onExit: () => void; net?: NetInfo }) {
   const s = store.state
   const humans = s.players.filter(p => !p.bot).map(p => p.id)
@@ -155,14 +168,18 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
     if (err) { setToast(err); setTimeout(() => setToast(null), 2500) }
   }
 
-  const iBuild = !!me && !botMe && dir.done && s.phase === 'build' && me.alive && !me.spell && handoff == null
+  const sending = net?.sendingSince != null
+  const slowHost = useSlow(net?.sendingSince ?? null, 8000)
+  const iBuild = !!me && !botMe && !sending && dir.done && s.phase === 'build' && me.alive && !me.spell && handoff == null
   const builder = useBuilder(me?.hand ?? [], !!me?.treasures.includes(T.trap), iBuild, `${s.game}-${s.round}-${viewer}`)
-  const myQ = me && !botMe && dir.done && s.pending && s.pending.player === viewer && handoff == null ? s.pending : null
+  const myQ = me && !botMe && !sending && dir.done && s.pending && s.pending.player === viewer && handoff == null ? s.pending : null
   const over = dir.done && (s.phase === 'gameover' || s.phase === 'tournament')
   const others = s.players.filter(p => p.id !== viewer)
   const waitNames = s.players.filter(q => q.alive && !q.spell).map(q => q.name)
   const clock = turnLeft != null ? ` · ⏳ ${turnLeft} с` : ''
-  const idle = !dir.done ? '' : s.phase === 'build'
+  const idle = !dir.done ? '' : sending
+    ? (slowHost ? '⏳ Хост не отвечает — ход дойдёт, как только он вернётся (или хостом станет другой игрок)' : '⏳ Ход отправлен, ждём хоста…')
+    : s.phase === 'build'
     ? (me?.spell && me.alive ? `Ждём: ${waitNames.join(', ')}${clock}` : me?.alive && !botMe ? `Собери заклинание из 1–3 карт${clock}` : `Раунд ${s.round}`)
     : s.pending ? `${s.players[s.pending.player].name} думает…${clock}` : ''
   const hurry = myAct && turnLeft != null && turnLeft <= 30 // мне пора: скоро пропуск хода
@@ -188,7 +205,7 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
           </div>
         ) : me.alive && (
           <HandDock b={builder}
-            waitText={dir.done && s.phase === 'build' && me.spell ? '✓ Заклинание выложено' : undefined} />
+            waitText={sending ? '⏳ Отправлено…' : dir.done && s.phase === 'build' && me.spell ? '✓ Заклинание выложено' : undefined} />
         )}
         {!me.alive && <div className="wait">☠ Ты дохлый колдун. Жди конца игры — карты дохлого помогут в следующей.</div>}
       </>
