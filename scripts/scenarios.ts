@@ -1,8 +1,9 @@
 // Точечные проверки правил на подготовленных ситуациях. Запуск: node scripts/scenarios.ts
-import { create, reduce } from '../src/game/engine.ts'
+import { create, reduce, waitingFor } from '../src/game/engine.ts'
 import { T } from '../src/game/core.ts'
 import { legalActions } from '../src/game/legal.ts'
 import type { Action, CardId, GameState } from '../src/game/types.ts'
+import { applyEvents, emptyStats, newTrack } from '../src/stats.ts'
 
 type Slot = 'source' | 'quality' | 'delivery'
 let fails = 0
@@ -216,6 +217,37 @@ console.log('Сеть: пропуск хода, бот вместо игрока
     if (asked && reset) break
   }
   if (!asked) ok(true, '(вопрос игроку не попался — пропуск вопроса не проверен)')
+}
+
+console.log('\nСтатистика: подсчёт по событиям целых турниров')
+{
+  let r = 777
+  const rnd = (n: number) => { r = (r * 1103515245 + 12345) & 0x7fffffff; return r % n }
+  let games = 0, wins = 0, champ = 0, deaths = 0, kills = 0, bad = ''
+  for (let t = 0; t < 30; t++) {
+    const np = 2 + (t % 4)
+    let s = create(Array.from({ length: np }, (_, i) => ({ name: 'И' + i, portrait: i })), 500 + t)
+    const st = emptyStats(), tr = newTrack(s.tid!, s.evBase)
+    const feed = () => { applyEvents(st, tr, s.ev.slice(Math.max(tr.pos, s.evBase) - s.evBase), s, { me: 0, vsHumans: false, strongBots: false }); tr.pos = s.evBase + s.ev.length }
+    feed()
+    let myWins = 0, myDeaths = 0, othersDead = 0, n = 0
+    while (s.phase !== 'tournament' && n++ < 30000) {
+      if (s.phase === 'gameover') { if (s.lastWinner === 0) myWins++; s = reduce(s, { type: 'nextGame' }); feed(); continue }
+      const pre = s.players.map(p => p.alive)
+      const who = waitingFor(s), p = who[rnd(who.length)], acts = legalActions(s, p)
+      s = reduce(s, acts[rnd(acts.length)])
+      s.players.forEach((q, i) => { if (pre[i] && !q.alive) { if (i === 0) myDeaths++; else othersDead++ } })
+      feed()
+    }
+    if (s.lastWinner === 0) myWins++
+    games += st.games; wins += st.wins; champ += st.champion; deaths += st.deaths; kills += st.kills
+    if (st.wins !== myWins) bad = `турнир ${t}: медалей ${st.wins}, а побед ${myWins}`
+    if (st.deaths !== myDeaths) bad = `турнир ${t}: смертей ${st.deaths}, а на деле ${myDeaths}`
+    if (st.kills > othersDead) bad = `турнир ${t}: убийств ${st.kills} больше смертей врагов ${othersDead}`
+    if (st.tournaments !== 1) bad = `турнир ${t}: турниров ${st.tournaments}`
+  }
+  ok(!bad, `медали, смерти, убийства и турниры сходятся с исходом ${bad}`)
+  ok(games > 30 && kills > 0, `схваток ${games}, медалей ${wins}, турниров выиграно ${champ}, убийств ${kills}, смертей ${deaths}`)
 }
 
 console.log(fails ? `\nОШИБОК: ${fails}` : '\nВсё OK')

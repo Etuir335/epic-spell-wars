@@ -83,6 +83,7 @@ export interface Roll { player: number; dice: number[]; bonus: number; total: nu
 
 export interface GameState {
   rng: number
+  tid?: number // номер турнира (начальный seed) — чтобы статистика не считала одни события дважды
   // start — подготовка новой игры (карты дохлых колдунов), build — выкладывают заклинания,
   // resolve — ходы, gameover — игра окончена (ждём nextGame), tournament — турнир окончен
   phase: 'start' | 'build' | 'resolve' | 'gameover' | 'tournament'

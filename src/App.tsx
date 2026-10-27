@@ -4,6 +4,7 @@ import { assetUrl } from './assets'
 import { ZoomProvider } from './ui/cards'
 import Game from './ui/Game'
 import Gallery from './ui/Gallery'
+import Profile from './ui/Profile'
 import Setup from './ui/Setup'
 import Tutorial from './ui/Tutorial'
 import { clearLocal, loadLocal, newLocalGame, useLocalGame } from './ui/store'
@@ -11,7 +12,7 @@ import { tgStartRoom, useTelegramBack } from './telegram'
 
 const NetPlay = lazy(() => import('./ui/NetPlay')) // Firebase — отдельным куском, только для сетевой игры
 
-type Screen = 'menu' | 'setup' | 'game' | 'gallery' | 'net'
+type Screen = 'menu' | 'setup' | 'game' | 'gallery' | 'net' | 'profile'
 const startRoom = tgStartRoom() // открыли по приглашению из Telegram
 
 export default function App() {
@@ -33,6 +34,7 @@ export default function App() {
           {game && game.phase !== 'tournament' && <button className="btn gold wide" onClick={() => setScreen('game')}>Продолжить турнир</button>}
           <button className="btn wide" onClick={() => setScreen('setup')}>Новый турнир</button>
           <button className="btn wide" onClick={() => setScreen('net')}>Игра по сети</button>
+          <button className="btn wide ghost" onClick={() => setScreen('profile')}>🏆 Профиль и достижения</button>
           <button className="btn wide ghost" onClick={() => setScreen('gallery')}>Галерея карт</button>
           <button className="btn wide ghost" onClick={() => setTut(true)}>📖 Как играть</button>
         </div>
@@ -47,6 +49,7 @@ export default function App() {
       )}
       {screen === 'game' && game && <LocalGame key={gen} initial={game} onExit={s => { setGame(s); setScreen('menu') }} />}
       {tut && <Tutorial onClose={() => setTut(false)} />}
+      {screen === 'profile' && <Profile onBack={() => setScreen('menu')} />}
       {screen === 'gallery' && <Gallery onBack={() => setScreen('menu')} />}
       {screen === 'net' && <Suspense fallback={<div className="screen"><p className="hint">Загрузка…</p></div>}><NetPlay onBack={() => setScreen('menu')} startCode={startRoom} /></Suspense>}
     </ZoomProvider>

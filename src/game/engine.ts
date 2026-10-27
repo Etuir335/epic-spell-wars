@@ -12,7 +12,7 @@ const RANK = { source: 0, quality: 1, delivery: 2 } as const
 
 export function create(setup: SetupPlayer[], seed: number, medalsToWin = 2): GameState {
   const s: GameState = {
-    rng: seed | 0, phase: 'start', game: 0, round: 0, medalsToWin,
+    rng: seed | 0, tid: seed | 0, phase: 'start', game: 0, round: 0, medalsToWin,
     players: setup.map((p, id) => ({
       id, name: p.name, portrait: p.portrait, ...(p.bot ? { bot: p.bot } : {}), ...(p.uid ? { uid: p.uid } : {}),
       life: START_LIFE, alive: true, hand: [], treasures: [], deadCards: [], medals: 0,

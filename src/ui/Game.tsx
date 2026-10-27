@@ -1,6 +1,7 @@
 // Экран партии: враги сверху, арена в центре (режиссёр проигрывает ходы), я и рука веером снизу.
 import { useEffect, useRef, useState } from 'react'
 import Tutorial, { tutorialSeen } from './Tutorial'
+import { useStatsTracker } from './useStats'
 import { DEAD, SPELLS, TREASURES } from '../data/cards'
 import { T } from '../game/core'
 import { waitingFor } from '../game/engine'
@@ -141,6 +142,14 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
   useBots(s, store.dispatch, dir.done && (!net || net.isHost))
   useTurnTimer(s, store.dispatch, dir.done, net)
   const turnLeft = useTurnLeft(s, net)
+  // статистика — за своё место (в сети) или за первого человека за столом
+  const statMe = net ? net.seat : humans[0] ?? -1
+  const others0 = s.players.filter(p => p.id !== statMe)
+  const ach = useStatsTracker(s, dir.pos, statMe < 0 ? null : {
+    me: statMe,
+    vsHumans: !!net && others0.some(p => !p.bot && p.uid),
+    strongBots: others0.length > 0 && others0.every(p => p.bot === 3),
+  })
   const [confirmLeave, setConfirmLeave] = useState(false)
   const [tut, setTut] = useState(() => !tutorialSeen()) // первый раз — обучение перед боем
   const arenaRef = useRef<HTMLDivElement>(null)
@@ -334,6 +343,7 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
       {sheet && typeof sheet === 'object' && <PlayerSheet s={s} p={s.players[sheet.player]} onClose={() => setSheet(null)} />}
       {toast && <div className="toast">{toast}</div>}
       {tut && <Tutorial onClose={() => setTut(false)} />}
+      {ach && <div className="ach-toast" key={ach.id}><span>{ach.icon}</span><div><small>Достижение!</small><b>{ach.name}</b><em>{ach.text}</em></div></div>}
     </div>
     {desk && <RightPanel hovered={hovered} />}
     {desk && <div className="desk-dock">{bottom}</div>}

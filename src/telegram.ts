@@ -15,6 +15,10 @@ interface TgWebApp {
   disableVerticalSwipes?(): void
   openTelegramLink?(url: string): void
   BackButton: { show(): void; hide(): void; onClick(cb: () => void): void; offClick(cb: () => void): void }
+  CloudStorage?: {
+    getItem(key: string, cb: (err: unknown, value?: string) => void): void
+    setItem(key: string, value: string, cb?: (err: unknown, ok?: boolean) => void): void
+  }
 }
 
 const webApp = (): TgWebApp | undefined => {
@@ -83,4 +87,27 @@ export function useTelegramBack(handler: (() => void) | null) {
       tg.BackButton.hide()
     }
   }, [handler])
+}
+
+// Облако Telegram (общее для всех устройств игрока). На некоторых ПК Telegram Desktop не отвечает — ждём не дольше 5 с.
+const CLOUD_MS = 5000
+function cloud() {
+  const tg = webApp()
+  return tg?.CloudStorage && tg.isVersionAtLeast('6.9') ? tg.CloudStorage : null
+}
+export function cloudGet(key: string): Promise<string | null> {
+  const c = cloud()
+  if (!c) return Promise.resolve(null)
+  return new Promise(res => {
+    const t = setTimeout(() => res(null), CLOUD_MS)
+    try { c.getItem(key, (err, v) => { clearTimeout(t); res(err ? null : v || null) }) } catch { clearTimeout(t); res(null) }
+  })
+}
+export function cloudSet(key: string, value: string): Promise<boolean> {
+  const c = cloud()
+  if (!c) return Promise.resolve(false)
+  return new Promise(res => {
+    const t = setTimeout(() => res(false), CLOUD_MS)
+    try { c.setItem(key, value, err => { clearTimeout(t); res(!err) }) } catch { clearTimeout(t); res(false) }
+  })
 }
