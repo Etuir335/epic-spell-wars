@@ -197,7 +197,13 @@ export default function HandDock({ b, waitText }: { b: Builder; waitText?: strin
   useLayoutEffect(() => {
     const el = fanRef.current
     if (!el) return
-    const ro = new ResizeObserver(() => setFanW(el.clientWidth))
+    const fit = () => setFanW(el.clientWidth)
+    if (typeof ResizeObserver === 'undefined') { // старый Edge 18 — следим за размером окна
+      fit()
+      window.addEventListener('resize', fit)
+      return () => window.removeEventListener('resize', fit)
+    }
+    const ro = new ResizeObserver(fit)
     ro.observe(el)
     return () => ro.disconnect()
   }, [])

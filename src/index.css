@@ -133,7 +133,7 @@ h1, h2, h3, h4 { margin: 0; font-family: var(--title); font-weight: 400; letter-
 .cinfo-text p { margin: 4px 0; }
 .cinfo-text .tier-line { padding-left: 8px; border-left: 3px solid #ffc53166; }
 /* узкий экран с мышью: подсказка с текстом сверху */
-.hover-float { position: fixed; top: 54px; left: 50%; transform: translateX(-50%); width: min(460px, 94vw); z-index: 30; pointer-events: none; background: #120914f2; border: 1px solid #ffc53155; border-radius: 16px; padding: 10px; box-shadow: 0 10px 30px #000c; animation: fadeIn .15s; }
+.hover-float { position: fixed; top: 54px; left: 50%; transform: translateX(-50%); width: 94vw; max-width: 460px; width: min(460px, 94vw); z-index: 30; pointer-events: none; background: #120914f2; border: 1px solid #ffc53155; border-radius: 16px; padding: 10px; box-shadow: 0 10px 30px #000c; animation: fadeIn .15s; }
 .hover-float .cinfo { display: flex; gap: 12px; align-items: flex-start; }
 .hover-float .cinfo > img { width: 130px; flex: none; margin: 0; }
 .hover-float .cinfo-text { margin-top: 0; font-size: 15px; }
@@ -426,3 +426,11 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .tut-nav { display: flex; gap: 10px; }
 .tut-nav .btn { flex: 1; }
 .tut-nav .btn:first-child { flex: 0 0 auto; min-width: 64px; }
+
+/* Старый Edge 18 (Telegram Desktop без WebView2): нет aspect-ratio — ячейки и карты на арене задаём размером от ширины экрана.
+   Нет gap во flex — отступы дорисовывает правило html.no-flexgap (см. index.html и vite.config.ts). */
+@supports not (aspect-ratio: 1) {
+  .slot { height: 40vw; max-height: 226px; width: 28vw; max-width: 160px; }
+  .flip { height: 36vw; max-height: 212px; width: 25.5vw; max-width: 150px; }
+  .spell-row.n4 .flip, .spell-row.n5 .flip, .spell-row.n6 .flip { height: 26vw; width: 18.4vw; }
+}

@@ -4,11 +4,92 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#140b16" />
+    <!-- Диагностика без консоли (Telegram Desktop на ПК): ошибки, незагрузившиеся файлы и пустой экран — красной плашкой.
+         Только ES5: этот скрипт должен работать даже там, где не запустится сама игра. -->
+    <script>
+      (function () {
+        var started = false, box = null, lines = [], files = {};
+        function show(msg) {
+          if (msg && (lines.length >= 6 || lines.indexOf(msg) >= 0)) return;
+          if (msg) lines.push(msg);
+          if (!document.body) { document.addEventListener('DOMContentLoaded', function () { show(''); }); return; }
+          if (!box) {
+            box = document.createElement('div');
+            box.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:99999;max-height:50%;overflow:auto;background:#a8141c;color:#fff;' +
+              'font:12px/1.35 monospace;padding:8px 30px 8px 8px;white-space:pre-wrap;word-break:break-all';
+            var x = document.createElement('button');
+            x.textContent = '✕';
+            x.style.cssText = 'position:absolute;top:4px;right:4px;background:none;border:0;color:#fff;font-size:16px';
+            x.onclick = function () { box.style.display = 'none'; };
+            box.appendChild(x);
+            box.appendChild(document.createElement('div'));
+            document.body.appendChild(box);
+          }
+          box.style.display = 'block';
+          box.lastChild.textContent = lines.join('\n') + '\n\n' + navigator.userAgent;
+        }
+        window.__eswStarted = function () { started = true; };
+        window.addEventListener('error', function (e) {
+          var t = e.target;
+          if (t && t !== window && (t.tagName === 'SCRIPT' || t.tagName === 'LINK')) {
+            var src = t.src || t.href || t.getAttribute('data-src');
+            files[src] = 'ошибка';
+            show('Не загрузился файл: ' + src);
+            return;
+          }
+          if (t && t !== window) return; // картинки и звуки — не страшно
+          show('Ошибка: ' + (e.message || e.error) + '\n  ' + (e.filename || '?') + ':' + (e.lineno || 0) + ':' + (e.colno || 0));
+        }, true);
+        window.addEventListener('load', function (e) {
+          var t = e.target;
+          if (t && t.tagName === 'SCRIPT' && t.src) files[t.src] = 'ok';
+        }, true);
+        window.addEventListener('unhandledrejection', function (e) {
+          var r = e.reason;
+          show('Ошибка (promise): ' + (r && (r.stack || r.message) || r));
+        });
+        // через 10 с экран пуст — какие скрипты загрузились, а какие нет
+        setTimeout(function () {
+          var root = document.getElementById('root');
+          if (started && root && root.childElementCount) return;
+          var list = [], s = document.getElementsByTagName('script');
+          for (var i = 0; i < s.length; i++) {
+            var src = s[i].src || s[i].getAttribute('data-src');
+            if (src) list.push('  ' + (files[src] || (s[i].src ? 'не дождались' : 'встроен')) + ' — ' + src);
+          }
+          show('Игра не запустилась за 10 с. Скрипты:\n' + list.join('\n') + '\n  System: ' + (typeof System) + ', Promise: ' + (typeof Promise));
+        }, 10000);
+        // Edge 18 не знает gap во flex — включаем запасные отступы (их генерирует vite.config.ts)
+        document.addEventListener('DOMContentLoaded', function () {
+          var d = document.createElement('div');
+          d.style.cssText = 'display:flex;flex-direction:column;row-gap:1px;position:absolute;visibility:hidden';
+          d.appendChild(document.createElement('div'));
+          d.appendChild(document.createElement('div'));
+          document.body.appendChild(d);
+          if (d.scrollHeight !== 1) document.documentElement.className += ' no-flexgap';
+          document.body.removeChild(d);
+        });
+        // Telegram кэширует страницу: если на сервере сборка новее — один раз перезагрузиться с ?v=<версия>
+        var BUILD = '%BUILD_ID%';
+        if (BUILD !== 'dev' && window.fetch) {
+          fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+            if (!j || !j.v || j.v === BUILD) return;
+            try { if (sessionStorage.getItem('esw-reload-' + j.v)) return; sessionStorage.setItem('esw-reload-' + j.v, '1'); } catch (er) { return; }
+            var q = location.search.replace(/[?&]v=[^&]*/g, '').replace(/^&/, '?');
+            location.replace(location.pathname + q + (q ? '&' : '?') + 'v=' + j.v + location.hash);
+          })['catch'](function () {});
+        }
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Rubik:wght@400;500;700;800&display=swap" rel="stylesheet" />
-    <!-- Telegram Mini App API (вне Telegram ничего не делает) -->
+    <!-- шрифты не блокируют загрузку -->
+    <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Rubik:wght@400;500;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <!-- Telegram Mini App API (вне Telegram ничего не делает); ready/expand — сразу, чтобы Telegram не держал заставку -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+      try { if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) { Telegram.WebApp.ready(); Telegram.WebApp.expand(); } } catch (e) {}
+    </script>
     <title>Эпичные схватки боевых магов</title>
   </head>
   <body>

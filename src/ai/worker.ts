@@ -1,4 +1,5 @@
 // Расчёт хода бота в отдельном потоке (не тормозит анимации).
+import './polyfills.ts'
 import { think } from './mcts.ts'
 import type { GameState } from '../game/types.ts'
 

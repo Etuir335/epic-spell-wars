@@ -48,6 +48,7 @@ export function useIsDesktop(): boolean {
   useEffect(() => {
     const m = window.matchMedia(DESK)
     const f = () => setD(m.matches)
+    if (!m.addEventListener) { m.addListener(f); return () => m.removeListener(f) } // старый Edge 18
     m.addEventListener('change', f)
     return () => m.removeEventListener('change', f)
   }, [])

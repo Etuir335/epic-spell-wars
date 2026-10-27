@@ -43,10 +43,12 @@ function useBots(s: GameState, dispatch: GameStore['dispatch'], ready: boolean) 
     }
     const w = getWorker()
     if (w) {
-      const onMsg = (e: MessageEvent<{ id: number; action: Action | null }>) => { if (e.data.id === id) { w.removeEventListener('message', onMsg); apply(e.data.action) } }
+      const onMsg = (e: MessageEvent<{ id: number; action: Action | null }>) => { if (e.data.id === id) { clearTimeout(dead); w.removeEventListener('message', onMsg); apply(e.data.action) } }
       w.addEventListener('message', onMsg)
       w.postMessage({ id, s, me: bot, level })
-      return () => { cancelled = true; w.removeEventListener('message', onMsg); clearTimeout(timer) }
+      // поток молчит (старый движок не смог его запустить) — дальше считаем в основном потоке
+      const dead = window.setTimeout(() => { w.removeEventListener('message', onMsg); worker = null; apply(think(s, bot, 1, 150)) }, 15000)
+      return () => { cancelled = true; w.removeEventListener('message', onMsg); clearTimeout(timer); clearTimeout(dead) }
     }
     timer = window.setTimeout(() => apply(think(s, bot, 1, 150)), 30)
     return () => { cancelled = true; clearTimeout(timer) }
