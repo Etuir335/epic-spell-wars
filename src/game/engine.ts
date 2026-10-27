@@ -2,19 +2,19 @@
 // останавливается (pending) и при ответе перезапускается с начала с накопленными ответами (RNG — в состоянии).
 import { DEAD, SPELLS, TREASURES } from '../data/cards.ts'
 import {
-  D, GameOver, NeedInput, START_LIFE, T, alive, ask, cardName, choosePlayer, d6, damage, deadOf, drawDead, drawSpell, enemies, fillHand,
+  BOSS_LIFE, D, GameOver, NeedInput, START_LIFE, T, hasMod, alive, ask, cardName, choosePlayer, d6, damage, deadOf, drawDead, drawSpell, enemies, fillHand,
   ev, gainTreasure, heal, isWild, leftEnemy, log, rand, rollEv, rightEnemy, shuffle, spellOf, treasureName, chooseHandCard, type Ctx,
 } from './core.ts'
 import { EFFECTS, addToSpell, cardInfo, replaceWild } from './effects.ts'
-import { TRAP, type Action, type CardId, type GameState, type PlayerState, type SetupPlayer, type SpellCard } from './types.ts'
+import { TRAP, type Action, type CardId, type GameState, type Mod, type PlayerState, type SetupPlayer, type SpellCard } from './types.ts'
 
 const RANK = { source: 0, quality: 1, delivery: 2 } as const
 
-export function create(setup: SetupPlayer[], seed: number, medalsToWin = 2): GameState {
+export function create(setup: SetupPlayer[], seed: number, medalsToWin = 2, mods?: Mod[]): GameState {
   const s: GameState = {
-    rng: seed | 0, tid: seed | 0, phase: 'start', game: 0, round: 0, medalsToWin,
+    rng: seed | 0, tid: seed | 0, ...(mods?.length ? { mods } : {}), phase: 'start', game: 0, round: 0, medalsToWin,
     players: setup.map((p, id) => ({
-      id, name: p.name, portrait: p.portrait, ...(p.bot ? { bot: p.bot } : {}), ...(p.uid ? { uid: p.uid } : {}),
+      id, name: p.name, portrait: p.portrait, ...(p.bot ? { bot: p.bot } : {}), ...(p.uid ? { uid: p.uid } : {}), ...(p.boss ? { boss: p.boss } : {}),
       life: START_LIFE, alive: true, hand: [], treasures: [], deadCards: [], medals: 0,
       spell: null, acted: false, extraDice: 0,
     })),
@@ -40,7 +40,7 @@ function startGame(ctx: Ctx) {
   ev(s, { k: 'game', n: s.game })
   log(s, `══ Игра ${s.game} ══`)
   for (const p of s.players) {
-    Object.assign(p, { life: START_LIFE, alive: true, spell: null, acted: false, extraDice: 0, goLast: undefined, tieRoll: undefined, firstTurnDie: undefined })
+    Object.assign(p, { life: p.boss ? BOSS_LIFE[p.boss] : hasMod(s, 'blood') ? 7 : START_LIFE, slimes: 0, alive: true, spell: null, acted: false, extraDice: 0, goLast: undefined, tieRoll: undefined, firstTurnDie: undefined })
     fillHand(s, p)
   }
   for (const p of s.players) {
@@ -54,7 +54,7 @@ function startGame(ctx: Ctx) {
       if (k === D.payback) damage(ctx, choosePlayer(ctx, p, enemies(s, p), '«Ответочка из преисподней»: кому нанести 2 урона?'), 2)
       if (k !== D.nirvana) log(s, `${p.name}: «${deadOf(c).name}».`)
     }
-    p.life = Math.min(p.life, 25)
+    p.life = Math.min(p.life, p.boss ? 99 : 25)
     if (p.reservedWild) { p.hand.push(...p.reservedWild); p.reservedWild = undefined }
   }
   for (const p of s.players) { s.deadDiscard.push(...p.deadCards); p.deadCards = [] }
@@ -62,13 +62,13 @@ function startGame(ctx: Ctx) {
 }
 
 // Ключ очерёдности: ранец «последним» → Нетерпеливый → меньше карт → больше инициатива → бросок кубика.
-function orderKey(p: PlayerState): number[] {
+function orderKey(p: PlayerState, reverse = false): number[] {
   const sp = p.spell ?? []
   const impatient = sp.some(c => c.id >= 0 && Math.floor(c.id / 10) === 25)
   const del = sp.find(c => c.slot === 'delivery')
   let init = del && del.id >= 0 && !isWild(del.id) ? spellOf(del.id).initiative ?? 0 : 0
   if (p.treasures.includes(T.jetpack)) init += 10
-  return [p.goLast ? 1 : 0, impatient ? 0 : 1, sp.length, -init]
+  return [p.goLast ? 1 : 0, impatient ? 0 : 1, reverse ? -sp.length : sp.length, -init]
 }
 const cmp = (a: number[], b: number[]) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] - b[i]; return 0 }
 
@@ -76,8 +76,9 @@ function nextActor(ctx: Ctx): PlayerState | null {
   const { s } = ctx
   const cand = alive(s).filter(p => !p.acted && p.spell)
   if (!cand.length) return null
-  cand.sort((a, b) => cmp(orderKey(a), orderKey(b)))
-  const top = cand.filter(p => cmp(orderKey(p), orderKey(cand[0])) === 0)
+  const rev = hasMod(s, 'reverse')
+  cand.sort((a, b) => cmp(orderKey(a, rev), orderKey(b, rev)))
+  const top = cand.filter(p => cmp(orderKey(p, rev), orderKey(cand[0], rev)) === 0)
   if (top.length === 1) return top[0]
   for (;;) {
     for (const p of top) if (p.tieRoll == null) { p.tieRoll = d6(s); rollEv(s, p, [p.tieRoll], p.tieRoll, 'очерёдность') }
@@ -99,6 +100,41 @@ function endRound(ctx: Ctx) {
   s.phase = 'build'
   ev(s, { k: 'round', n: s.round })
   log(s, `— Раунд ${s.round} —`)
+  roundMadness(ctx)
+}
+
+// Безумные правила и боссы в начале раунда (урон может закончить игру — GameOver).
+function roundMadness(ctx: Ctx) {
+  const { s } = ctx
+  const live = alive(s)
+  if (hasMod(s, 'swap') && live.length > 1) {
+    const hands = live.map(p => p.hand)
+    live.forEach((p, i) => { p.hand = hands[(i - 1 + live.length) % live.length] })
+    log(s, '🔄 Обмен телами: все отдают руку соседу слева.')
+  }
+  if (hasMod(s, 'greedy')) {
+    for (const p of live) gainTreasure(ctx, p)
+    for (const p of alive(s)) if (p.treasures.length > 3) { log(s, `💰 Сокровища кусают ${p.name}!`); damage(ctx, p, p.treasures.length - 3) }
+  }
+  if (hasMod(s, 'zombie')) {
+    for (const z of s.players.filter(p => !p.alive && !p.boss)) {
+      const prey = alive(s).filter(q => q !== z)
+      if (!prey.length) break
+      const v = prey[rand(s, prey.length)]
+      log(s, `🧟 Зомби ${z.name} кусает ${v.name}!`)
+      damage(ctx, v, Math.ceil(d6(s) / 2))
+    }
+  }
+  for (const b of alive(s).filter(p => p.boss)) {
+    if (b.boss === 'grandpa') {
+      log(s, `👴 ${b.name} орёт: «В моё время колдовали лучше!» — всем по 2 урона.`)
+      for (const q of enemies(s, b)) damage(ctx, q, 2)
+    }
+    if (b.boss === 'slime' && b.slimes) {
+      log(s, `🟢 Слизняки (${b.slimes}) плюются!`)
+      for (const q of enemies(s, b)) damage(ctx, q, b.slimes)
+    }
+  }
 }
 
 function startTurn(ctx: Ctx, p: PlayerState) {
@@ -116,11 +152,14 @@ function reveal(ctx: Ctx, p: PlayerState) {
   const turn = s.turn!
   const sp = p.spell!
   const count = sp.length
+  if (p.boss === 'mirror' && s.mirrorOf) mirrorSpell(s, p)
+  if (!p.bot && !p.boss) s.mirrorOf = sp.filter(c => c.id >= 0).map(c => ({ index: Math.floor(c.id / 10), slot: c.slot }))
   ev(s, { k: 'reveal', p: p.id, cards: sp.map(c => c.id) })
   log(s, `${p.name} открывает: ${sp.map(c => cardName(c.id)).join(' + ')}.`)
   s.turns.push({ game: s.game, round: s.round, actor: p.id, cards: sp.map(c => c.id), at: s.logBase + s.log.length - 1 })
   if (s.turns.length > 12) s.turns.shift()
-  for (const c of sp.filter(c => c.id === TRAP || isWild(c.id))) {
+  const allWild = hasMod(s, 'wild')
+  for (const c of sp.filter(c => c.id === TRAP || isWild(c.id) || (allWild && c.id >= 0))) {
     turn.hadWild = true
     p.spell = p.spell!.filter(x => x !== c)
     if (c.id === TRAP) p.treasures.push(T.trap)
@@ -147,6 +186,23 @@ function reveal(ctx: Ctx, p: PlayerState) {
     }
   }
   turn.stage = 'cards'
+}
+
+// «Зеркальный ты»: карты босса подменяются такими же, как в прошлом заклинании человека (из колоды или сброса).
+function mirrorSpell(s: GameState, p: PlayerState) {
+  for (const want of s.mirrorOf ?? []) {
+    const c = p.spell!.find(x => x.slot === want.slot && x.id >= 0)
+    if (!c || Math.floor(c.id / 10) === want.index) continue
+    for (const pile of [s.deck, s.discard]) {
+      const i = pile.findIndex(id => Math.floor(id / 10) === want.index)
+      if (i < 0) continue
+      const id = pile.splice(i, 1)[0]
+      s.discard.push(c.id)
+      c.id = id
+      break
+    }
+  }
+  log(s, `🪞 ${p.name} повторяет твоё прошлое заклинание!`)
 }
 
 // Применить следующую карту заклинания (несколько карт одного типа — в выбранном порядке).

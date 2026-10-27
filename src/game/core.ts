@@ -1,10 +1,13 @@
 // Общие операции движка: случайность, колоды, урон и лечение, знаки, могучий бросок, вопросы игрокам.
 import { DEAD, SPELLS, TREASURES, type School } from '../data/cards.ts'
-import type { CardId, Ev, GameState, PlayerState, QOption, Question, SpellCard } from './types.ts'
+import type { CardId, Ev, GameState, Mod, PlayerState, QOption, Question, SpellCard } from './types.ts'
 
 export const START_LIFE = 20
 export const MAX_LIFE = 25
 export const HAND = 8
+export const hasMod = (s: GameState, m: Mod) => !!s.mods?.includes(m)
+export const BOSS_LIFE = { grandpa: 50, slime: 40, mirror: 30 } as const
+export const maxLife = (p: PlayerState) => (p.boss ? 99 : MAX_LIFE)
 
 // Сокровища по индексу (см. transcript/treasures.md)
 export const T = {
@@ -212,17 +215,30 @@ export function yesNo(ctx: Ctx, who: PlayerState, prompt: string, yes: string, n
 export function heal(ctx: Ctx, p: PlayerState | null, n: number) {
   if (!p || !p.alive || n <= 0) return
   const before = p.life
-  p.life = Math.min(MAX_LIFE, p.life + n)
+  p.life = Math.min(maxLife(p), p.life + n)
   if (p.life > before) ev(ctx.s, { k: 'heal', p: p.id, n: p.life - before, before, after: p.life })
   if (p.life > before) log(ctx.s, `${p.name} накручивает ${p.life - before} ж. (${before}→${p.life}).`)
 }
 export function damage(ctx: Ctx, p: PlayerState | null, n: number) {
   if (!p || !p.alive || n <= 0) return
+  const from = ctx.s.turn?.actor ?? null
+  if (hasMod(ctx.s, 'mirror') && from != null && from !== p.id) {
+    ctx.s.hits = (ctx.s.hits ?? 0) + 1
+    const att = ctx.s.players[from]
+    if (ctx.s.hits % 3 === 0 && att.alive) {
+      log(ctx.s, `🪞 Отражающий щит! Удар по ${p.name} отлетает в ${att.name}.`)
+      p = att
+    }
+  }
   const before = p.life
   p.life -= n
   ev(ctx.s, { k: 'dmg', p: p.id, n, from: ctx.s.turn?.actor ?? null, before, after: Math.max(p.life, 0) })
   log(ctx.s, `${p.name} отхватывает ${n} ур. (${before}→${Math.max(p.life, 0)}).`)
   if (p.life <= 0) kill(ctx, p)
+  else if (p.boss === 'slime' && n >= 4) {
+    p.slimes = (p.slimes ?? 0) + 1
+    log(ctx.s, `🟢 ${p.name} отпочковывает слизняка! Слизняков: ${p.slimes}.`)
+  }
 }
 export function kill(ctx: Ctx, p: PlayerState) {
   const { s } = ctx
@@ -240,6 +256,11 @@ export function kill(ctx: Ctx, p: PlayerState) {
     p.spell = null
   }
   drawDead(s, p)
+  const killer = s.turn ? s.players[s.turn.actor] : null
+  if (hasMod(s, 'blood') && killer && killer !== p && killer.alive) {
+    log(s, `🩸 Кровавая луна: ${killer.name} пьёт силу жертвы.`)
+    heal(ctx, killer, 5)
+  }
   if (alive(s).length <= 1) throw new GameOver()
 }
 
@@ -278,6 +299,14 @@ export function mightyRoll(ctx: Ctx, p: PlayerState, card: { school: School | nu
   if (has(T.despair) && p.life <= 9) n += 1
   let dice = Array.from({ length: n }, () => d6(s))
   const show = () => dice.join('+')
+  if (hasMod(s, 'dice')) {
+    const alt = Array.from({ length: n }, () => d6(s))
+    const sum = (a: number[]) => a.reduce((x, y) => x + y, 0)
+    const full = s.round % 2 === 1 // нечётный раунд — полнолуние: лучший бросок
+    const old = show()
+    if (full ? sum(alt) > sum(dice) : sum(alt) < sum(dice)) dice = alt
+    log(s, `🌕 Кубики сошли с ума (${full ? 'полнолуние — лучший' : 'новолуние — худший'}): ${old} и ${alt.join('+')} → ${show()}.`)
+  }
   if (has(T.luckyBra) && yesNo(ctx, p, `Могучий бросок «${card.name}»: ${show()}. Сбросить «Лифчик госпожи удачи» и перебросить?`, 'Перебросить', 'Оставить')) {
     loseTreasure(s, p, T.luckyBra)
     dice = dice.map(() => d6(s))

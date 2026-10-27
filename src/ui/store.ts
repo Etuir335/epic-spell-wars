@@ -10,18 +10,20 @@ export interface GameStore {
 
 const KEY = 'esw-local-game'
 
-export function loadLocal(): GameState | null {
+export function loadLocal(key = KEY): GameState | null {
   try {
-    const raw = localStorage.getItem(KEY)
+    const raw = localStorage.getItem(key)
     return raw ? (JSON.parse(raw) as GameState) : null
   } catch { return null }
 }
-export function clearLocal() {
-  try { localStorage.removeItem(KEY) } catch { /* нет доступа — не страшно */ }
+export function clearLocal(key = KEY) {
+  try { localStorage.removeItem(key) } catch { /* нет доступа — не страшно */ }
 }
-function save(s: GameState) {
-  try { localStorage.setItem(KEY, JSON.stringify(s)) } catch { /* переполнение — играем без сохранения */ }
+function save(s: GameState, key = KEY) {
+  try { localStorage.setItem(key, JSON.stringify(s)) } catch { /* переполнение — играем без сохранения */ }
 }
+
+export const saveLocal = save
 
 export function newLocalGame(players: SetupPlayer[], medalsToWin: number): GameState {
   const s = create(players, (Math.random() * 2 ** 31) | 0, medalsToWin)
@@ -29,14 +31,14 @@ export function newLocalGame(players: SetupPlayer[], medalsToWin: number): GameS
   return s
 }
 
-export function useLocalGame(initial: GameState): GameStore {
+export function useLocalGame(initial: GameState, key = KEY): GameStore {
   const [state, setState] = useState(initial)
   const dispatch = useCallback((a: Action) => {
     let err: string | null = null
     setState(cur => {
       const r = tryReduce(cur, a)
       if ('error' in r) { err = r.error; return cur }
-      save(r.state)
+      save(r.state, key)
       return r.state
     })
     return err

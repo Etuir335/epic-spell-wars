@@ -172,3 +172,9 @@ Telegram Mini App по настольной игре Epic Spell Wars of the Batt
 - `src/stats.ts`: счётчики, 7 званий по опыту, 19 достижений; `applyEvents` разбирает события движка (s.ev) за «своего» колдуна (сеть — своё место, локально — первый человек).
 - `src/ui/useStats.ts`: хранение в localStorage `esw-stats` + облако Telegram (CloudStorage, тайм-аут 5 с, берётся более свежая копия); разбор идёт по мере показа (dir.pos), позиция по турнирам — `esw-stats-tracks` (ключ — `s.tid`, старые партии без tid не считаются).
 - Экран «🏆 Профиль и достижения» (`src/ui/Profile.tsx`), всплывашка достижения в партии. Тест подсчёта — в `scripts/scenarios.ts`.
+
+## Испытание дня
+- `src/daily.ts`: по дате — seed, 1–2 безумных правила (`s.mods`), через день босс (`PlayerState.boss`); очки `dailyScore`. Экран `src/ui/Daily.tsx`, своя ячейка сохранения `esw-daily-game`, лучший за день `esw-daily-best`.
+- Правила в движке (`hasMod`): wild — все карты заклинания шальные (reveal); reverse — `orderKey`; blood — 7 ❤, +5 за убийство (`kill`); swap/greedy/zombie и боссы grandpa/slime — `roundMadness` в начале раунда; dice — `mightyRoll`; mirror — каждый 3-й удар обратно (`damage`); fever — 12 с на ход (локальный таймер в `Game.tsx`). Босс mirror подменяет карты на прошлое заклинание человека (`mirrorSpell`, карты берутся из колоды/сброса — учёт карт не ломается). Жизни босса до 99 (`maxLife`).
+- Проверка: `node scripts/madness-check.ts 300` — случайные турниры со всеми правилами и боссами.
+- Рекорды: `daily/<дата>/scores/<uid>` (`src/net/dailyBoard.ts`), правило — в `firestore.rules`, в консоль Firebase вставляется вручную.

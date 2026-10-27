@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Tutorial, { tutorialSeen } from './Tutorial'
 import { useStatsTracker } from './useStats'
+import { MOD_INFO } from '../daily'
 import { DEAD, SPELLS, TREASURES } from '../data/cards'
 import { T } from '../game/core'
 import { waitingFor } from '../game/engine'
@@ -68,7 +69,8 @@ export interface NetInfo {
 
 // время на заклинание и на ответ (для проверки в dev-сборке: localStorage esw-turn-sec = секунд)
 const devTurn = import.meta.env.DEV ? Number((() => { try { return localStorage.getItem('esw-turn-sec') } catch { return null } })()) * 1000 : 0
-const BUILD_MS = devTurn || 180_000, ASK_MS = devTurn || 90_000
+const BUILD_MS = devTurn || 180_000, ASK_MS = devTurn || 90_000, FEVER_MS = 12_000 // лихорадка — испытание дня
+type TurnNet = Pick<NetInfo, 'isHost' | 'turnKey' | 'turnEnd' | 'setTurn'>
 
 // Кого ждём из людей и ключ ожидания: раунд целиком (выкладка) или конкретный вопрос.
 function turnWait(s: GameState) {
@@ -78,7 +80,7 @@ function turnWait(s: GameState) {
 }
 
 // Хост: ставит срок хода, когда его анимации доиграли (ready), и по сроку пропускает ход всем, кто не успел.
-function useTurnTimer(s: GameState, dispatch: GameStore['dispatch'], ready: boolean, net?: NetInfo) {
+function useTurnTimer(s: GameState, dispatch: GameStore['dispatch'], ready: boolean, net?: TurnNet) {
   const sRef = useRef(s)
   sRef.current = s
   const { key } = turnWait(s)
@@ -89,7 +91,7 @@ function useTurnTimer(s: GameState, dispatch: GameStore['dispatch'], ready: bool
     let end = net.turnKey === key && net.turnEnd ? net.turnEnd : 0
     if (!end) {
       if (!ready) return
-      end = Date.now() + (key[0] === 'q' ? ASK_MS : BUILD_MS)
+      end = Date.now() + (sRef.current.mods?.includes('fever') ? FEVER_MS : key[0] === 'q' ? ASK_MS : BUILD_MS)
       net.setTurn(key, end)
     }
     const t = setTimeout(() => {
@@ -101,7 +103,7 @@ function useTurnTimer(s: GameState, dispatch: GameStore['dispatch'], ready: bool
 }
 
 // Секунд до конца хода (для всех; null — таймера нет).
-function useTurnLeft(s: GameState, net?: NetInfo) {
+function useTurnLeft(s: GameState, net?: TurnNet) {
   const { key } = turnWait(s)
   const end = net && key && net.turnKey === key ? net.turnEnd ?? null : null
   const [now, setNow] = useState(Date.now())
@@ -140,8 +142,11 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
   const canHover = typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches // на телефоне касание — не наведение
   const dir = useDirector(s)
   useBots(s, store.dispatch, dir.done && (!net || net.isHost))
-  useTurnTimer(s, store.dispatch, dir.done, net)
-  const turnLeft = useTurnLeft(s, net)
+  // локальная «Колдовская лихорадка»: свой срок хода вместо сетевого
+  const [lt, setLt] = useState<{ key: string | null; end: number | null }>({ key: null, end: null })
+  const timerNet: TurnNet | undefined = net ?? (s.mods?.includes('fever') ? { isHost: true, turnKey: lt.key, turnEnd: lt.end, setTurn: (key, end) => setLt({ key, end }) } : undefined)
+  useTurnTimer(s, store.dispatch, dir.done, timerNet)
+  const turnLeft = useTurnLeft(s, timerNet)
   // статистика — за своё место (в сети) или за первого человека за столом
   const statMe = net ? net.seat : humans[0] ?? -1
   const others0 = s.players.filter(p => p.id !== statMe)
@@ -240,6 +245,12 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
         <button onClick={() => setSheet('log')}>📜</button>
       </div>
 
+      {(s.mods?.length || s.players.some(p => p.slimes && p.alive)) ? (
+        <div className="mods-bar">
+          {s.mods?.map(m => <button key={m} onClick={() => { setToast(MOD_INFO[m].text); setTimeout(() => setToast(null), 3500) }}>{MOD_INFO[m].icon} {MOD_INFO[m].name}</button>)}
+          {s.players.filter(p => p.slimes && p.alive).map(p => <span key={p.id}>🟢 ×{p.slimes}</span>)}
+        </div>
+      ) : null}
       <div className={`foes n${others.length}`}>
         {others.map(p => (
           <Seat key={p.id} s={s} p={p} life={shown[p.id].life} alive={shown[p.id].alive}

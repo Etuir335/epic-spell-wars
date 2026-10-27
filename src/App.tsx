@@ -1,10 +1,12 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { GameState } from './game/types'
 import { assetUrl } from './assets'
 import { ZoomProvider } from './ui/cards'
 import Game from './ui/Game'
 import Gallery from './ui/Gallery'
 import Profile from './ui/Profile'
+import DailyScreen, { DAILY_KEY, finishDaily } from './ui/Daily'
+import { dailyOf } from './daily'
 import Setup from './ui/Setup'
 import Tutorial from './ui/Tutorial'
 import { clearLocal, loadLocal, newLocalGame, useLocalGame } from './ui/store'
@@ -12,7 +14,7 @@ import { tgStartRoom, useTelegramBack } from './telegram'
 
 const NetPlay = lazy(() => import('./ui/NetPlay')) // Firebase — отдельным куском, только для сетевой игры
 
-type Screen = 'menu' | 'setup' | 'game' | 'gallery' | 'net' | 'profile'
+type Screen = 'menu' | 'setup' | 'game' | 'gallery' | 'net' | 'profile' | 'daily' | 'dailyGame'
 const startRoom = tgStartRoom() // открыли по приглашению из Telegram
 
 export default function App() {
@@ -21,6 +23,8 @@ export default function App() {
   const [game, setGame] = useState<GameState | null>(() => loadLocal())
   const [gen, setGen] = useState(0) // новая партия — новый store
   const [tut, setTut] = useState(false)
+  const [daily, setDaily] = useState<GameState | null>(null)
+  const [dailyLast, setDailyLast] = useState<{ score: number; win: boolean } | null>(null)
 
   return (
     <ZoomProvider>
@@ -34,6 +38,7 @@ export default function App() {
           {game && game.phase !== 'tournament' && <button className="btn gold wide" onClick={() => setScreen('game')}>Продолжить турнир</button>}
           <button className="btn wide" onClick={() => setScreen('setup')}>Новый турнир</button>
           <button className="btn wide" onClick={() => setScreen('net')}>Игра по сети</button>
+          <button className="btn wide fire" onClick={() => setScreen('daily')}>🔥 Испытание дня</button>
           <button className="btn wide ghost" onClick={() => setScreen('profile')}>🏆 Профиль и достижения</button>
           <button className="btn wide ghost" onClick={() => setScreen('gallery')}>Галерея карт</button>
           <button className="btn wide ghost" onClick={() => setTut(true)}>📖 Как играть</button>
@@ -49,6 +54,9 @@ export default function App() {
       )}
       {screen === 'game' && game && <LocalGame key={gen} initial={game} onExit={s => { setGame(s); setScreen('menu') }} />}
       {tut && <Tutorial onClose={() => setTut(false)} />}
+      {screen === 'daily' && <DailyScreen last={dailyLast} onBack={() => setScreen('menu')} onPlay={s => { setDaily(s); setDailyLast(null); setGen(g => g + 1); setScreen('dailyGame') }} />}
+      {screen === 'dailyGame' && daily && <LocalGame key={gen} initial={daily} storeKey={DAILY_KEY}
+        onFinish={s => setDailyLast(finishDaily(s, dailyOf()))} onExit={() => setScreen('daily')} />}
       {screen === 'profile' && <Profile onBack={() => setScreen('menu')} />}
       {screen === 'gallery' && <Gallery onBack={() => setScreen('menu')} />}
       {screen === 'net' && <Suspense fallback={<div className="screen"><p className="hint">Загрузка…</p></div>}><NetPlay onBack={() => setScreen('menu')} startCode={startRoom} /></Suspense>}
@@ -56,7 +64,9 @@ export default function App() {
   )
 }
 
-function LocalGame({ initial, onExit }: { initial: GameState; onExit: (s: GameState) => void }) {
-  const store = useLocalGame(initial)
+function LocalGame({ initial, onExit, storeKey, onFinish }: { initial: GameState; onExit: (s: GameState) => void; storeKey?: string; onFinish?: (s: GameState) => void }) {
+  const store = useLocalGame(initial, storeKey)
+  const done = useRef(initial.phase === 'tournament')
+  useEffect(() => { if (store.state.phase === 'tournament' && !done.current) { done.current = true; onFinish?.(store.state) } }, [store.state]) // eslint-disable-line react-hooks/exhaustive-deps
   return <Game store={store} onExit={() => onExit(store.state)} />
 }

@@ -473,3 +473,24 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .ach-list div div { display: flex; flex-direction: column; }
 .ach-list b { font-size: 15px; }
 .ach-list small { font-size: 12px; color: var(--dim); }
+
+/* испытание дня */
+.menu .btn.fire { background: linear-gradient(#d9461c, #8c1d10); border-color: #ffb11f88; box-shadow: 0 0 18px #ff6a1a77, 0 3px 0 #0007; }
+.daily-last { text-align: center; font-family: var(--title); font-size: 20px; margin: 6px 0 12px; padding: 10px; border-radius: 14px; background: #3a1414; border: 1px solid #ff5a3a55; }
+.daily-last.win { background: linear-gradient(#4a2d12, #2a160c); border-color: var(--gold); color: var(--gold); }
+.daily-last b { font-size: 26px; }
+.daily-boss, .daily-mod { display: flex; gap: 12px; align-items: center; padding: 12px; margin-bottom: 10px; border-radius: 14px; background: #ffffff0a; border: 1px solid #ffffff14; }
+.daily-boss { background: linear-gradient(135deg, #5a1414, #241529); border-color: #ff5a3a88; box-shadow: 0 0 22px #ff3a1a44; }
+.daily-boss > span, .daily-mod > span { font-size: 38px; line-height: 1; flex: none; width: 44px; text-align: center; }
+.daily-boss div, .daily-mod div { display: flex; flex-direction: column; gap: 2px; }
+.daily-boss small { color: #ff9d7a; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+.daily-boss b, .daily-mod b { font-family: var(--title); font-weight: 400; font-size: 18px; color: var(--gold); }
+.daily-boss em, .daily-mod em { font-style: normal; font-size: 13px; color: var(--text); opacity: .85; }
+.board { display: flex; flex-direction: column; gap: 6px; }
+.board > div { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 10px; background: #ffffff08; }
+.board > div.me { background: #4a2d1299; border: 1px solid #ffc53155; }
+.board i { font-style: normal; width: 22px; text-align: right; color: var(--dim); }
+.board span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.board b { color: #ffe2b0; }
+.mods-bar { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 2px 8px 4px; }
+.mods-bar > * { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: #5a1414cc; border: 1px solid #ff9d3a66; color: #ffe2b0; }

@@ -13,6 +13,10 @@ export interface SpellCard {
   from?: string // откуда пришла карта (для журнала): 'wild' | 'added' | 'stolen'
 }
 
+// Безумные правила испытания дня и боссы
+export type Mod = 'wild' | 'reverse' | 'blood' | 'swap' | 'dice' | 'zombie' | 'greedy' | 'fever' | 'mirror'
+export type BossKind = 'grandpa' | 'slime' | 'mirror'
+
 export interface PlayerState {
   id: number // место за столом по часовой стрелке; левый враг — следующий живой по возрастанию
   name: string
@@ -21,6 +25,8 @@ export interface PlayerState {
   uid?: string // сетевая игра: чьё это место (анонимный uid Firebase)
   away?: 'left' | 'afk' // сетевая игра: место занял бот — игрок ушёл или пропустил подряд 3 хода (afk может вернуться)
   skips?: number // сетевая игра: ходов подряд пропущено по таймеру
+  boss?: BossKind // босс испытания дня
+  slimes?: number // «Король Слизней»: сколько слизняков отпочковалось
   life: number
   alive: boolean
   hand: CardId[]
@@ -83,6 +89,9 @@ export interface Roll { player: number; dice: number[]; bonus: number; total: nu
 
 export interface GameState {
   rng: number
+  mods?: Mod[] // безумные правила (испытание дня)
+  hits?: number // «Отражающий щит»: счётчик ударов
+  mirrorOf?: { index: number; slot: string }[] // «Зеркальный ты»: прошлое заклинание человека
   tid?: number // номер турнира (начальный seed) — чтобы статистика не считала одни события дважды
   // start — подготовка новой игры (карты дохлых колдунов), build — выкладывают заклинания,
   // resolve — ходы, gameover — игра окончена (ждём nextGame), tournament — турнир окончен
@@ -109,7 +118,7 @@ export interface GameState {
   seq: number // номер изменения (для сети)
 }
 
-export interface SetupPlayer { name: string; portrait: number; bot?: number; uid?: string }
+export interface SetupPlayer { name: string; portrait: number; bot?: number; uid?: string; boss?: BossKind }
 
 export type Action =
   | { type: 'submit'; player: number; cards: { id: CardId; slot: Exclude<SpellType, 'wild'> }[]; goLast?: boolean }
