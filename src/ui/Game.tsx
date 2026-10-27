@@ -64,7 +64,7 @@ export interface NetInfo {
 
 // время на заклинание и на ответ (для проверки в dev-сборке: localStorage esw-turn-sec = секунд)
 const devTurn = import.meta.env.DEV ? Number((() => { try { return localStorage.getItem('esw-turn-sec') } catch { return null } })()) * 1000 : 0
-const BUILD_MS = devTurn || 75_000, ASK_MS = devTurn || 45_000
+const BUILD_MS = devTurn || 180_000, ASK_MS = devTurn || 90_000
 
 // Кого ждём из людей и ключ ожидания: раунд целиком (выкладка) или конкретный вопрос.
 function turnWait(s: GameState) {
@@ -165,7 +165,7 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
   const idle = !dir.done ? '' : s.phase === 'build'
     ? (me?.spell && me.alive ? `Ждём: ${waitNames.join(', ')}${clock}` : me?.alive && !botMe ? `Собери заклинание из 1–3 карт${clock}` : `Раунд ${s.round}`)
     : s.pending ? `${s.players[s.pending.player].name} думает…${clock}` : ''
-  const hurry = myAct && turnLeft != null && turnLeft <= 20 // мне пора: скоро пропуск хода
+  const hurry = myAct && turnLeft != null && turnLeft <= 30 // мне пора: скоро пропуск хода
 
   // низ экрана: я и рука (на ПК — отдельной полосой на всю ширину под колонками)
   const bottom = (
