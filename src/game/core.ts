@@ -6,7 +6,7 @@ export const START_LIFE = 20
 export const MAX_LIFE = 25
 export const HAND = 8
 export const hasMod = (s: GameState, m: Mod) => !!s.mods?.includes(m)
-export const BOSS_LIFE = { grandpa: 50, slime: 40, mirror: 30 } as const
+export const BOSS_LIFE = { grandpa: 21, slime: 21, mirror: 24 } as const
 export const maxLife = (p: PlayerState) => (p.boss ? 99 : MAX_LIFE)
 
 // Сокровища по индексу (см. transcript/treasures.md)
@@ -235,7 +235,7 @@ export function damage(ctx: Ctx, p: PlayerState | null, n: number) {
   ev(ctx.s, { k: 'dmg', p: p.id, n, from: ctx.s.turn?.actor ?? null, before, after: Math.max(p.life, 0) })
   log(ctx.s, `${p.name} отхватывает ${n} ур. (${before}→${Math.max(p.life, 0)}).`)
   if (p.life <= 0) kill(ctx, p)
-  else if (p.boss === 'slime' && n >= 4) {
+  else if (p.boss === 'slime' && n >= 5) {
     p.slimes = (p.slimes ?? 0) + 1
     log(ctx.s, `🟢 ${p.name} отпочковывает слизняка! Слизняков: ${p.slimes}.`)
   }

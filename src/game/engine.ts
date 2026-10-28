@@ -127,8 +127,8 @@ function roundMadness(ctx: Ctx) {
   }
   for (const b of alive(s).filter(p => p.boss)) {
     if (b.boss === 'grandpa') {
-      log(s, `👴 ${b.name} орёт: «В моё время колдовали лучше!» — всем по 2 урона.`)
-      for (const q of enemies(s, b)) damage(ctx, q, 2)
+      log(s, `👴 ${b.name} орёт: «В моё время колдовали лучше!» — всем по 1 урону.`)
+      for (const q of enemies(s, b)) damage(ctx, q, 1)
     }
     if (b.boss === 'slime' && b.slimes) {
       log(s, `🟢 Слизняки (${b.slimes}) плюются!`)

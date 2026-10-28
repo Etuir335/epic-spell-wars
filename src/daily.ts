@@ -14,9 +14,9 @@ export const MOD_INFO: Record<Mod, { icon: string; name: string; text: string }>
   mirror: { icon: '🪞', name: 'Отражающий щит', text: 'Каждый третий удар отлетает в того, кто бил.' },
 }
 export const BOSS_INFO: Record<BossKind, { icon: string; name: string; text: string; portrait: number }> = {
-  grandpa: { icon: '👴', name: 'Дед Черепламень', text: '50 ❤. В начале каждого раунда орёт и бьёт тебя на 2.', portrait: 7 },
-  slime: { icon: '🟢', name: 'Король Слизней', text: '40 ❤. От удара 4+ отпочковывает слизняка; каждый слизняк плюётся в тебя на 1 каждый раунд.', portrait: 23 },
-  mirror: { icon: '🪞', name: 'Зеркальный ты', text: '30 ❤. Повторяет твоё прошлое заклинание.', portrait: -1 },
+  grandpa: { icon: '👴', name: 'Дед Черепламень', text: '21 ❤. В начале каждого раунда орёт и бьёт тебя на 1.', portrait: 7 },
+  slime: { icon: '🟢', name: 'Король Слизней', text: '21 ❤. От удара 5+ отпочковывает слизняка; каждый слизняк плюётся в тебя на 1 каждый раунд.', portrait: 23 },
+  mirror: { icon: '🪞', name: 'Зеркальный ты', text: '24 ❤. Повторяет твоё прошлое заклинание.', portrait: -1 },
 }
 const MODS = Object.keys(MOD_INFO) as Mod[]
 const BOSSES = Object.keys(BOSS_INFO) as BossKind[]

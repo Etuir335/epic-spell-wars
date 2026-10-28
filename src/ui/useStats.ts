@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { GameState } from '../game/types'
 import { ARENAS } from '../arenas'
-import { ACHIEVEMENTS, addCups, applyEvents, emptyStats, newTrack, type Seat, type Stats, type Track } from '../stats'
+import { ACHIEVEMENTS, addCups, applyEvents, emptyStats, fixStats, newTrack, type Seat, type Stats, type Track } from '../stats'
 import { cloudGet, cloudSet } from '../telegram'
 
 const KEY = 'esw-stats', TRACKS = 'esw-stats-tracks', CLOUD_KEY = 'stats'
@@ -10,7 +10,9 @@ const KEY = 'esw-stats', TRACKS = 'esw-stats-tracks', CLOUD_KEY = 'stats'
 function read<T>(k: string, d: T): T { try { const r = localStorage.getItem(k); return r ? { ...d, ...(JSON.parse(r) as T) } : d } catch { return d } }
 function write(k: string, v: unknown) { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* не важно */ } }
 
-let stats: Stats = read(KEY, emptyStats())
+const saved = read<Stats>(KEY, { ...emptyStats(), sv: 1 })
+let stats: Stats = fixStats(saved)
+if (stats !== saved) write(KEY, stats)
 const subs = new Set<() => void>()
 const notify = () => { stats = { ...stats }; subs.forEach(f => f()) }
 let cloudTimer = 0
@@ -24,7 +26,7 @@ function commit() {
 void cloudGet(CLOUD_KEY).then(v => {
   if (!v) return
   try {
-    const c = { ...emptyStats(), ...(JSON.parse(v) as Stats) }
+    const c = fixStats({ ...emptyStats(), sv: 1, ...(JSON.parse(v) as Stats) })
     if (c.at > stats.at) { stats = c; write(KEY, stats); notify() }
   } catch { /* битые данные — не страшно */ }
 })
@@ -60,9 +62,10 @@ export function useStatsTracker(s: GameState, pos: number, seat: Seat | null) {
     if (pos <= from) return
     const evs = s.ev.slice(from - s.evBase, pos - s.evBase)
     tr.pos = pos
+    tr.seen = Date.now()
     const got = applyEvents(stats, tr, evs, s, st)
-    // храним разбор только последних турниров
-    const keep = Object.values<Track>({ ...all, [s.tid]: tr }).sort((a, b) => b.pos - a.pos).slice(0, 5)
+    // храним разбор последних по времени турниров (не по pos: у нового турнира он маленький — его и выкидывало)
+    const keep = Object.values<Track>({ ...all, [s.tid]: tr }).sort((a, b) => (b.seen ?? 0) - (a.seen ?? 0)).slice(0, 8)
     write(TRACKS, Object.fromEntries(keep.map(t => [t.tid, t])))
     commit()
     if (got.length) setFresh(f => [...f, ...got])

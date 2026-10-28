@@ -14,7 +14,7 @@ export const ARENAS: Arena[] = [
   {
     name: 'Логово Деда', sky: ['#c9a35a', '#4b2c55', '#140a1c'], icon: '👴', cups: 100, ready: true, text: 'Бои с боссами: у них много жизней и свои подлые трюки.',
     intro: [
-      { icon: '👴', title: 'Боссы', body: 'На этой арене ты дерёшься один на один с боссом. У босса 30–50 жизней и особое свойство.' },
+      { icon: '👴', title: 'Боссы', body: 'На этой арене ты дерёшься один на один с боссом. У босса больше жизней, чем у тебя, и подлый трюк. Бей с умом!' },
       ...(Object.keys(BOSS_INFO) as BossKind[]).map(k => ({ icon: BOSS_INFO[k].icon, title: BOSS_INFO[k].name, body: BOSS_INFO[k].text })),
     ],
   },

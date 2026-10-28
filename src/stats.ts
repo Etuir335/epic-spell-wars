@@ -29,12 +29,21 @@ export interface Stats {
   winDay?: string // день первой победы (бонус +50)
   dailyCupDay?: string // день, когда начислены кубки за испытание
   at: number // когда менялась (для выбора между устройством и облаком)
+  sv?: number // версия счёта: 2 — после починки двойного подсчёта
 }
 
 export const emptyStats = (): Stats => ({
   games: 0, wins: 0, tournaments: 0, champion: 0, netGames: 0, netWins: 0, kills: 0, deaths: 0, dealt: 0, taken: 0, healed: 0,
-  spells: 0, treasures: 0, bestHit: 0, bestRoll: 0, cards: {}, ach: {}, cups: 0, arena: 0, arenaSeen: 0, at: 0,
+  spells: 0, treasures: 0, bestHit: 0, bestRoll: 0, cards: {}, ach: {}, cups: 0, arena: 0, arenaSeen: 0, at: 0, sv: 2,
 })
+
+// До sv 2 разбор текущего турнира терялся, и события считались заново много раз — суммы испорчены.
+// Обнуляем счётчики; рекорды, достижения, кубки и арены оставляем.
+export function fixStats(st: Stats): Stats {
+  if ((st.sv ?? 1) >= 2) return st
+  const { bestHit, bestRoll, ach, cups, arena, arenaSkip, arenaSeen, winDay, dailyCupDay } = st
+  return { ...emptyStats(), bestHit, bestRoll, ach, cups, arena, arenaSkip, arenaSeen, winDay, dailyCupDay, at: Date.now() }
+}
 
 // ---------- звания ----------
 export const xpOf = (s: Stats) => s.games * 2 + s.wins * 10 + s.champion * 30 + s.kills * 3 + s.netWins * 10 + Object.keys(s.ach).length * 5
@@ -81,6 +90,7 @@ export const ACHIEVEMENTS: { id: string; icon: string; name: string; text: strin
 export interface Track {
   tid: number
   pos: number // абсолютный номер следующего непрочитанного события
+  seen?: number // когда разбирали последний раз
   hitBy: Record<number, number> // кто последним ранил колдуна
   actor: number // чей сейчас ход
   size: number // сколько карт в заклинании ходящего
