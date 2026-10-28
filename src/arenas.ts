@@ -3,31 +3,31 @@
 import { BOSS_INFO, MOD_INFO } from './daily.ts'
 import type { BossKind, Mod, SetupPlayer } from './game/types.ts'
 
-export interface Arena { name: string; icon: string; cups: number; text: string; ready: boolean; intro: { icon: string; title: string; body: string }[] }
+export interface Arena { name: string; icon: string; cups: number; sky: [string, string, string]; text: string; ready: boolean; intro: { icon: string; title: string; body: string }[] }
 
 export const ARENAS: Arena[] = [
   {
-    name: 'Гора Черепламени', icon: '🌋', cups: 0, ready: true, text: 'Основная коробка: заводилы, навороты, приходы и могучие броски.',
+    name: 'Гора Черепламени', sky: ['#ff7a1a', '#7a1d0c', '#1e0907'], icon: '🌋', cups: 0, ready: true, text: 'Основная коробка: заводилы, навороты, приходы и могучие броски.',
     intro: [],
   },
   {
-    name: 'Логово Деда', icon: '👴', cups: 100, ready: true, text: 'Бои с боссами: у них много жизней и свои подлые трюки.',
+    name: 'Логово Деда', sky: ['#c9a35a', '#4b2c55', '#140a1c'], icon: '👴', cups: 100, ready: true, text: 'Бои с боссами: у них много жизней и свои подлые трюки.',
     intro: [
       { icon: '👴', title: 'Боссы', body: 'На этой арене ты дерёшься один на один с боссом. У босса 30–50 жизней и особое свойство.' },
       ...(Object.keys(BOSS_INFO) as BossKind[]).map(k => ({ icon: BOSS_INFO[k].icon, title: BOSS_INFO[k].name, body: BOSS_INFO[k].text })),
     ],
   },
   {
-    name: 'Безумная гора', icon: '🌀', cups: 250, ready: true, text: 'Безумные правила: каждый бой — два случайных.',
+    name: 'Безумная гора', sky: ['#b14dff', '#2c1a7a', '#0a0a24'], icon: '🌀', cups: 250, ready: true, text: 'Безумные правила: каждый бой — два случайных.',
     intro: [
       { icon: '🌀', title: 'Безумные правила', body: 'В каждом бою действуют два случайных правила — они меняют всю игру. Плашки правил видны сверху, нажми — покажут подсказку.' },
       ...(Object.keys(MOD_INFO) as Mod[]).map(k => ({ icon: MOD_INFO[k].icon, title: MOD_INFO[k].name, body: MOD_INFO[k].text })),
     ],
   },
-  { name: 'Грибучее Болото', icon: '🍄', cups: 450, ready: false, text: 'Дополнение «Мессиво на грибучем болоте» — скоро.', intro: [] },
-  { name: 'Замок Спрутобойни', icon: '🐙', cups: 700, ready: false, text: 'Дополнение с Тварями и Кровью — позже.', intro: [] },
-  { name: 'Адская школа', icon: '🏫', cups: 1000, ready: false, text: 'Дополнение «Лютый дебош в адской школе» — позже.', intro: [] },
-  { name: 'Хоромы страсти', icon: '💋', cups: 1350, ready: false, text: 'Дополнение «Переполох в хоромах страсти» — позже.', intro: [] },
+  { name: 'Грибучее Болото', sky: ['#8fe04a', '#245a2a', '#07160b'], icon: '🍄', cups: 450, ready: false, text: 'Дополнение «Мессиво на грибучем болоте» — скоро.', intro: [] },
+  { name: 'Замок Спрутобойни', sky: ['#3fd0e0', '#163e6e', '#060f22'], icon: '🐙', cups: 700, ready: false, text: 'Дополнение с Тварями и Кровью — позже.', intro: [] },
+  { name: 'Адская школа', sky: ['#ff3b3b', '#5a0f2a', '#16040a'], icon: '🏫', cups: 1000, ready: false, text: 'Дополнение «Лютый дебош в адской школе» — позже.', intro: [] },
+  { name: 'Хоромы страсти', sky: ['#ff6fc8', '#6a1a5c', '#1a0618'], icon: '💋', cups: 1350, ready: false, text: 'Дополнение «Переполох в хоромах страсти» — позже.', intro: [] },
 ]
 
 export const arenaOf = (cups: number) => { let i = 0; while (i + 1 < ARENAS.length && cups >= ARENAS[i + 1].cups) i++; return i }

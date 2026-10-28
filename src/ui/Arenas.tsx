@@ -37,20 +37,31 @@ export default function Arenas({ onPlay, onBack }: { onPlay: (s: GameState) => v
     <div className="screen arenas">
       <div className="top-bar"><button onClick={onBack}>←</button><h2>Арены</h2></div>
       <div className="cups-card">
-        <div className="cups-big">🏆 {cups}</div>
-        <div className="xp-bar"><i style={{ width: `${pct}%` }} /></div>
-        <small>{next ? `До арены «${next.name}» — ${Math.max(0, next.cups - cups)} кубков` : 'Все арены пройдены!'}</small>
+        <div className="cups-big"><span className="trophy">🏆</span>{cups}</div>
+        <div className="cups-track">
+          <span>{ARENAS[cur].icon}</span>
+          <div className="xp-bar"><i style={{ width: `${pct}%` }} /></div>
+          <span>{next ? next.icon : '👑'}</span>
+        </div>
+        <small>{next ? `До арены «${next.name}» — ${Math.max(0, next.cups - cups)} 🏆` : 'Все арены пройдены!'}</small>
       </div>
-      <div className="arena-path">
+      <div className="arena-road">
         {ARENAS.map((a, i) => ({ a, i })).reverse().map(({ a, i }) => (
-          <div key={i} className={`arena-card${i === cur ? ' cur' : ''}${open(i) ? '' : ' locked'}`}>
-            <span className="arena-icon">{open(i) ? a.icon : a.ready ? '🔒' : '⏳'}</span>
-            <div className="arena-main">
-              <small>Арена {i + 1} · {a.cups} 🏆</small>
-              <b>{a.name}</b>
+          <div key={i} className="road-step">
+            <div className={`arena-card${i === cur ? ' cur' : ''}${open(i) ? '' : ' locked'}${a.ready ? '' : ' soon'}`}
+              style={{ ['--s1' as string]: a.sky[0], ['--s2' as string]: a.sky[1], ['--s3' as string]: a.sky[2] }}>
+              <div className="arena-scene">
+                <span className="arena-rays" />
+                <span className="arena-icon">{a.icon}</span>
+                <span className="arena-floor" />
+                {i === cur && <span className="arena-you">Ты здесь</span>}
+                {!open(i) && <span className="arena-lock">{a.ready ? '🔒' : 'Скоро'}</span>}
+              </div>
+              <div className="arena-ribbon"><small>Арена {i + 1}</small><b>{a.name}</b></div>
               <em>{a.text}</em>
+              {open(i) && <button className={`btn gold arena-go${i === cur ? ' hot' : ''}`} onClick={() => fight(i)}>⚔️ В бой</button>}
             </div>
-            {open(i) && <button className="btn gold" onClick={() => fight(i)}>В бой</button>}
+            {i > 0 && <div className="road-mark"><span>🏆 {a.cups}</span></div>}
           </div>
         ))}
       </div>

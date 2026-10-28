@@ -12,6 +12,9 @@ import Setup from './ui/Setup'
 import Tutorial from './ui/Tutorial'
 import { clearLocal, loadLocal, newLocalGame, useLocalGame } from './ui/store'
 import { tgStartRoom, useTelegramBack } from './telegram'
+import { useStatsData } from './ui/useStats'
+import { rankOf } from './stats'
+import { ARENAS } from './arenas'
 
 const NetPlay = lazy(() => import('./ui/NetPlay')) // Firebase — отдельным куском, только для сетевой игры
 
@@ -24,6 +27,7 @@ export default function App() {
   const [game, setGame] = useState<GameState | null>(() => loadLocal())
   const [gen, setGen] = useState(0) // новая партия — новый store
   const [tut, setTut] = useState(false)
+  const st = useStatsData(), rank = rankOf(st)
   const [daily, setDaily] = useState<GameState | null>(null)
   const [arena, setArena] = useState<GameState | null>(null)
   const [dailyLast, setDailyLast] = useState<{ score: number; win: boolean } | null>(null)
@@ -32,19 +36,33 @@ export default function App() {
     <ZoomProvider>
       {screen === 'menu' && (
         <div className="screen menu" style={{ ['--bg-img' as string]: `url(${assetUrl('assets/ui/menu-bg.webp')})` }}>
+          <div className="menu-top">
+            <button className="chip cups" onClick={() => setScreen('arenas')}>🏆 {st.cups ?? 0}</button>
+            <button className="chip" onClick={() => setScreen('profile')}>{rank.icon} {rank.name}</button>
+          </div>
           <div className="menu-head">
             <h1>Эпичные схватки<br />боевых магов</h1>
             <p className="hint">Битва на горе Черепламени</p>
           </div>
           <div className="menu-space" />
-          {game && game.phase !== 'tournament' && <button className="btn gold wide" onClick={() => setScreen('game')}>Продолжить турнир</button>}
-          <button className="btn wide" onClick={() => setScreen('setup')}>Новый турнир</button>
-          <button className="btn wide" onClick={() => setScreen('net')}>Игра по сети</button>
-          <button className="btn wide gold" onClick={() => setScreen('arenas')}>⚔️ Арены</button>
-          <button className="btn wide fire" onClick={() => setScreen('daily')}>🔥 Испытание дня</button>
-          <button className="btn wide ghost" onClick={() => setScreen('profile')}>🏆 Профиль и достижения</button>
-          <button className="btn wide ghost" onClick={() => setScreen('gallery')}>Галерея карт</button>
-          <button className="btn wide ghost" onClick={() => setTut(true)}>📖 Как играть</button>
+          <button className="menu-hero" onClick={() => setScreen('arenas')}>
+            <span className="mh-icon">{ARENAS[st.arena ?? 0].icon}</span>
+            <span className="mh-text"><small>Арена {(st.arena ?? 0) + 1}</small><b>{ARENAS[st.arena ?? 0].name}</b></span>
+            <span className="mh-go">В БОЙ</span>
+          </button>
+          <div className="menu-row">
+            {game && game.phase !== 'tournament'
+              ? <button className="menu-tile gold" onClick={() => setScreen('game')}><i>▶️</i>Продолжить</button>
+              : <button className="menu-tile" onClick={() => setScreen('setup')}><i>🎲</i>Турнир</button>}
+            <button className="menu-tile" onClick={() => setScreen('net')}><i>🌐</i>По сети</button>
+            <button className="menu-tile fire" onClick={() => setScreen('daily')}><i>🔥</i>Испытание</button>
+          </div>
+          <div className="menu-icons">
+            {game && game.phase !== 'tournament' && <button onClick={() => setScreen('setup')}><i>🎲</i>Новый турнир</button>}
+            <button onClick={() => setScreen('profile')}><i>👤</i>Профиль</button>
+            <button onClick={() => setScreen('gallery')}><i>🃏</i>Карты</button>
+            <button onClick={() => setTut(true)}><i>📖</i>Правила</button>
+          </div>
         </div>
       )}
       {screen === 'setup' && (
