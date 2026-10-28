@@ -1,5 +1,6 @@
 // Испытание дня: у всех одна раздача, 1–2 безумных правила, иногда босс. Очки — за победу, скорость и жизни.
 import type { BossKind, GameState, Mod, SetupPlayer } from './game/types.ts'
+import { wizardName } from './wizards.ts'
 
 export const MOD_INFO: Record<Mod, { icon: string; name: string; text: string }> = {
   wild: { icon: '🌀', name: 'Шальной вторник', text: 'Каждая карта в заклинании — шальная: превращается в случайную того же типа.' },
@@ -35,13 +36,12 @@ export function dailyOf(key = todayKey()): Daily {
   return { key, seed: seed | 0, mods, boss }
 }
 
-const RIVALS = ['Ведьма Гниль', 'Колдун Хрыч', 'Некромант Пупс']
 export function dailySetup(d: Daily, me: { name: string; portrait: number }): SetupPlayer[] {
   if (d.boss) {
     const b = BOSS_INFO[d.boss]
     return [{ ...me }, { name: d.boss === 'mirror' ? `Зеркальный ${me.name}` : b.name, portrait: b.portrait < 0 ? me.portrait : b.portrait, bot: 3, boss: d.boss }]
   }
-  return [{ ...me }, ...RIVALS.map((name, i) => ({ name, portrait: (d.seed >>> (i * 5)) % 41, bot: 2 }))]
+  return [{ ...me }, ...[0, 1, 2].map(i => { const portrait = (d.seed >>> (i * 5)) % 41; return { name: wizardName(portrait), portrait, bot: 2 } })]
 }
 
 // Очки: победа 1000 + жизни×20 + быстрота; поражение — за убитых и продержанные раунды.

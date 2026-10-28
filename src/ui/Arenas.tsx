@@ -4,11 +4,18 @@ import { ARENAS, arenaFight } from '../arenas'
 import { create } from '../game/engine'
 import type { GameState } from '../game/types'
 import { dailyMe } from './Daily'
+import { assetUrl } from '../assets'
 import { saveLocal } from './store'
 import Tutorial from './Tutorial'
 import { updateStats, useStatsData } from './useStats'
 
 export const ARENA_KEY = 'esw-arena-game'
+// три предупреждения, чтобы не открыть все арены случайно
+const SKIP_ASK = [
+  'Открыть все арены сразу? Нажми ещё раз',
+  'Точно уверен? Кубки за это не дают, а новые правила свалятся все разом',
+  'Последнее слово: открыть все арены? Обратно не закрыть',
+]
 
 export default function Arenas({ onPlay, onBack }: { onPlay: (s: GameState) => void; onBack: () => void }) {
   const st = useStatsData()
@@ -17,7 +24,7 @@ export default function Arenas({ onPlay, onBack }: { onPlay: (s: GameState) => v
   // новая открытая арена со вступлением, которое ещё не показывали
   const unseen = ARENAS.findIndex((a, i) => i > (st.arenaSeen ?? 0) && open(i) && a.intro.length)
   const [intro, setIntro] = useState<number | null>(unseen > 0 ? unseen : null)
-  const [sure, setSure] = useState(false)
+  const [sure, setSure] = useState(0)
   const next = ARENAS[cur + 1]
   const pct = next ? Math.min(100, Math.round(((cups - ARENAS[cur].cups) / (next.cups - ARENAS[cur].cups)) * 100)) : 100
 
@@ -51,9 +58,8 @@ export default function Arenas({ onPlay, onBack }: { onPlay: (s: GameState) => v
             <div className={`arena-card${i === cur ? ' cur' : ''}${open(i) ? '' : ' locked'}${a.ready ? '' : ' soon'}`}
               style={{ ['--s1' as string]: a.sky[0], ['--s2' as string]: a.sky[1], ['--s3' as string]: a.sky[2] }}>
               <div className="arena-scene">
-                <span className="arena-rays" />
-                <span className="arena-icon">{a.icon}</span>
-                <span className="arena-floor" />
+                <img className="arena-art" src={assetUrl(`assets/arenas/${i}.webp`)} alt="" loading="lazy" />
+                <span className="arena-badge">{a.icon}</span>
                 {i === cur && <span className="arena-you">Ты здесь</span>}
                 {!open(i) && <span className="arena-lock">{a.ready ? '🔒' : 'Скоро'}</span>}
               </div>
@@ -67,10 +73,12 @@ export default function Arenas({ onPlay, onBack }: { onPlay: (s: GameState) => v
       </div>
       <p className="hint center">Победа +40 🏆, поражение −5, по месту в бою на многих. Против живых ×1,5, первая победа за день +50, испытание дня +20. Ниже порога своей арены кубки не падают.</p>
       {!st.arenaSkip && ARENAS.some((a, i) => a.ready && i > cur) && (
-        sure
-          ? <button className="btn wide danger" onClick={() => { updateStats(x => { x.arenaSkip = true }); setSure(false) }}>Да, открыть все арены (кубки за это не дают)</button>
-          : <button className="btn wide ghost" onClick={() => setSure(true)}>Я опытный — открыть все арены</button>
+        <button className={`skip-all${sure ? ' warn' : ''}`} onClick={() => {
+          if (sure < SKIP_ASK.length) { setSure(sure + 1); return }
+          updateStats(x => { x.arenaSkip = true }); setSure(0)
+        }}>{sure ? SKIP_ASK[sure - 1] : 'я уже играл в настолку…'}</button>
       )}
+      {sure > 0 && <button className="skip-all" onClick={() => setSure(0)}>Нет, буду проходить по порядку</button>}
       {intro != null && (
         <Tutorial slides={ARENAS[intro].intro} done="Понятно!" onClose={() => { seen(intro); setIntro(null) }} />
       )}

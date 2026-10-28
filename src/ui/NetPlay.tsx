@@ -7,12 +7,12 @@ import { claimAdmin, deleteSong, uploadSong, watchLibrary, type LibSong } from '
 import { shareInvite, tgUser } from '../telegram'
 import { Portrait } from './cards'
 import WizardPicker from './WizardPicker'
+import { wizardName } from '../wizards'
 import Game from './Game'
 
 const PROFILE = 'esw-profile'
 const ROOM = 'esw-net-room'
 const PORTRAITS = 41
-const BOT_NAMES = ['Ведьма', 'Чародей', 'Некромант', 'Шаман', 'Маг']
 const LEVELS = ['', 'лёгкий', 'обычный', 'сильный']
 
 function load<T>(k: string, d: T): T { try { const r = localStorage.getItem(k); return r ? (JSON.parse(r) as T) : d } catch { return d } }
@@ -221,7 +221,7 @@ function RoomView({ code, uid, onLeave, onBack }: { code: string; uid: string; o
     const used = new Set([...g.members.map(m => m.portrait), ...bots.map(b => b.portrait)])
     let portrait = 0
     for (let k = 0; k < 50; k++) { portrait = Math.floor(Math.random() * PORTRAITS); if (!used.has(portrait)) break }
-    const b: BotSeat = { id: Math.random().toString(36).slice(2, 8), name: BOT_NAMES[bots.length % BOT_NAMES.length], portrait, level: 2 }
+    const b: BotSeat = { id: Math.random().toString(36).slice(2, 8), name: wizardName(portrait), portrait, level: 2 }
     void updateRoom(code, { bots: [...bots, b] })
   }
   const setBot = (id: string, patch: Partial<BotSeat>) => void updateRoom(code, { bots: bots.map(b => (b.id === id ? { ...b, ...patch } : b)) })

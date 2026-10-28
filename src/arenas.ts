@@ -2,6 +2,7 @@
 // Арену не теряешь: кубки не падают ниже её порога.
 import { BOSS_INFO, MOD_INFO } from './daily.ts'
 import type { BossKind, Mod, SetupPlayer } from './game/types.ts'
+import { wizardName } from './wizards.ts'
 
 export interface Arena { name: string; icon: string; cups: number; sky: [string, string, string]; text: string; ready: boolean; intro: { icon: string; title: string; body: string }[] }
 
@@ -40,11 +41,12 @@ export function cupsFor(place: number, n: number, vsHumans: boolean) {
 }
 
 // Бой на арене (против ботов): чем выше арена, тем умнее боты.
-const RIVALS = ['Ведьма Гниль', 'Колдун Хрыч', 'Некромант Пупс']
 const MODS = Object.keys(MOD_INFO) as Mod[]
 export function arenaFight(i: number, me: { name: string; portrait: number }): { setup: SetupPlayer[]; mods: Mod[] } {
   const r = (n: number) => Math.floor(Math.random() * n)
-  const pr = () => r(41)
+  // разные портреты, не как у игрока; ник — по портрету
+  const used = new Set([me.portrait])
+  const rival = (bot: number): SetupPlayer => { let p = r(41); while (used.has(p)) p = r(41); used.add(p); return { name: wizardName(p), portrait: p, bot } }
   if (i === 1) {
     const kinds = Object.keys(BOSS_INFO) as BossKind[]
     const boss = kinds[r(kinds.length)]
@@ -54,7 +56,7 @@ export function arenaFight(i: number, me: { name: string; portrait: number }): {
   if (i === 2) {
     const pool = [...MODS]
     const mods = [pool.splice(r(pool.length), 1)[0], pool.splice(r(pool.length), 1)[0]]
-    return { setup: [me, ...RIVALS.map(name => ({ name, portrait: pr(), bot: 2 }))], mods }
+    return { setup: [me, rival(2), rival(2), rival(2)], mods }
   }
-  return { setup: [me, ...RIVALS.slice(0, 2).map(name => ({ name, portrait: pr(), bot: 1 }))], mods: [] }
+  return { setup: [me, rival(1), rival(1)], mods: [] }
 }

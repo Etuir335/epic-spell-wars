@@ -46,7 +46,7 @@ export default function App() {
           </div>
           <div className="menu-space" />
           <button className="menu-hero" onClick={() => setScreen('arenas')}>
-            <span className="mh-icon">{ARENAS[st.arena ?? 0].icon}</span>
+            <img className="mh-icon" src={assetUrl(`assets/arenas/${st.arena ?? 0}.webp`)} alt="" />
             <span className="mh-text"><small>Арена {(st.arena ?? 0) + 1}</small><b>{ARENAS[st.arena ?? 0].name}</b></span>
             <span className="mh-go">В БОЙ</span>
           </button>

@@ -3,21 +3,21 @@ import { useState } from 'react'
 import type { SetupPlayer } from '../game/types'
 import { Portrait } from './cards'
 import WizardPicker from './WizardPicker'
+import { wizardName } from '../wizards'
 
-const NAMES = ['Колдун', 'Ведьма', 'Чародей', 'Маг', 'Некромант', 'Шаман']
 const PORTRAITS = 41
 const BOT_LEVELS = ['Человек', 'Бот: лёгкий', 'обычный', 'сильный']
 
 export default function Setup({ onStart, onBack }: { onStart: (p: SetupPlayer[], medals: number) => void; onBack: () => void }) {
-  const [seats, setSeats] = useState<SetupPlayer[]>(() => [
-    { name: 'Я', portrait: rnd() },
-    { name: NAMES[1], portrait: rnd(), bot: 2 },
-  ])
+  const [seats, setSeats] = useState<SetupPlayer[]>(() => {
+    const me = { name: 'Я', portrait: rnd() }
+    return [me, botSeat([me])]
+  })
   const [medals, setMedals] = useState(2)
   const [pick, setPick] = useState<number | null>(null)
 
   const upd = (i: number, p: Partial<SetupPlayer>) => setSeats(ss => ss.map((s, k) => (k === i ? { ...s, ...p } : s)))
-  const add = () => setSeats(ss => [...ss, { name: NAMES[ss.length] ?? 'Колдун', portrait: freePortrait(ss), bot: 2 }])
+  const add = () => setSeats(ss => [...ss, botSeat(ss)])
   const del = (i: number) => setSeats(ss => ss.filter((_, k) => k !== i))
   const ok = seats.length >= 2 && seats.every(s => s.name.trim())
 
@@ -31,7 +31,7 @@ export default function Setup({ onStart, onBack }: { onStart: (p: SetupPlayer[],
             <input value={s.name} maxLength={14} onChange={e => upd(i, { name: e.target.value })} />
             <div className="seg">
               {BOT_LEVELS.map((l, k) => (
-                <button key={l} className={(s.bot ?? 0) === k ? 'on' : ''} onClick={() => upd(i, { bot: k || undefined })}>{l}</button>
+                <button key={l} className={(s.bot ?? 0) === k ? 'on' : ''} onClick={() => upd(i, k && !s.bot && s.name !== 'Я' ? { bot: k, name: wizardName(s.portrait) } : { bot: k || undefined })}>{l}</button>
               ))}
             </div>
           </div>
@@ -48,13 +48,15 @@ export default function Setup({ onStart, onBack }: { onStart: (p: SetupPlayer[],
 
       {pick != null && (
         <WizardPicker value={seats[pick].portrait} taken={seats.filter((_, k) => k !== pick).map(s => s.portrait)}
-          onPick={k => upd(pick, { portrait: k })} onClose={() => setPick(null)} />
+          onPick={k => upd(pick, seats[pick].bot && seats[pick].name === wizardName(seats[pick].portrait) ? { portrait: k, name: wizardName(k) } : { portrait: k })} onClose={() => setPick(null)} />
       )}
     </div>
   )
 }
 
 function rnd() { return Math.floor(Math.random() * PORTRAITS) }
+// бот получает ник своего колдуна
+function botSeat(ss: SetupPlayer[]): SetupPlayer { const portrait = freePortrait(ss); return { name: wizardName(portrait), portrait, bot: 2 } }
 function freePortrait(ss: SetupPlayer[]) {
   for (;;) { const k = rnd(); if (!ss.some(s => s.portrait === k)) return k }
 }
