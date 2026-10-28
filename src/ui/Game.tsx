@@ -13,7 +13,7 @@ import { Card, cardText, cardTitle, HoverCtx, Portrait, SpellMeta, useIsDesktop,
 import { shownLives, useDirector } from './director'
 import { shakeEl } from './fx'
 import { assetUrl, cardUrl } from '../assets'
-import HandDock, { PEEK_SIZES, SpellSlots, getPeek, setPeek, useBuilder } from './HandDock'
+import HandDock, { PEEK_SIZES, SLOTS, SpellSlots, getPeek, setPeek, useBuilder } from './HandDock'
 import { simpleBotMove } from './simpleBot'
 import { isMuted, setMuted, sfx } from './sound'
 import { music, useMusic } from './music'
@@ -189,6 +189,16 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
   const slowHost = useSlow(net?.sendingSince ?? null, 8000)
   const iBuild = !!me && !botMe && !sending && dir.done && s.phase === 'build' && me.alive && !me.spell && handoff == null
   const builder = useBuilder(me?.hand ?? [], !!me?.treasures.includes(T.trap), iBuild, `${s.game}-${s.round}-${viewer}`)
+  // время вышло, а карты уже в ячейках — колдуем ими, а не пропускаем ход (в сети — чуть раньше: ход должен успеть дойти до хоста)
+  const placed = SLOTS.filter(k => builder.slots[k] != null).map(k => ({ id: builder.slots[k]!, slot: k }))
+  const autoKey = `${s.game}-${s.round}`
+  const autoSent = useRef('')
+  useEffect(() => {
+    if (!iBuild || turnLeft == null || turnLeft > (net ? 2 : 1) || !placed.length || autoSent.current === autoKey) return
+    autoSent.current = autoKey
+    act({ type: 'submit', player: viewer, cards: placed, goLast: builder.goLast })
+    setToast('⏳ Время вышло — колдуем тем, что успел собрать!'); setTimeout(() => setToast(null), 2500)
+  }, [turnLeft]) // eslint-disable-line react-hooks/exhaustive-deps
   const myQ = me && !botMe && !sending && dir.done && s.pending && s.pending.player === viewer && handoff == null ? s.pending : null
   const over = dir.done && (s.phase === 'gameover' || s.phase === 'tournament')
   // враги по кругу от меня, как в движке (enemies): слева на экране — левый враг, справа — правый
