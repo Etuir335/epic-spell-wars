@@ -1,7 +1,8 @@
 // Статистика: хранение (устройство + облако Telegram) и разбор событий партии по мере показа.
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { GameState } from '../game/types'
-import { ACHIEVEMENTS, applyEvents, emptyStats, newTrack, type Seat, type Stats, type Track } from '../stats'
+import { ARENAS } from '../arenas'
+import { ACHIEVEMENTS, addCups, applyEvents, emptyStats, newTrack, type Seat, type Stats, type Track } from '../stats'
 import { cloudGet, cloudSet } from '../telegram'
 
 const KEY = 'esw-stats', TRACKS = 'esw-stats-tracks', CLOUD_KEY = 'stats'
@@ -27,6 +28,18 @@ void cloudGet(CLOUD_KEY).then(v => {
     if (c.at > stats.at) { stats = c; write(KEY, stats); notify() }
   } catch { /* битые данные — не страшно */ }
 })
+
+// Отметка → всплывашка: достижение, кубки или новая арена
+function toastOf(id: string): { id: string; icon: string; name: string; text: string } | null {
+  if (id.startsWith('cups:')) { const d = Number(id.slice(5)); return { id, icon: '🏆', name: `${d >= 0 ? '+' : ''}${d} кубков`, text: `Всего: ${stats.cups} · арена «${ARENAS[stats.arena].name}»` } }
+  if (id.startsWith('arena:')) { const a = ARENAS[Number(id.slice(6))]; return { id, icon: a.icon, name: `Новая арена: ${a.name}`, text: a.text } }
+  return ACHIEVEMENTS.find(a => a.id === id) ?? null
+}
+// Кубки вне партии (испытание дня): сразу сохранить
+export function grantCups(d: number) { const got = addCups(stats, d); commit(); return got }
+export function updateStats(f: (s: Stats) => void) { f(stats); stats.at = Date.now(); commit() }
+
+export const getStats = () => stats
 
 export function useStatsData(): Stats {
   return useSyncExternalStore(f => { subs.add(f); return () => subs.delete(f) }, () => stats)
@@ -54,7 +67,7 @@ export function useStatsTracker(s: GameState, pos: number, seat: Seat | null) {
     commit()
     if (got.length) setFresh(f => [...f, ...got])
   }, [s, pos])
-  const shown = fresh[0] ? ACHIEVEMENTS.find(a => a.id === fresh[0]) ?? null : null
+  const shown = fresh[0] ? toastOf(fresh[0]) : null
   useEffect(() => {
     if (!fresh.length) return
     const t = setTimeout(() => setFresh(f => f.slice(1)), 3500)

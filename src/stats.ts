@@ -2,6 +2,7 @@
 // в сетевой игре — своё место, в локальной — первый человек за столом. Хранится на устройстве и в облаке Telegram.
 import { spellOf } from './game/core.ts'
 import type { Ev, GameState } from './game/types.ts'
+import { ARENAS, arenaOf, cupsFor } from './arenas.ts'
 
 export interface Stats {
   games: number // схваток сыграно
@@ -21,12 +22,18 @@ export interface Stats {
   bestRoll: number // лучший могучий бросок
   cards: Record<number, number> // сколько раз сыграна карта (индекс заклинания)
   ach: Record<string, number> // достижение → когда получено
+  cups: number // кубки (арены)
+  arena: number // самая высокая достигнутая арена (ниже её порога кубки не падают)
+  arenaSkip?: boolean // «Я опытный»: все арены открыты
+  arenaSeen: number // до какой арены показано вступление
+  winDay?: string // день первой победы (бонус +50)
+  dailyCupDay?: string // день, когда начислены кубки за испытание
   at: number // когда менялась (для выбора между устройством и облаком)
 }
 
 export const emptyStats = (): Stats => ({
   games: 0, wins: 0, tournaments: 0, champion: 0, netGames: 0, netWins: 0, kills: 0, deaths: 0, dealt: 0, taken: 0, healed: 0,
-  spells: 0, treasures: 0, bestHit: 0, bestRoll: 0, cards: {}, ach: {}, at: 0,
+  spells: 0, treasures: 0, bestHit: 0, bestRoll: 0, cards: {}, ach: {}, cups: 0, arena: 0, arenaSeen: 0, at: 0,
 })
 
 // ---------- звания ----------
@@ -83,11 +90,12 @@ export interface Track {
   life: number // мои жизни сейчас (−1 — урона в этой схватке не было)
   diedThis: boolean
   diedLast: boolean
+  order: number[] // кто в каком порядке погиб в этой схватке (для места)
 }
 export const newTrack = (tid: number, pos: number): Track =>
-  ({ tid, pos, hitBy: {}, actor: -1, size: 0, turnKills: 0, gameTaken: 0, gameHealed: 0, life: -1, diedThis: false, diedLast: false })
+  ({ tid, pos, hitBy: {}, actor: -1, size: 0, turnKills: 0, gameTaken: 0, gameHealed: 0, life: -1, diedThis: false, diedLast: false, order: [] })
 
-export interface Seat { me: number; vsHumans: boolean; strongBots: boolean }
+export interface Seat { me: number; vsHumans: boolean; strongBots: boolean; ranked?: boolean }
 
 // Разобрать новые события. Меняет st и tr, возвращает новые достижения.
 export function applyEvents(st: Stats, tr: Track, evs: Ev[], s: GameState, seat: Seat): string[] {
@@ -97,7 +105,7 @@ export function applyEvents(st: Stats, tr: Track, evs: Ev[], s: GameState, seat:
   for (const e of evs) {
     switch (e.k) {
       case 'game':
-        tr.hitBy = {}; tr.gameTaken = 0; tr.gameHealed = 0; tr.life = -1; tr.diedLast = tr.diedThis; tr.diedThis = false
+        tr.hitBy = {}; tr.gameTaken = 0; tr.gameHealed = 0; tr.life = -1; tr.diedLast = tr.diedThis; tr.diedThis = false; tr.order = []
         break
       case 'turn':
         tr.actor = e.p; tr.size = e.n; tr.turnKills = 0
@@ -128,6 +136,7 @@ export function applyEvents(st: Stats, tr: Track, evs: Ev[], s: GameState, seat:
         if (e.p === me) { tr.life = e.after; const n = e.after - e.before; st.healed += n; tr.gameHealed += n; if (tr.gameHealed >= 10) award('medic') }
         break
       case 'death':
+        (tr.order ??= []).push(e.p)
         if (e.p === me) {
           st.deaths++; tr.diedThis = true
           if (tr.hitBy[me] === me) award('oops')
@@ -149,6 +158,14 @@ export function applyEvents(st: Stats, tr: Track, evs: Ev[], s: GameState, seat:
         }
         break
       case 'over': {
+        if (seat.ranked) {
+          const n = s.players.length, idx = (tr.order ?? []).indexOf(me)
+          const place = e.winner === me ? 1 : idx >= 0 ? n - idx : 2
+          let d = cupsFor(place, n, seat.vsHumans)
+          const day = new Date().toDateString()
+          if (e.winner === me && st.winDay !== day) { st.winDay = day; d += 50 }
+          got.push(...addCups(st, d))
+        }
         st.games++
         if (seat.vsHumans) st.netGames++
         if (st.games >= 50) award('veteran')
@@ -176,4 +193,15 @@ export function favoriteCard(st: Stats): { index: number; n: number } | null {
   let best: { index: number; n: number } | null = null
   for (const [k, n] of Object.entries(st.cards)) if (!best || n > best.n) best = { index: Number(k), n }
   return best
+}
+
+// Начислить кубки (не ниже порога достигнутой арены). Возвращает отметки для всплывашек: кубки и новую арену.
+export function addCups(st: Stats, d: number): string[] {
+  st.cups ??= 0; st.arena ??= 0
+  st.cups = Math.max(ARENAS[st.arena].cups, st.cups + d)
+  const out = [`cups:${d}`]
+  const a = arenaOf(st.cups)
+  if (a > st.arena) { st.arena = a; out.push(`arena:${a}`) }
+  st.at = Date.now()
+  return out
 }

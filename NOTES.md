@@ -178,3 +178,9 @@ Telegram Mini App по настольной игре Epic Spell Wars of the Batt
 - Правила в движке (`hasMod`): wild — все карты заклинания шальные (reveal); reverse — `orderKey`; blood — 7 ❤, +5 за убийство (`kill`); swap/greedy/zombie и боссы grandpa/slime — `roundMadness` в начале раунда; dice — `mightyRoll`; mirror — каждый 3-й удар обратно (`damage`); fever — 12 с на ход (локальный таймер в `Game.tsx`). Босс mirror подменяет карты на прошлое заклинание человека (`mirrorSpell`, карты берутся из колоды/сброса — учёт карт не ломается). Жизни босса до 99 (`maxLife`).
 - Проверка: `node scripts/madness-check.ts 300` — случайные турниры со всеми правилами и боссами.
 - Рекорды: `daily/<дата>/scores/<uid>` (`src/net/dailyBoard.ts`), правило — в `firestore.rules`, в консоль Firebase вставляется вручную.
+
+## Арены
+- `src/arenas.ts`: 7 арен (готовы 1–3: база, Логово Деда — боссы, Безумная гора — 2 случайных правила; 4–7 — под дополнения, `ready: false`), `cupsFor` (по месту: +40…−5, против живых плюс ×1,5), `arenaFight`.
+- Кубки в `Stats` (`cups`, `arena` — не ниже порога достигнутой, `arenaSkip` — «Я опытный», `arenaSeen` — показанные вступления). Начисляются в `applyEvents` при `seat.ranked` (сеть и бои на арене); +50 за первую победу дня; испытание дня +20 раз в день (`finishDaily`). Обычный турнир — без кубков.
+- Экран `src/ui/Arenas.tsx`, ячейка сохранения боя `esw-arena-game`; вступление новой арены — `Tutorial` со своими слайдами.
+- Дополнение = новая арена: поставить `ready: true` и добавить его карты/механику.

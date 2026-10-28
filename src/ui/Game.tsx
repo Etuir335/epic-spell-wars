@@ -128,7 +128,7 @@ function useSlow(since: number | null, ms: number) {
   return slow
 }
 
-export default function Game({ store, onExit, net }: { store: GameStore; onExit: () => void; net?: NetInfo }) {
+export default function Game({ store, onExit, net, ranked }: { store: GameStore; onExit: () => void; net?: NetInfo; ranked?: boolean }) {
   const s = store.state
   const humans = s.players.filter(p => !p.bot).map(p => p.id)
   const [localViewer, setViewer] = useState(humans[0] ?? -1)
@@ -153,6 +153,7 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
   const ach = useStatsTracker(s, dir.pos, statMe < 0 ? null : {
     me: statMe,
     vsHumans: !!net && others0.some(p => !p.bot && p.uid),
+    ranked: !!net || !!ranked, // кубки — в сети и на аренах; обычный турнир и испытание дня — без них
     strongBots: others0.length > 0 && others0.every(p => p.bot === 3),
   })
   const [confirmLeave, setConfirmLeave] = useState(false)

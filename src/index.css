@@ -509,3 +509,18 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .tut { position: relative; }
 .tut-music { position: absolute; top: 10px; right: 10px; background: #0006; border: 1px solid #ffffff26; border-radius: 10px; font-size: 18px; padding: 4px 8px; }
 .tut-music.off { opacity: .6; }
+
+/* арены */
+.cups-card { text-align: center; padding: 14px; margin: 4px 0 14px; border-radius: 16px; background: linear-gradient(135deg, #4a2d12, #241529); border: 1px solid #ffc53166; display: flex; flex-direction: column; gap: 6px; }
+.cups-big { font-family: var(--title); font-size: 34px; color: var(--gold); text-shadow: 0 2px 0 #9a2a10; }
+.cups-card small { color: var(--dim); }
+.arena-path { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.arena-card { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 16px; background: #ffffff0a; border: 1px solid #ffffff14; }
+.arena-card.cur { background: linear-gradient(135deg, #5a3a12, #2a1530); border: 2px solid var(--gold); box-shadow: 0 0 24px #ffb11f55; }
+.arena-card.locked { opacity: .5; filter: grayscale(.7); }
+.arena-icon { font-size: 40px; width: 48px; text-align: center; flex: none; }
+.arena-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.arena-main small { color: var(--dim); font-size: 12px; }
+.arena-main b { font-family: var(--title); font-weight: 400; font-size: 19px; color: var(--gold); }
+.arena-main em { font-style: normal; font-size: 13px; opacity: .85; }
+.arena-card .btn { flex: none; padding: 10px 14px; }

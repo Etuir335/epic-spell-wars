@@ -3,7 +3,8 @@ import { create, reduce, waitingFor } from '../src/game/engine.ts'
 import { T } from '../src/game/core.ts'
 import { legalActions } from '../src/game/legal.ts'
 import type { Action, CardId, GameState } from '../src/game/types.ts'
-import { applyEvents, emptyStats, newTrack } from '../src/stats.ts'
+import { addCups, applyEvents, emptyStats, newTrack } from '../src/stats.ts'
+import { cupsFor } from '../src/arenas.ts'
 
 type Slot = 'source' | 'quality' | 'delivery'
 let fails = 0
@@ -248,6 +249,18 @@ console.log('\nСтатистика: подсчёт по событиям цел
   }
   ok(!bad, `медали, смерти, убийства и турниры сходятся с исходом ${bad}`)
   ok(games > 30 && kills > 0, `схваток ${games}, медалей ${wins}, турниров выиграно ${champ}, убийств ${kills}, смертей ${deaths}`)
+}
+
+console.log('\nКубки и арены')
+{
+  ok(cupsFor(1, 2, false) === 40 && cupsFor(2, 2, false) === -5, '1 на 1: победа +40, поражение −5')
+  ok(cupsFor(2, 4, false) === 25 && cupsFor(4, 4, false) === -5, 'бой на четверых: 2-е место +25, последнее −5')
+  ok(cupsFor(1, 2, true) === 60 && cupsFor(2, 2, true) === -5, 'против живых плюс ×1,5, минус без множителя')
+  const st = emptyStats()
+  const got = addCups(st, 110)
+  ok(st.arena === 1 && got.includes('arena:1'), '110 кубков — вторая арена открылась')
+  addCups(st, -50)
+  ok(st.cups === 100, 'кубки не падают ниже порога достигнутой арены (100)')
 }
 
 console.log(fails ? `\nОШИБОК: ${fails}` : '\nВсё OK')

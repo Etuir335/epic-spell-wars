@@ -53,11 +53,14 @@ const SLIDES: { icon: string; title: string; body: ReactNode }[] = [
   },
 ]
 
-export default function Tutorial({ onClose }: { onClose: () => void }) {
+export type Slide = { icon: string; title: string; body: ReactNode }
+
+// slides — свои слайды (вступление арены); без них — обычное обучение (запоминаем, что показано)
+export default function Tutorial({ onClose, slides = SLIDES, done = 'В бой!' }: { onClose: () => void; slides?: Slide[]; done?: string }) {
   const [i, setI] = useState(0)
-  const close = () => { markSeen(); onClose() }
-  const last = i === SLIDES.length - 1
-  const sl = SLIDES[i]
+  const close = () => { if (slides === SLIDES) markSeen(); onClose() }
+  const last = i === slides.length - 1
+  const sl = slides[i]
   const mus = useMusic(false) // только следим, музыку не включаем
   return (
     <div className="sheet-back tut-back">
@@ -66,10 +69,10 @@ export default function Tutorial({ onClose }: { onClose: () => void }) {
         <div className="tut-icon">{sl.icon}</div>
         <h3>{sl.title}</h3>
         <div className="tut-body">{sl.body}</div>
-        <div className="tut-dots">{SLIDES.map((_, k) => <button key={k} className={k === i ? 'on' : ''} onClick={() => setI(k)} aria-label={`Шаг ${k + 1}`} />)}</div>
+        <div className="tut-dots">{slides.map((_, k) => <button key={k} className={k === i ? 'on' : ''} onClick={() => setI(k)} aria-label={`Шаг ${k + 1}`} />)}</div>
         <div className="tut-nav">
           {i > 0 ? <button className="btn" onClick={() => setI(i - 1)}>←</button> : <button className="btn ghost" onClick={close}>Пропустить</button>}
-          <button className="btn gold" onClick={() => (last ? close() : setI(i + 1))}>{last ? 'В бой!' : 'Дальше →'}</button>
+          <button className="btn gold" onClick={() => (last ? close() : setI(i + 1))}>{last ? done : 'Дальше →'}</button>
         </div>
       </div>
     </div>
