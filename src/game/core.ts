@@ -17,6 +17,18 @@ export const T = {
 } as const
 // Дохлые колдуны по индексу (см. transcript/dead.md)
 export const D = { nirvana: 0, payback: 1, shangri: 2, saint: 3, small: 4, pasture: 5, cosmic: 6, artifact: 7 } as const
+// «Мессиво на грибучем болоте» (transcript/swamp-*.md): сокровища 26–50, дохлые 8–15
+export const ST = {
+  music: 26, slowpoke: 27, fluffy: 28, burroughs: 29, pushkin: 30, ketchup: 31, freud: 32, dog: 33, fly: 34, gin: 35,
+  pinata: 36, pine: 37, poopHelm: 38, golem: 39, nipple: 40, tale: 41, pacman: 42, shakespeare: 43, piglets: 44, bandit: 45,
+  poe: 46, purse: 47, marley: 48, timecar: 49, afterlife: 50,
+} as const
+export const SD = { brain: 8, abort: 9, teeth: 10, shitq: 11, tomb: 12, wolf: 13, bottom: 14, tentacles: 15 } as const
+export const isEternal = (t: number) => !!TREASURES[t].eternal
+// Твари игрока: карты в игре и сокровища-твари
+export const creatureTreasures = (p: PlayerState) => p.treasures.filter(t => TREASURES[t].creature)
+// Хуки дополнения, которые ставит effects.ts (иначе — круговой импорт)
+export const hooks: { surprise?: (ctx: Ctx, p: PlayerState) => void; deadNow?: (ctx: Ctx, p: PlayerState, c: CardId) => boolean } = {}
 
 // ---------- случайность (детерминированная, состояние в s.rng) ----------
 export function rand(s: GameState, n: number): number {
@@ -120,12 +132,15 @@ export function moveTreasure(s: GameState, from: PlayerState, to: PlayerState, t
     if (c != null) to.hand.push(c)
   }
 }
-export function drawDead(s: GameState, p: PlayerState) {
+export function drawDead(ctx: Ctx, p: PlayerState) {
+  const { s } = ctx
   const c = drawFrom(s, s.deadDeck, s.deadDiscard)
   if (c == null) return
-  p.deadCards.push(c)
   ev(s, { k: 'dead', p: p.id, c })
   log(s, `${p.name} берёт карту дохлого колдуна «${deadOf(c).name}».`)
+  // «Прямо сейчас» — применить и сбросить
+  if (hooks.deadNow?.(ctx, p, c)) s.deadDiscard.push(c)
+  else p.deadCards.push(c)
 }
 
 // ---------- игроки и соседи ----------
@@ -222,6 +237,7 @@ export function heal(ctx: Ctx, p: PlayerState | null, n: number) {
 export function damage(ctx: Ctx, p: PlayerState | null, n: number) {
   if (!p || !p.alive || n <= 0) return
   const from = ctx.s.turn?.actor ?? null
+  if (from != null && from !== p.id && guard(ctx, p, n)) return
   if (hasMod(ctx.s, 'mirror') && from != null && from !== p.id) {
     ctx.s.hits = (ctx.s.hits ?? 0) + 1
     const att = ctx.s.players[from]
@@ -240,22 +256,46 @@ export function damage(ctx: Ctx, p: PlayerState | null, n: number) {
     log(ctx.s, `🟢 ${p.name} отпочковывает слизняка! Слизняков: ${p.slimes}.`)
   }
 }
+// Тварь заслоняет хозяина от урона врага (сбрасывается). Возвращает true, если урон поглощён.
+function guard(ctx: Ctx, p: PlayerState, n: number): boolean {
+  const own = p.creatures ?? [], tr = creatureTreasures(p)
+  if (!own.length && !tr.length) return false
+  const v = ask(ctx, {
+    player: p.id, prompt: `Тебе прилетает ${n} ур. Подставить тварь?`, optional: true,
+    options: [
+      ...own.map(id => ({ v: id, label: spellOf(id).name, card: { deck: 'spells' as const, index: Math.floor(id / 10) } })),
+      ...tr.map(t => ({ v: `t${t}`, label: TREASURES[t].name, card: { deck: 'treasures' as const, index: t } })),
+    ],
+  })
+  if (v == null) return false
+  if (typeof v === 'string') loseTreasure(ctx.s, p, +v.slice(1))
+  else { p.creatures = own.filter(x => x !== v); ctx.s.discard.push(v) }
+  log(ctx.s, `🛡 Тварь заслоняет ${p.name} от ${n} ур. и погибает.`)
+  return true
+}
 export function kill(ctx: Ctx, p: PlayerState) {
   const { s } = ctx
+  // нежданчик: колдунства с руки из последних сил (лечение может спасти)
+  if (hooks.surprise && p.spell?.some(c => !c.done && !c.on && c.id >= 0 && spellOf(c.id).surprise)) {
+    p.life = 0
+    hooks.surprise(ctx, p)
+    if (p.life > 0) return
+  }
   p.life = 0
   p.alive = false
   ev(s, { k: 'death', p: p.id })
   log(s, `☠ ${p.name} склеивает ласты!`)
   s.discard.push(...p.hand)
   p.hand = []
-  for (const t of [...p.treasures]) loseTreasure(s, p, t)
+  for (const t of [...p.treasures]) if (!isEternal(t)) loseTreasure(s, p, t)
+  if (p.creatures?.length) { s.discard.push(...p.creatures); p.creatures = [] }
   // невыложенное заклинание мертвеца — в сброс (своё заклинание ходящий доигрывает в конце хода)
   if (p.spell && s.turn?.actor !== p.id) {
     s.discard.push(...p.spell.filter(c => c.id >= 0).map(c => c.id))
     if (p.spell.some(c => c.id < 0)) s.treasureDiscard.push(T.trap)
     p.spell = null
   }
-  drawDead(s, p)
+  drawDead(ctx, p)
   const killer = s.turn ? s.players[s.turn.actor] : null
   if (hasMod(s, 'blood') && killer && killer !== p && killer.alive) {
     log(s, `🩸 Кровавая луна: ${killer.name} пьёт силу жертвы.`)
@@ -267,14 +307,17 @@ export function kill(ctx: Ctx, p: PlayerState) {
 // ---------- знаки и броски ----------
 export function signs(p: PlayerState): Record<School, number> {
   const r: Record<School, number> = { grass: 0, hex: 0, haze: 0, dark: 0, fire: 0 }
-  for (const c of p.spell ?? []) {
-    const sc = c.id >= 0 ? spellOf(c.id).school : null
-    if (sc) r[sc]++
+  for (const id of [...(p.spell ?? []).map(c => c.id), ...(p.creatures ?? [])]) {
+    if (id < 0) continue
+    const c = spellOf(id)
+    if (c.school) r[c.school]++
+    if (c.school2) r[c.school2]++
   }
   for (const t of p.treasures) {
-    const sc = TREASURES[t].school
+    const sc = TREASURES[t].school ?? TREASURES[t].creature
     if (sc) r[sc]++
   }
+  for (const sc of p.deadSigns ?? []) r[sc]++
   return r
 }
 export const uniqueSigns = (p: PlayerState) => Object.values(signs(p)).filter(n => n > 0).length
@@ -288,10 +331,11 @@ export function rollOne(ctx: Ctx, p: PlayerState): { raw: number; total: number 
 export const isLast = (s: GameState, p: PlayerState) => alive(s).every(q => q === p || q.acted)
 
 // Могучий бросок карты (school/type — знак и тип карты, которая бросает). Возвращает итог.
-export function mightyRoll(ctx: Ctx, p: PlayerState, card: { school: School | null; type: string; name: string; index?: number }): number {
+export function mightyRoll(ctx: Ctx, p: PlayerState, card: { school: School | null; school2?: School; type: string; name: string; index?: number }): number {
   const { s } = ctx
   const has = (t: number) => p.treasures.includes(t)
-  let n = Math.max(1, card.school ? signs(p)[card.school] : 1)
+  const sg = signs(p)
+  let n = card.school2 ? Math.max(2, sg[card.school!] + sg[card.school2]) : Math.max(1, card.school ? sg[card.school] : 1)
   n += p.extraDice + (p.firstTurnDie ? 1 : 0)
   if (card.type === 'delivery' && has(T.cannonFist)) n += 1
   if (card.type === 'quality' && has(T.skullRing)) n += 2
@@ -328,6 +372,7 @@ export function mightyRoll(ctx: Ctx, p: PlayerState, card: { school: School | nu
   if (has(T.crownStoned)) bonus += uniqueSigns(p)
   if (has(T.stick)) bonus += 2 * s.players.filter(q => !q.alive).length
   if (has(T.luckyPanties) && dice.length === 1) bonus += 2
+  if (has(ST.pacman)) bonus += 1
   const total = dice.reduce((a, b) => a + b, 0) + bonus
   s.lastRoll = { player: p.id, dice, bonus, total, label: card.name }
   ev(s, { k: 'roll', p: p.id, dice: [...dice], bonus, total, label: card.name, card: card.index })

@@ -39,7 +39,7 @@ export function applyScene(sc: Scene, e: Ev, s: GameState): Scene {
   const name = (p: number) => s.players[p]?.name ?? '?'
   switch (e.k) {
     case 'log': return { ...sc, ticker: e.t }
-    case 'game': return { ...emptyScene(), banner: { text: `Игра ${e.n}`, sub: 'Турнир на горе Черепламени', key: Math.random(), kind: 'game' } }
+    case 'game': return { ...emptyScene(), banner: { text: `Игра ${e.n}`, sub: s.sets?.includes('swamp') ? 'Мессиво на грибучем болоте' : 'Турнир на горе Черепламени', key: Math.random(), kind: 'game' } }
     case 'round': return { ...emptyScene(), banner: { text: `Раунд ${e.n}`, sub: 'Собирайте заклинания!', key: Math.random(), kind: 'round' } }
     case 'built': return { ...sc, counts: e.counts, banner: { text: 'Заклинания выложены!', sub: 'Кто быстрее — тот первый', key: Math.random(), kind: 'built' } }
     case 'turn': return {
@@ -168,6 +168,26 @@ export function useDirector(s: GameState) {
   // иначе у собирающего заклинание на миг пропадают ячейки и сбрасывается перетаскивание
   const done = p >= end || s.ev.slice(p - s.evBase).every(e => e.k === 'log')
   return { pos: p, done, scene, skip, fast, setFast }
+}
+
+// Колдуны «как на экране»: жизни, сокровища, карты дохлых и медали без ещё не показанных событий —
+// чтобы стол не выдавал исход раунда раньше анимации.
+export function shownState(s: GameState, pos: number): GameState {
+  const later = s.ev.slice(Math.max(0, pos - s.evBase))
+  if (!later.length || later.some(e => e.k === 'game')) return s
+  const lives = shownLives(s, pos)
+  const players = s.players.map((p, i) => ({ ...p, ...lives[i], treasures: [...p.treasures], deadCards: [...p.deadCards] }))
+  const drop = <X,>(a: X[], x: X) => { const i = a.indexOf(x); if (i >= 0) a.splice(i, 1) }
+  for (const e of [...later].reverse()) {
+    if (e.k === 'over') {
+      if (e.tr) e.tr.forEach((t, i) => { if (players[i]) players[i].treasures = [...t] })
+      if (e.winner >= 0) players[e.winner].medals = Math.max(0, players[e.winner].medals - 1)
+    }
+    if (e.k === 'treasure') { drop(players[e.p].treasures, e.t); if (e.from != null) players[e.from].treasures.push(e.t) }
+    if (e.k === 'lose') players[e.p].treasures.push(e.t)
+    if (e.k === 'dead') drop(players[e.p].deadCards, e.c)
+  }
+  return { ...s, players }
 }
 
 // Жизни/живость «как на экране»: откатываем ещё не показанные события.

@@ -1,10 +1,10 @@
 // Арены как в Clash Royale: кубки ведут по лестнице, каждая арена добавляет новые правила (позже — по дополнению).
 // Арену не теряешь: кубки не падают ниже её порога.
 import { BOSS_INFO, MOD_INFO } from './daily.ts'
-import type { BossKind, Mod, SetupPlayer } from './game/types.ts'
+import type { BossKind, CardSet, Mod, SetupPlayer } from './game/types.ts'
 import { wizardName } from './wizards.ts'
 
-export interface Arena { name: string; icon: string; cups: number; sky: [string, string, string]; text: string; ready: boolean; intro: { icon: string; title: string; body: string }[] }
+export interface Arena { name: string; icon: string; cups: number; sets?: CardSet[]; sky: [string, string, string]; text: string; ready: boolean; intro: { icon: string; title: string; body: string }[] }
 
 export const ARENAS: Arena[] = [
   {
@@ -25,7 +25,16 @@ export const ARENAS: Arena[] = [
       ...(Object.keys(MOD_INFO) as Mod[]).map(k => ({ icon: MOD_INFO[k].icon, title: MOD_INFO[k].name, body: MOD_INFO[k].text })),
     ],
   },
-  { name: 'Грибучее Болото', sky: ['#8fe04a', '#245a2a', '#07160b'], icon: '🍄', cups: 450, ready: false, text: 'Дополнение «Мессиво на грибучем болоте» — скоро.', intro: [] },
+  { name: 'Грибучее Болото', sky: ['#8fe04a', '#245a2a', '#07160b'], icon: '🍄', cups: 450, ready: true, sets: ['swamp'], text: 'Колода «Мессива на грибучем болоте»: твари, колдунство, пережор.',
+    intro: [
+      { icon: '🍄', title: 'Грибучее Болото', body: 'Здесь играют колодой дополнения «Мессиво на грибучем болоте». Правила те же, но у карт появились новые свойства.' },
+      { icon: '🐾', title: 'Твари', body: 'Половина приходов — твари. Если выпало «СТОЯТЬ!», тварь остаётся перед тобой и срабатывает снова каждый твой ход. А когда враг бьёт тебя, можно подставить тварь — она примет весь удар и погибнет.' },
+      { icon: '✨', title: 'Колдунство', body: 'Карта с колдунством может прыгнуть в заклинание прямо с руки во время твоего хода: сбрось 2 карты нужного типа («Шальная магия» подходит за любой). Игра сама предложит, когда можно.' },
+      { icon: '🍄', title: 'Пережор', body: 'Если в заклинании 4 разных знака или больше, карта с пережором срабатывает дважды. Знаки считаются и с тварей, сокровищ и карт дохлых колдунов.' },
+      { icon: '💥', title: 'Нежданчик', body: 'Подох, не успев сыграть карту с нежданчиком? Из последних сил сыграй колдунства с руки — их эффекты сработают сразу.' },
+      { icon: '🎲', title: 'Два знака и вечные сокровища', body: 'У многих приходов два знака — для могучего броска считаются оба (минимум 2 кубика). «Вечные» сокровища не пропадают ни при смерти, ни в конце игры.' },
+    ],
+  },
   { name: 'Замок Спрутобойни', sky: ['#3fd0e0', '#163e6e', '#060f22'], icon: '🐙', cups: 700, ready: false, text: 'Дополнение с Тварями и Кровью — позже.', intro: [] },
   { name: 'Адская школа', sky: ['#ff3b3b', '#5a0f2a', '#16040a'], icon: '🏫', cups: 1000, ready: false, text: 'Дополнение «Лютый дебош в адской школе» — позже.', intro: [] },
   { name: 'Хоромы страсти', sky: ['#ff6fc8', '#6a1a5c', '#1a0618'], icon: '💋', cups: 1350, ready: false, text: 'Дополнение «Переполох в хоромах страсти» — позже.', intro: [] },
@@ -42,7 +51,7 @@ export function cupsFor(place: number, n: number, vsHumans: boolean) {
 
 // Бой на арене (против ботов): чем выше арена, тем умнее боты.
 const MODS = Object.keys(MOD_INFO) as Mod[]
-export function arenaFight(i: number, me: { name: string; portrait: number }): { setup: SetupPlayer[]; mods: Mod[] } {
+export function arenaFight(i: number, me: { name: string; portrait: number }): { setup: SetupPlayer[]; mods: Mod[]; sets?: CardSet[] } {
   const r = (n: number) => Math.floor(Math.random() * n)
   // разные портреты, не как у игрока; ник — по портрету
   const used = new Set([me.portrait])
@@ -58,5 +67,6 @@ export function arenaFight(i: number, me: { name: string; portrait: number }): {
     const mods = [pool.splice(r(pool.length), 1)[0], pool.splice(r(pool.length), 1)[0]]
     return { setup: [me, rival(2), rival(2), rival(2)], mods }
   }
+  if (i === 3) return { setup: [me, rival(2), rival(2), rival(2)], mods: [], sets: ['swamp'] }
   return { setup: [me, rival(1), rival(1)], mods: [] }
 }

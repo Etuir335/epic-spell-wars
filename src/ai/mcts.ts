@@ -52,7 +52,7 @@ function determinize(src: GameState, me: number): GameState {
 // Эвристика заклинания: больше карт, одна школа (больше кубиков), есть приход.
 export function spellScore(cards: { id: CardId }[]): number {
   const cs = cards.map(c => (c.id < 0 ? null : sp(c.id)))
-  const schools = cs.map(c => c?.school).filter(Boolean)
+  const schools = cs.flatMap(c => [c?.school, c?.school2]).filter(Boolean)
   const same = Math.max(0, ...schools.map(x => schools.filter(y => y === x).length))
   return cards.length * 3 + same * 2 + (cs.some(c => c?.type === 'delivery') ? 2 : 0)
 }
@@ -117,7 +117,7 @@ function evaluate(s: GameState, me: number, game: number): number {
   const foes = s.players.filter(q => q.id !== me)
   const live = foes.filter(q => q.alive)
   const avg = live.length ? live.reduce((a, q) => a + q.life, 0) / live.length : 0
-  const v = 0.5 + 0.022 * (p.life - avg) + 0.12 * (1 - live.length / Math.max(1, foes.length)) + 0.02 * p.treasures.length
+  const v = 0.5 + 0.022 * (p.life - avg) + 0.12 * (1 - live.length / Math.max(1, foes.length)) + 0.02 * p.treasures.length + 0.03 * (p.creatures?.length ?? 0)
   return Math.max(0.06, Math.min(0.95, v))
 }
 

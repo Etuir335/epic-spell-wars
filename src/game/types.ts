@@ -10,12 +10,15 @@ export interface SpellCard {
   slot: Exclude<SpellType, 'wild'> // место в заклинании (тип, который заменяет «Шальная магия»)
   on?: boolean // карта объявлена (следующий шаг применит её эффект)
   done?: boolean // эффект применён
-  from?: string // откуда пришла карта (для журнала): 'wild' | 'added' | 'stolen'
+  from?: string // откуда пришла карта (для журнала): 'wild' | 'added' | 'stolen' | 'creature'
+  stay?: boolean // тварь получила «СТОЯТЬ!» — останется в игре после хода
 }
 
 // Безумные правила испытания дня и боссы
 export type Mod = 'wild' | 'reverse' | 'blood' | 'swap' | 'dice' | 'zombie' | 'greedy' | 'fever' | 'mirror'
 export type BossKind = 'grandpa' | 'slime' | 'mirror'
+// Наборы карт: база «Битва на горе Черепламени» и дополнения
+export type CardSet = 'base' | 'swamp'
 
 export interface PlayerState {
   id: number // место за столом по часовой стрелке; левый враг — следующий живой по возрастанию
@@ -41,6 +44,11 @@ export interface PlayerState {
   extraDice: number // «От Мордоеда» — +кубики к могучим броскам в этом раунде
   firstTurnDie?: boolean // «Шлакошангри-ла» — +1 кубик на первом ходу игры
   reservedWild?: CardId[] // «Пастбище шальных сердиторогов» — отложенные «Шальные магии»
+  // «Мессиво на грибучем болоте»
+  creatures?: CardId[] // твари в игре (остались после «СТОЯТЬ!»)
+  deadSigns?: School[] // знаки с карт дохлых колдунов прошлой игры
+  keep?: number[] // сокровища, которые не сбрасываются в конце этой игры («Дерьмо вопрос»)
+  extraDraw?: number // «Текучий любимый кетчуп»: сколько лишних карт добрать
 }
 
 export interface TurnState {
@@ -48,6 +56,11 @@ export interface TurnState {
   stage: 'start' | 'reveal' | 'cards' | 'end'
   hadWild: boolean // в заклинании была «Шальная магия» (для Ахалая и гульфика)
   deliveryAll: boolean // «Шерочка с Машерочкой»: жертвы прихода — все враги
+  allStay?: boolean // «От Рюмкенштильцхена»: все твари в этот ход получают «СТОЯТЬ!»
+  usedT?: number[] // сокровища «раз в свой ход», уже применённые
+  sorcHand?: string // рука, при которой колдунство уже предлагали
+  first?: boolean // ходит первым в раунде
+  creaturesDone?: boolean // сокровища-твари уже сработали
 }
 
 export interface QOption { v: number | string; label: string; card?: { deck: 'spells' | 'treasures' | 'dead'; index: number }; player?: number }
@@ -81,7 +94,7 @@ export type Ev =
   | { k: 'lose'; p: number; t: number }
   | { k: 'dead'; p: number; c: CardId }
   | { k: 'end'; p: number }
-  | { k: 'over'; winner: number; champion: boolean }
+  | { k: 'over'; winner: number; champion: boolean; tr?: number[][] } // tr — сокровища до сброса в конце игры (для показа)
 
 export interface TurnRecord { game: number; round: number; actor: number; cards: CardId[]; at: number }
 
@@ -92,6 +105,7 @@ export interface GameState {
   mods?: Mod[] // безумные правила (испытание дня)
   hits?: number // «Отражающий щит»: счётчик ударов
   mirrorOf?: { index: number; slot: string }[] // «Зеркальный ты»: прошлое заклинание человека
+  sets?: CardSet[] // наборы карт (нет — только база)
   tid?: number // номер турнира (начальный seed) — чтобы статистика не считала одни события дважды
   // start — подготовка новой игры (карты дохлых колдунов), build — выкладывают заклинания,
   // resolve — ходы, gameover — игра окончена (ждём nextGame), tournament — турнир окончен

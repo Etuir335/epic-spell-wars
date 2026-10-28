@@ -33,6 +33,39 @@ const SG = { 'травы': 'grass', 'угара': 'fire', 'мрака': 'dark', 
 for (const t of treasures) t.school = t.school ? SG[t.school] : null
 const dead = rows('transcript/dead.md').map(([n, c, name, text]) => ({ index: +n, copies: +c, name, text }))
 
+// ---------- «Мессиво на грибучем болоте»: нумерация продолжает базу ----------
+const SIGN = { 'Трава': 'grass', 'Порча': 'hex', 'Кумар': 'haze', 'Мрак': 'dark', 'Угар': 'fire' }
+const SIGN_OF = { 'травы': 'grass', 'угара': 'fire', 'мрака': 'dark', 'кумара': 'haze', 'порчи': 'hex' }
+const OFF = { spells: 64, treasures: 26, dead: 8 }
+const SORC = { 'заводил': 'source', 'наворота': 'quality', 'прихода': 'delivery' }
+for (const [n, t, name, sc, ini, text] of rows('transcript/swamp-spells.md')) {
+  const [a, b] = sc.split('+').map(x => SIGN[x.trim()])
+  const md = mighty(text)
+  const sorc = text.match(/Колдунство: сбрось 2 (заводил|наворота|прихода)/)
+  spells.push({
+    index: OFF.spells + +n, type: TYPE[t.replace('*', '')], name, school: a, ...(b ? { school2: b } : {}),
+    initiative: ini === '—' ? null : +ini, copies: 2, promo: false, set: 'swamp',
+    ...(t.includes('*') ? { creature: true } : {}),
+    ...(sorc ? { sorcery: SORC[sorc[1]] } : {}),
+    ...(text.includes('Пережор:') ? { overdose: true } : {}),
+    ...(text.includes('Нежданчик:') ? { surprise: true } : {}),
+    ...(md ? { victim: md.victim, mighty: md.tiers } : { text }),
+  })
+}
+for (const [n, name, text] of rows('transcript/swamp-treasures.md')) {
+  const cr = text.match(/считается тварью со знаком (\S+?)\./)
+  const md = cr ? mighty(text.replace(/^.*?(?=Жертва: )/, '')) : null
+  treasures.push({
+    index: OFF.treasures + +n, name, promo: false, text, school: null, set: 'swamp',
+    ...(text.includes('Вечное.') ? { eternal: true } : {}),
+    ...(cr ? { creature: SIGN_OF[cr[1]], victim: md?.victim, mighty: md?.tiers } : {}),
+  })
+}
+for (const [n, c, name, text] of rows('transcript/swamp-dead.md')) {
+  dead.push({ index: OFF.dead + +n, copies: +c, name, text, set: 'swamp',
+    school: SIGN_OF[(text.match(/считается картой со знаком (\S+) в каждом/) || [])[1]] ?? null })
+}
+
 const out = `// СГЕНЕРИРОВАНО scripts/build-data.mjs из transcript/*.md — правьте расшифровку и перезапускайте.
 // Картинка карты: assets/cards/<колода>/<index>.webp
 
@@ -43,9 +76,19 @@ export interface SpellData {
   index: number; type: SpellType; name: string; school: School | null; initiative: number | null
   copies: number; promo: boolean
   text?: string; victim?: string; mighty?: MightyTier[]
+  set?: 'swamp' // дополнение (нет — база)
+  school2?: School // второй знак (приходы болота)
+  creature?: boolean // тварь: «СТОЯТЬ!» оставляет её в игре
+  sorcery?: 'source' | 'quality' | 'delivery' // колдунство: сбрось 2 карты этого типа — и карта с руки идёт в заклинание
+  overdose?: boolean // пережор: при 4+ уникальных знаках эффект ещё раз
+  surprise?: boolean // нежданчик: если подох до этой карты — колдунства с руки
 }
-export interface TreasureData { index: number; name: string; promo: boolean; text: string; school: School | null }
-export interface DeadData { index: number; copies: number; name: string; text: string }
+export interface TreasureData {
+  index: number; name: string; promo: boolean; text: string; school: School | null
+  set?: 'swamp'; eternal?: boolean // вечное: не сбрасывается в конце игры и при смерти
+  creature?: School; victim?: string; mighty?: MightyTier[] // сокровище-тварь
+}
+export interface DeadData { index: number; copies: number; name: string; text: string; set?: 'swamp'; school?: School | null }
 
 export const SCHOOL_NAMES: Record<School, string> = { grass: 'Трава', hex: 'Порча', haze: 'Кумар', dark: 'Мрак', fire: 'Угар' }
 export const TYPE_NAMES: Record<SpellType, string> = { source: 'Заводила', quality: 'Наворот', delivery: 'Приход', wild: 'Шальная магия' }

@@ -34,7 +34,7 @@ export default function Arenas({ onPlay, onBack }: { onPlay: (s: GameState) => v
   const fight = (i: number) => {
     if (i > (st.arenaSeen ?? 0) && ARENAS[i].intro.length) { setIntro(i); return }
     const f = arenaFight(i, dailyMe())
-    const s = create(f.setup, (Math.random() * 2 ** 31) | 0, 1, f.mods)
+    const s = create(f.setup, (Math.random() * 2 ** 31) | 0, 1, f.mods, f.sets)
     saveLocal(s, ARENA_KEY)
     onPlay(s)
   }

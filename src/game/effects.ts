@@ -5,10 +5,10 @@ import {
   ev, leftEnemy, log, loseTreasure, mightyRoll, moveTreasure, neighborsOf, rand, randomEnemy, rightEnemy, rollEv, rollOne, signs, spellOf,
   strongest, tier, uniqueSigns, weakest, yesNo, cardName, type Ctx,
 } from './core.ts'
-import { TRAP, type CardId, type PlayerState } from './types.ts'
+import { TRAP, type CardId, type PlayerState, type SpellCard } from './types.ts'
 
-export interface CardInfo { index: number; school: School | null; type: SpellType; name: string }
-export interface E extends Ctx { p: PlayerState; card: CardInfo; depth: number }
+export interface CardInfo { index: number; school: School | null; school2?: School; type: SpellType; name: string }
+export interface E extends Ctx { p: PlayerState; card: CardInfo; depth: number; cur?: SpellCard }
 
 const M = (e: E) => tier(mightyRoll(e, e.p, e.card))
 const hitAll = (e: E, list: PlayerState[], n: number) => { for (const q of list) damage(e, q, n) }
@@ -330,7 +330,7 @@ export const EFFECTS: Record<number, (e: E) => void> = {
   // 57 От Розового Бутончика
   57: e => heal(e, e.p, uniqueSigns(e.p)),
   // 58 От Поганого Мерлина
-  58: e => { damage(e, strongest(e, e.p), alive(e.s).length); if (e.p.alive) drawDead(e.s, e.p) },
+  58: e => { damage(e, strongest(e, e.p), alive(e.s).length); if (e.p.alive) drawDead(e, e.p) },
   // 59 От Брадостреля
   59: e => copyCard(e, ['delivery']),
   // 60 От Пыща с Тыдыщем
@@ -358,5 +358,5 @@ export const EFFECTS: Record<number, (e: E) => void> = {
 
 export const cardInfo = (id: CardId): CardInfo => {
   const s = SPELLS[Math.floor(id / 10)]
-  return { index: s.index, school: s.school, type: s.type, name: s.name }
+  return { index: s.index, school: s.school, ...(s.school2 ? { school2: s.school2 } : {}), type: s.type, name: s.name }
 }

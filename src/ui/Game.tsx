@@ -1,5 +1,5 @@
 // Экран партии: враги сверху, арена в центре (режиссёр проигрывает ходы), я и рука веером снизу.
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Tutorial, { tutorialSeen } from './Tutorial'
 import { useStatsTracker } from './useStats'
 import { MOD_INFO } from '../daily'
@@ -10,7 +10,7 @@ import type { Action, GameState, PlayerState } from '../game/types'
 import { think } from '../ai/mcts'
 import Arena from './Arena'
 import { Card, cardText, cardTitle, HoverCtx, Portrait, SpellMeta, useIsDesktop, type CardRef } from './cards'
-import { shownLives, useDirector } from './director'
+import { shownLives, shownState, useDirector } from './director'
 import { shakeEl } from './fx'
 import { assetUrl, cardUrl } from '../assets'
 import HandDock, { PEEK_SIZES, SLOTS, SpellSlots, getPeek, setPeek, useBuilder } from './HandDock'
@@ -162,6 +162,7 @@ export default function Game({ store, onExit, net, ranked }: { store: GameStore;
   const arenaRef = useRef<HTMLDivElement>(null)
 
   const shown = shownLives(s, dir.pos)
+  const vs = useMemo(() => shownState(s, dir.pos), [s, dir.pos]) // стол как на экране (для показа, не для правил)
   const need = dir.done ? waitingFor(s).filter(id => !s.players[id].bot) : []
   const handoff = !net && humans.length > 1 && need.length > 0 && !need.includes(viewer) ? need[0] : null
   const me = viewer >= 0 ? s.players[viewer] : null
@@ -204,7 +205,7 @@ export default function Game({ store, onExit, net, ranked }: { store: GameStore;
   const over = dir.done && (s.phase === 'gameover' || s.phase === 'tournament')
   // враги по кругу от меня, как в движке (enemies): слева на экране — левый враг, справа — правый
   const n = s.players.length, from = Math.max(viewer, 0)
-  const others = Array.from({ length: n }, (_, k) => s.players[(from + k) % n]).filter(p => p.id !== viewer)
+  const others = Array.from({ length: n }, (_, k) => vs.players[(from + k) % n]).filter(p => p.id !== viewer)
   const waitNames = s.players.filter(q => q.alive && !q.spell).map(q => q.name)
   const clock = turnLeft != null ? ` · ⏳ ${turnLeft} с` : ''
   const idle = !dir.done ? '' : sending
@@ -226,7 +227,7 @@ export default function Game({ store, onExit, net, ranked }: { store: GameStore;
       </div>
     ) : me ? (
       <>
-        <MyBar s={s} p={me} life={shown[viewer].life} alive={shown[viewer].alive} casting={dir.scene.caster === viewer && !dir.done}
+        <MyBar s={vs} p={vs.players[viewer]} life={shown[viewer].life} alive={shown[viewer].alive} casting={dir.scene.caster === viewer && !dir.done}
           onClick={() => setSheet({ player: viewer })} />
         {botMe ? (
           <div className="wait bot-me">
@@ -246,7 +247,7 @@ export default function Game({ store, onExit, net, ranked }: { store: GameStore;
   return (
     <HoverCtx.Provider value={canHover ? setHovered : noHover}>
     <div className={`game-wrap${desk ? ' desk' : ''}`} style={{ ['--bg-img' as string]: `url(${assetUrl('assets/ui/arena-bg.webp')})` }}>
-    {desk && <LeftPanel s={s} pos={dir.pos} shown={shown} viewer={viewer} caster={dir.done ? null : dir.scene.caster} onPick={p => setSheet({ player: p })} />}
+    {desk && <LeftPanel s={vs} pos={dir.pos} shown={shown} viewer={viewer} caster={dir.done ? null : dir.scene.caster} onPick={p => setSheet({ player: p })} />}
     <div className="game">
       <div className="top-bar">
         <button onClick={() => setSheet('menu')}>☰</button>
@@ -265,7 +266,7 @@ export default function Game({ store, onExit, net, ranked }: { store: GameStore;
       ) : null}
       <div className={`foes n${others.length}`}>
         {others.map(p => (
-          <Seat key={p.id} s={s} p={p} life={shown[p.id].life} alive={shown[p.id].alive}
+          <Seat key={p.id} s={vs} p={p} life={shown[p.id].life} alive={shown[p.id].alive}
             casting={dir.scene.caster === p.id && !dir.done} count={dir.scene.counts?.[p.id]}
             onClick={() => setSheet({ player: p.id })} />
         ))}
@@ -369,7 +370,7 @@ export default function Game({ store, onExit, net, ranked }: { store: GameStore;
           </div>
         </div>
       )}
-      {sheet && typeof sheet === 'object' && <PlayerSheet s={s} p={s.players[sheet.player]} onClose={() => setSheet(null)} />}
+      {sheet && typeof sheet === 'object' && <PlayerSheet s={vs} p={vs.players[sheet.player]} onClose={() => setSheet(null)} />}
       {toast && <div className="toast">{toast}</div>}
       {tut && <Tutorial onClose={() => setTut(false)} />}
       {ach && <div className="ach-toast" key={ach.id}><span>{ach.icon}</span><div><small>Достижение!</small><b>{ach.name}</b><em>{ach.text}</em></div></div>}
@@ -413,7 +414,8 @@ function LeftPanel({ s, pos, shown, viewer, caster, onPick }: {
             <div className="side-pl-main">
               <b>{p.bot ? '🤖 ' : ''}{p.name}{p.id === viewer ? ' (ты)' : ''}{awayText(p)}</b>
               <span>{shown[p.id].alive ? <>❤ <em>{shown[p.id].life}</em></> : '☠ дохлый'} {p.medals > 0 && '🏅'.repeat(p.medals)}</span>
-              <div className={`side-tr${p.treasures.length + p.deadCards.length > 4 ? ' many' : ''}`}>
+              <div className={`side-tr${p.treasures.length + p.deadCards.length + (p.creatures?.length ?? 0) > 4 ? ' many' : ''}`}>
+                {p.creatures?.map(c => <Card key={'c' + c} c={{ deck: 'spells', index: Math.floor(c / 10) }} size="s" caption={false} />)}
                 {p.treasures.map(t => <Card key={t} c={{ deck: 'treasures', index: t }} size="s" caption={false} />)}
                 {p.deadCards.map(c => <Card key={'d' + c} c={{ deck: 'dead', index: Math.floor(c / 10) }} size="s" caption={false} />)}
               </div>
@@ -466,6 +468,7 @@ function Seat({ s, p, life, alive, casting, count, onClick }: {
       <div className="seat-name">{p.bot ? '🤖 ' : ''}{p.name}{p.away && <small className="away">{awayText(p)}</small>}</div>
       <div className="seat-info">
         {p.treasures.length > 0 && <span>💰{p.treasures.length}</span>}
+        {!!p.creatures?.length && <span>🐾{p.creatures.length}</span>}
         {alive && s.phase === 'build' && (p.spell ? <span className="ready">✓</span> : <span className="think">…</span>)}
         {n != null && <Backs n={n} />}
       </div>
@@ -485,6 +488,7 @@ function MyBar({ s, p, life, alive, casting, onClick }: { s: GameState; p: Playe
         <small>{s.medalsToWin} 🏅 до победы</small>
       </div>
       <div className="mybar-tr">
+        {p.creatures?.map(c => <Card key={'c' + c} c={{ deck: 'spells', index: Math.floor(c / 10) }} size="s" caption={false} />)}
         {p.treasures.map(t => <Card key={t} c={{ deck: 'treasures', index: t }} size="s" caption={false} />)}
         {p.deadCards.map(c => <Card key={'d' + c} c={{ deck: 'dead', index: Math.floor(c / 10) }} size="s" caption={false} />)}
       </div>
@@ -504,6 +508,12 @@ function PlayerSheet({ s, p, onClose }: { s: GameState; p: PlayerState; onClose:
         <div className="list-cards">{p.treasures.map(t => (
           <div key={t} className="lc"><Card c={{ deck: 'treasures', index: t }} size="s" caption={false} /><div><b>{TREASURES[t].name}</b><p>{TREASURES[t].text}</p></div></div>
         ))}</div>
+        {!!p.creatures?.length && <>
+          <h4>Твари в игре</h4>
+          <div className="list-cards">{p.creatures.map(c => { const d = SPELLS[Math.floor(c / 10)]; return (
+            <div key={c} className="lc"><Card c={{ deck: 'spells', index: d.index }} size="s" caption={false} /><div><b>{d.name}</b><p>{d.victim} Срабатывает в твой ход; может заслонить тебя от удара.</p></div></div>
+          ) })}</div>
+        </>}
         {p.deadCards.length > 0 && <>
           <h4>Карты дохлого колдуна</h4>
           <div className="list-cards">{p.deadCards.map(c => { const d = DEAD[Math.floor(c / 10)]; return (

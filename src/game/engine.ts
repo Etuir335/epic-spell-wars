@@ -2,27 +2,31 @@
 // останавливается (pending) и при ответе перезапускается с начала с накопленными ответами (RNG — в состоянии).
 import { DEAD, SPELLS, TREASURES } from '../data/cards.ts'
 import {
-  BOSS_LIFE, D, GameOver, NeedInput, START_LIFE, T, hasMod, alive, ask, cardName, choosePlayer, d6, damage, deadOf, drawDead, drawSpell, enemies, fillHand,
+  BOSS_LIFE, D, SD, ST, GameOver, creatureTreasures, isEternal, isLast, NeedInput, START_LIFE, T, hasMod, alive, ask, cardName, choosePlayer, d6, damage, deadOf, drawDead, drawSpell, enemies, fillHand,
   ev, gainTreasure, heal, isWild, leftEnemy, log, rand, rollEv, rightEnemy, shuffle, spellOf, treasureName, chooseHandCard, type Ctx,
 } from './core.ts'
-import { EFFECTS, addToSpell, cardInfo, replaceWild } from './effects.ts'
-import { TRAP, type Action, type CardId, type GameState, type Mod, type PlayerState, type SetupPlayer, type SpellCard } from './types.ts'
+import { addToSpell, cardInfo, replaceWild } from './effects.ts'
+import { applyCard, offers, treasureCreatures } from './swamp.ts'
+import { TRAP, type Action, type CardId, type CardSet, type GameState, type Mod, type PlayerState, type SetupPlayer, type SpellCard } from './types.ts'
 
 const RANK = { source: 0, quality: 1, delivery: 2 } as const
 
-export function create(setup: SetupPlayer[], seed: number, medalsToWin = 2, mods?: Mod[]): GameState {
+// Карта входит в выбранные наборы («Шальная магия» — во все)
+const inSets = (sets: CardSet[], c: { set?: string; index: number }, wild = false) => wild || sets.includes((c.set ?? 'base') as CardSet)
+
+export function create(setup: SetupPlayer[], seed: number, medalsToWin = 2, mods?: Mod[], sets: CardSet[] = ['base']): GameState {
   const s: GameState = {
-    rng: seed | 0, tid: seed | 0, ...(mods?.length ? { mods } : {}), phase: 'start', game: 0, round: 0, medalsToWin,
+    rng: seed | 0, tid: seed | 0, ...(mods?.length ? { mods } : {}), ...(sets.join() !== 'base' ? { sets } : {}), phase: 'start', game: 0, round: 0, medalsToWin,
     players: setup.map((p, id) => ({
       id, name: p.name, portrait: p.portrait, ...(p.bot ? { bot: p.bot } : {}), ...(p.uid ? { uid: p.uid } : {}), ...(p.boss ? { boss: p.boss } : {}),
       life: START_LIFE, alive: true, hand: [], treasures: [], deadCards: [], medals: 0,
       spell: null, acted: false, extraDice: 0,
     })),
-    deck: SPELLS.flatMap(c => Array.from({ length: c.copies }, (_, k) => c.index * 10 + k)),
+    deck: SPELLS.filter(c => inSets(sets, c, c.type === 'wild')).flatMap(c => Array.from({ length: c.copies }, (_, k) => c.index * 10 + k)),
     discard: [],
-    treasureDeck: TREASURES.map(t => t.index),
+    treasureDeck: TREASURES.filter(t => inSets(sets, t)).map(t => t.index),
     treasureDiscard: [],
-    deadDeck: DEAD.flatMap(c => Array.from({ length: c.copies }, (_, k) => c.index * 10 + k)),
+    deadDeck: DEAD.filter(c => inSets(sets, c)).flatMap(c => Array.from({ length: c.copies }, (_, k) => c.index * 10 + k)),
     deadDiscard: [],
     turn: null, pending: null, lastWinner: null, lastRoll: null, log: [], logBase: 0, ev: [], evBase: 0, turns: [], seq: 0,
   }
@@ -40,7 +44,10 @@ function startGame(ctx: Ctx) {
   ev(s, { k: 'game', n: s.game })
   log(s, `══ Игра ${s.game} ══`)
   for (const p of s.players) {
-    Object.assign(p, { life: p.boss ? BOSS_LIFE[p.boss] : hasMod(s, 'blood') ? 7 : START_LIFE, slimes: 0, alive: true, spell: null, acted: false, extraDice: 0, goLast: undefined, tieRoll: undefined, firstTurnDie: undefined })
+    Object.assign(p, { life: p.boss ? BOSS_LIFE[p.boss] : hasMod(s, 'blood') ? 7 : START_LIFE, slimes: 0, alive: true, spell: null, acted: false, extraDice: 0, goLast: undefined, tieRoll: undefined, firstTurnDie: undefined, creatures: undefined, extraDraw: undefined })
+    // знаки с карт дохлых колдунов болота — на всю эту игру
+    const sg = p.deadCards.map(c => DEAD[Math.floor(c / 10)].school).filter(x => !!x)
+    p.deadSigns = sg.length ? (sg as PlayerState['deadSigns']) : undefined
     fillHand(s, p)
   }
   for (const p of s.players) {
@@ -52,6 +59,17 @@ function startGame(ctx: Ctx) {
       if (k === D.artifact) gainTreasure(ctx, p)
       if (k === D.shangri) p.firstTurnDie = true
       if (k === D.payback) damage(ctx, choosePlayer(ctx, p, enemies(s, p), '«Ответочка из преисподней»: кому нанести 2 урона?'), 2)
+      if (k === SD.tomb) {
+        // «Гробница абсолютного зла»: открывать до карты с колдунством, взять её и следующую
+        const shown: CardId[] = []
+        for (let i = 0; i < 200; i++) {
+          const x = drawSpell(s)
+          if (x == null) break
+          if (spellOf(x).sorcery) { p.hand.push(x); const y = drawSpell(s); if (y != null) p.hand.push(y); break }
+          shown.push(x)
+        }
+        s.discard.push(...shown)
+      }
       if (k !== D.nirvana) log(s, `${p.name}: «${deadOf(c).name}».`)
     }
     p.life = Math.min(p.life, p.boss ? 99 : 25)
@@ -68,6 +86,7 @@ function orderKey(p: PlayerState, reverse = false): number[] {
   const del = sp.find(c => c.slot === 'delivery')
   let init = del && del.id >= 0 && !isWild(del.id) ? spellOf(del.id).initiative ?? 0 : 0
   if (p.treasures.includes(T.jetpack)) init += 10
+  if (p.treasures.includes(ST.purse)) init += 5
   return [p.goLast ? 1 : 0, impatient ? 0 : 1, reverse ? -sp.length : sp.length, -init]
 }
 const cmp = (a: number[], b: number[]) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] - b[i]; return 0 }
@@ -91,15 +110,28 @@ function nextActor(ctx: Ctx): PlayerState | null {
 
 function endRound(ctx: Ctx) {
   const { s } = ctx
+  // «если ты (и только ты) самый хилый колдун в конце раунда»
+  const live = alive(s), min = Math.min(...live.map(p => p.life))
+  const low = live.filter(p => p.life === min)
+  if (low.length === 1 && live.length > 1) {
+    const w = low[0]
+    if (w.treasures.includes(ST.ketchup)) w.extraDraw = 2
+    if (w.treasures.includes(ST.pinata)) heal(ctx, w, 2)
+    if (w.treasures.includes(ST.tale)) for (const q of enemies(s, w)) damage(ctx, q, 1)
+  }
   s.round++
   for (const p of s.players) {
     Object.assign(p, { spell: null, acted: false, extraDice: 0, goLast: undefined, tieRoll: undefined })
-    if (p.alive) fillHand(s, p)
-    else drawDead(s, p)
+    if (p.alive) {
+      fillHand(s, p)
+      for (let i = 0; i < (p.extraDraw ?? 0); i++) { const c = drawSpell(s); if (c != null) p.hand.push(c) }
+      p.extraDraw = undefined
+    } else drawDead(ctx, p)
   }
   s.phase = 'build'
   ev(s, { k: 'round', n: s.round })
   log(s, `— Раунд ${s.round} —`)
+  for (const p of alive(s)) if (p.treasures.includes(ST.fly)) heal(ctx, p, (p.creatures?.length ?? 0) + creatureTreasures(p).length)
   roundMadness(ctx)
 }
 
@@ -139,11 +171,23 @@ function roundMadness(ctx: Ctx) {
 
 function startTurn(ctx: Ctx, p: PlayerState) {
   const { s } = ctx
-  s.turn = { actor: p.id, stage: 'start', hadWild: false, deliveryAll: false }
+  const first = alive(s).every(q => !q.acted)
+  s.turn = { actor: p.id, stage: 'start', hadWild: false, deliveryAll: false, ...(first ? { first } : {}) }
   ev(s, { k: 'turn', p: p.id, n: p.spell!.length })
   log(s, `▶ Ходит ${p.name} (${p.spell!.length} карт.).`)
   if (p.treasures.includes(T.cannonLeft)) damage(ctx, leftEnemy(s, p), 1)
   if (p.treasures.includes(T.cannonRight)) damage(ctx, rightEnemy(s, p), 1)
+  const pick = (name: string) => choosePlayer(ctx, p, enemies(s, p), `${name}: кому нанести 1 урон?`)
+  if (p.treasures.includes(ST.timecar) && first) damage(ctx, pick('«Рыдван времени»'), 1)
+  if (p.treasures.includes(ST.slowpoke) && isLast(s, p)) damage(ctx, pick('«Руководство Тормозуна»'), 1)
+  if (p.treasures.includes(ST.afterlife)) {
+    const q = choosePlayer(ctx, p, alive(s).filter(q => q.hand.length), '«Колода загробной жизни»: кто сбрасывает карту?')
+    if (q) {
+      const id = chooseHandCard(ctx, q, 'Сбрось 1 карту')!
+      q.hand = q.hand.filter(x => x !== id); s.discard.push(id)
+      log(s, `${q.name} сбрасывает карту.`)
+    }
+  }
   s.turn.stage = 'reveal'
 }
 
@@ -172,6 +216,13 @@ function reveal(ctx: Ctx, p: PlayerState) {
     addToSpell(ctx, p, id, 'added')
   }
   if (turn.hadWild && p.treasures.includes(T.codpiece)) { heal(ctx, p, 2); gainTreasure(ctx, p) }
+  if (count <= 2 && p.treasures.includes(ST.dog)) { const c = drawSpell(s); if (c != null) p.hand.push(c) }
+  // твари, оставшиеся с прошлых раундов, снова в заклинании
+  if (p.creatures?.length) {
+    for (const id of p.creatures) p.spell!.push({ id, slot: 'delivery', from: 'creature' })
+    log(s, `🐾 Твари ${p.name} снова в деле: ${p.creatures.map(cardName).join(', ')}.`)
+    p.creatures = []
+  }
   // «50 оттенков свинофермы»: такая же карта на руке у владельца
   for (const q of enemies(s, p).filter(q => q.treasures.includes(T.pigs))) {
     for (;;) {
@@ -216,11 +267,16 @@ function resolveNext(ctx: Ctx, p: PlayerState) {
     const info = cardInfo(cur.id)
     if (info.school === 'dark') for (const q of enemies(s, p)) if (q.treasures.includes(T.crown)) damage(ctx, p, 1)
     if (!p.alive) return
-    EFFECTS[info.index]?.(Object.assign(ctx, { p, card: info, depth: 0 }))
+    applyCard(ctx, p, cur.id, cur)
     return
   }
+  if (offers(ctx, p)) return
   const left = p.spell!.filter(c => !c.done)
-  if (!left.length) { s.turn!.stage = 'end'; return }
+  if (!left.length) {
+    if (creatureTreasures(p).length && !s.turn!.creaturesDone) { s.turn!.creaturesDone = true; treasureCreatures(ctx, p); return }
+    s.turn!.stage = 'end'
+    return
+  }
   const r = Math.min(...left.map(c => RANK[c.slot]))
   const cand = left.filter(c => RANK[c.slot] === r)
   const v = ask(ctx, {
@@ -237,7 +293,12 @@ function endTurn(ctx: Ctx, p: PlayerState) {
   const { s } = ctx
   const rec = s.turns.at(-1)
   if (rec && rec.actor === p.id && p.spell?.length) rec.cards = p.spell.map(c => c.id) // с добавленными картами
-  s.discard.push(...(p.spell ?? []).filter(c => c.id >= 0).map(c => c.id))
+  // твари со «СТОЯТЬ!» остаются в игре
+  const allStay = !!s.turn?.allStay
+  const stays = (c: SpellCard) => p.alive && c.id >= 0 && !!spellOf(c.id).creature && (c.stay || (allStay && c.done))
+  const kept = (p.spell ?? []).filter(stays).map(c => c.id)
+  if (kept.length) p.creatures = [...(p.creatures ?? []), ...kept]
+  s.discard.push(...(p.spell ?? []).filter(c => c.id >= 0 && !kept.includes(c.id)).map(c => c.id))
   if ((p.spell ?? []).some(c => c.id === TRAP)) (p.alive ? p.treasures : s.treasureDiscard).push(T.trap)
   p.spell = []
   ev(s, { k: 'end', p: p.id })
@@ -261,15 +322,18 @@ function endGame(s: GameState) {
       }
     }
   }
+  const tr = s.players.map(p => [...p.treasures])
   for (const p of s.players) {
-    s.discard.push(...p.hand, ...(p.spell ?? []).filter(c => c.id >= 0).map(c => c.id))
+    s.discard.push(...p.hand, ...(p.spell ?? []).filter(c => c.id >= 0).map(c => c.id), ...(p.creatures ?? []))
     if (p.spell?.some(c => c.id === TRAP)) p.treasures.push(T.trap)
-    s.treasureDiscard.push(...p.treasures)
-    Object.assign(p, { hand: [], treasures: [], spell: null, acted: false })
+    // вечные сокровища и «Дерьмо вопрос» остаются
+    const stay = p.treasures.filter(t => isEternal(t) || p.keep?.includes(t))
+    s.treasureDiscard.push(...p.treasures.filter(t => !stay.includes(t)))
+    Object.assign(p, { hand: [], treasures: stay, spell: null, acted: false, creatures: undefined, keep: undefined })
   }
   s.turn = null
   s.phase = w && w.medals >= s.medalsToWin ? 'tournament' : 'gameover'
-  ev(s, { k: 'over', winner: w ? w.id : -1, champion: s.phase === 'tournament' })
+  ev(s, { k: 'over', winner: w ? w.id : -1, champion: s.phase === 'tournament', tr })
   if (s.phase === 'tournament') log(s, `🏆 ${w!.name} выигрывает турнир!`)
 }
 
