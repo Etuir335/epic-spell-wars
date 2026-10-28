@@ -1,5 +1,6 @@
 // Краткое обучение: несколько слайдов. Само показывается один раз перед первой партией, потом — из меню «Как играть».
 import { useState, type ReactNode } from 'react'
+import { music, useMusic } from './music'
 
 const KEY = 'esw-tutorial-seen'
 export function tutorialSeen() { try { return localStorage.getItem(KEY) === '1' } catch { return true } }
@@ -57,9 +58,11 @@ export default function Tutorial({ onClose }: { onClose: () => void }) {
   const close = () => { markSeen(); onClose() }
   const last = i === SLIDES.length - 1
   const sl = SLIDES[i]
+  const mus = useMusic(false) // только следим, музыку не включаем
   return (
     <div className="sheet-back tut-back">
       <div className="tut" key={i}>
+        {mus.tracks.length > 0 && <button className={`tut-music${mus.on ? '' : ' off'}`} onClick={() => music.toggle()} title="Музыка">{mus.on ? '🎵' : '🔇'}</button>}
         <div className="tut-icon">{sl.icon}</div>
         <h3>{sl.title}</h3>
         <div className="tut-body">{sl.body}</div>

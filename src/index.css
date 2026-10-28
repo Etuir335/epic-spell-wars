@@ -494,3 +494,18 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .board b { color: #ffe2b0; }
 .mods-bar { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 2px 8px 4px; }
 .mods-bar > * { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: #5a1414cc; border: 1px solid #ff9d3a66; color: #ffe2b0; }
+
+/* выбор колдуна — планшетами */
+.wiz-sheet { max-height: 92vh; }
+.wiz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; margin-bottom: 8px; }
+.wiz-grid button { background: none; border: 3px solid transparent; border-radius: 10px; padding: 0; overflow: hidden; line-height: 0; }
+.wiz-grid button.on { border-color: var(--gold); box-shadow: 0 0 14px #ffc53188; }
+.wiz-grid button.taken { opacity: .35; }
+.wiz-grid img { width: 100%; display: block; aspect-ratio: 517 / 737; object-fit: cover; }
+.wiz-look { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 60; background: #000e; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 14px; animation: fadeIn .15s; }
+.wiz-look img { max-width: 100%; max-height: calc(100vh - 110px); border-radius: 14px; box-shadow: 0 0 40px #ff6a1a55, 0 10px 30px #000; animation: placeIn .25s ease-out; }
+.wiz-look-btns { display: flex; gap: 8px; width: 100%; max-width: 460px; }
+.wiz-look-btns .btn.gold { flex: 1; }
+.tut { position: relative; }
+.tut-music { position: absolute; top: 10px; right: 10px; background: #0006; border: 1px solid #ffffff26; border-radius: 10px; font-size: 18px; padding: 4px 8px; }
+.tut-music.off { opacity: .6; }

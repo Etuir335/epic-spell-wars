@@ -6,6 +6,7 @@ import { useNetGame } from '../net/useNetGame'
 import { claimAdmin, deleteSong, uploadSong, watchLibrary, type LibSong } from '../net/library'
 import { shareInvite, tgUser } from '../telegram'
 import { Portrait } from './cards'
+import WizardPicker from './WizardPicker'
 import Game from './Game'
 
 const PROFILE = 'esw-profile'
@@ -132,18 +133,7 @@ function Shell({ onBack, children, title = 'Игра по сети' }: { onBack:
 }
 
 function PortraitPicker({ value, onPick, onClose }: { value: number; onPick: (p: number) => void; onClose: () => void }) {
-  return (
-    <div className="sheet-back" onClick={onClose}>
-      <div className="sheet" onClick={e => e.stopPropagation()}>
-        <h3>Выбери колдуна</h3>
-        <div className="portrait-grid">
-          {Array.from({ length: PORTRAITS }, (_, k) => (
-            <button key={k} className={value === k ? 'on' : ''} onClick={() => onPick(k)}><Portrait i={k} size={64} /></button>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
+  return <WizardPicker value={value} onPick={onPick} onClose={onClose} />
 }
 
 function RoomView({ code, uid, onLeave, onBack }: { code: string; uid: string; onLeave: () => void; onBack: () => void }) {

@@ -164,7 +164,10 @@ export function useDirector(s: GameState) {
     setScene({ ...sc, banner: null })
     setPos(end)
   }
-  return { pos: p, done: p >= end, scene, skip, fast, setFast }
+  // впереди только строки журнала (например «X выкладывает заклинание») — это не анимация: интерфейс хода не прячем,
+  // иначе у собирающего заклинание на миг пропадают ячейки и сбрасывается перетаскивание
+  const done = p >= end || s.ev.slice(p - s.evBase).every(e => e.k === 'log')
+  return { pos: p, done, scene, skip, fast, setFast }
 }
 
 // Жизни/живость «как на экране»: откатываем ещё не показанные события.

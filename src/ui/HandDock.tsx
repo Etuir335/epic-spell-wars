@@ -48,6 +48,12 @@ function Badge({ id }: { id: CardId }) {
 interface Drag { id: CardId; from: 'hand' | Slot; x: number; y: number; over: Slot | null; started: boolean; sx: number; sy: number }
 
 // ---------- сборщик: что лежит в ячейках, что тащим, что рассматриваем ----------
+// Насколько крупно показывать карту при долгом нажатии (настройка игрока: в автобусе — покрупнее)
+export const PEEK_SIZES = [{ k: 0.8, label: 'S' }, { k: 1, label: 'M' }, { k: 1.3, label: 'L' }, { k: 1.6, label: 'XL' }]
+let peekK = (() => { try { return Number(localStorage.getItem('esw-peek')) || 1 } catch { return 1 } })()
+export const getPeek = () => peekK
+export function setPeek(k: number) { peekK = k; try { localStorage.setItem('esw-peek', String(k)) } catch { /* не важно */ } }
+
 export function useBuilder(hand: CardId[], hasTrap: boolean, canBuild: boolean, resetKey: string) {
   const [slots, setSlots] = useState<Partial<Record<Slot, CardId>>>({})
   const [goLast, setGoLast] = useState(false)
@@ -251,7 +257,7 @@ export default function HandDock({ b, waitText }: { b: Builder; waitText?: strin
         {shownPeek != null && inHand.includes(shownPeek) && (() => {
           // увеличенная копия над картой: по центру карты, не вылезает за края веера
           const i = inHand.indexOf(shownPeek)
-          const PW = Math.min(CW * (wide ? 1.5 : 1.9), wide ? 360 : 250), PH = PW * 1.413
+          const PW = Math.min(Math.min(CW * (wide ? 1.5 : 1.9), wide ? 360 : 250) * peekK, fanW - 4), PH = PW * 1.413
           // долгое нажатие (палец): низ копии чуть выше пальца и по центру пальца — палец не закрывает текст;
           // наведение мышью: над самой картой
           const fan = fanRef.current?.getBoundingClientRect()

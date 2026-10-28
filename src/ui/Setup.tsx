@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import type { SetupPlayer } from '../game/types'
 import { Portrait } from './cards'
+import WizardPicker from './WizardPicker'
 
 const NAMES = ['Колдун', 'Ведьма', 'Чародей', 'Маг', 'Некромант', 'Шаман']
 const PORTRAITS = 41
@@ -46,18 +47,8 @@ export default function Setup({ onStart, onBack }: { onStart: (p: SetupPlayer[],
       <button className="btn wide gold" disabled={!ok} onClick={() => onStart(seats.map(s => ({ ...s, name: s.name.trim() })), medals)}>В бой!</button>
 
       {pick != null && (
-        <div className="sheet-back" onClick={() => setPick(null)}>
-          <div className="sheet" onClick={e => e.stopPropagation()}>
-            <h3>Выбери колдуна</h3>
-            <div className="portrait-grid">
-              {Array.from({ length: PORTRAITS }, (_, k) => (
-                <button key={k} className={seats[pick].portrait === k ? 'on' : ''} onClick={() => { upd(pick, { portrait: k }); setPick(null) }}>
-                  <Portrait i={k} size={64} />
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+        <WizardPicker value={seats[pick].portrait} taken={seats.filter((_, k) => k !== pick).map(s => s.portrait)}
+          onPick={k => upd(pick, { portrait: k })} onClose={() => setPick(null)} />
       )}
     </div>
   )

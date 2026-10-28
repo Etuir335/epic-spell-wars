@@ -13,7 +13,7 @@ import { Card, cardText, cardTitle, HoverCtx, Portrait, SpellMeta, useIsDesktop,
 import { shownLives, useDirector } from './director'
 import { shakeEl } from './fx'
 import { assetUrl, cardUrl } from '../assets'
-import HandDock, { SpellSlots, useBuilder } from './HandDock'
+import HandDock, { PEEK_SIZES, SpellSlots, getPeek, setPeek, useBuilder } from './HandDock'
 import { simpleBotMove } from './simpleBot'
 import { isMuted, setMuted, sfx } from './sound'
 import { music, useMusic } from './music'
@@ -156,6 +156,7 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
     strongBots: others0.length > 0 && others0.every(p => p.bot === 3),
   })
   const [confirmLeave, setConfirmLeave] = useState(false)
+  const [peek, setPeekK] = useState(getPeek())
   const [tut, setTut] = useState(() => !tutorialSeen()) // первый раз — обучение перед боем
   const arenaRef = useRef<HTMLDivElement>(null)
 
@@ -347,6 +348,12 @@ export default function Game({ store, onExit, net }: { store: GameStore; onExit:
               <button className="btn wide danger" onClick={net.onLeave}>Да, покинуть</button>
             </>}
             {!confirmLeave && <button className="btn wide" onClick={() => { setSheet(null); setTut(true) }}>📖 Как играть</button>}
+            {!confirmLeave && (
+              <div className="row">
+                <span>Карта при удержании:</span>
+                <div className="seg">{PEEK_SIZES.map(p => <button key={p.k} className={peek === p.k ? 'on' : ''} onClick={() => { setPeek(p.k); setPeekK(p.k) }}>{p.label}</button>)}</div>
+              </div>
+            )}
             <button className="btn wide ghost" onClick={() => { setSheet(null); setConfirmLeave(false) }}>Назад к бою</button>
           </div>
         </div>
