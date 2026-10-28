@@ -1,6 +1,7 @@
 // Настройка локальной партии: 2–6 мест (человек или бот), имена, портреты, медалей до победы.
 import { useState } from 'react'
-import type { SetupPlayer } from '../game/types'
+import type { CardSet, SetupPlayer } from '../game/types'
+import SetPicker from './SetPicker'
 import { Portrait } from './cards'
 import WizardPicker from './WizardPicker'
 import { wizardName } from '../wizards'
@@ -8,12 +9,13 @@ import { wizardName } from '../wizards'
 const PORTRAITS = 41
 const BOT_LEVELS = ['Человек', 'Бот: лёгкий', 'обычный', 'сильный']
 
-export default function Setup({ onStart, onBack }: { onStart: (p: SetupPlayer[], medals: number) => void; onBack: () => void }) {
+export default function Setup({ onStart, onBack }: { onStart: (p: SetupPlayer[], medals: number, sets: CardSet[]) => void; onBack: () => void }) {
   const [seats, setSeats] = useState<SetupPlayer[]>(() => {
     const me = { name: 'Я', portrait: rnd() }
     return [me, botSeat([me])]
   })
   const [medals, setMedals] = useState(2)
+  const [sets, setSets] = useState<CardSet[]>(['base'])
   const [pick, setPick] = useState<number | null>(null)
 
   const upd = (i: number, p: Partial<SetupPlayer>) => setSeats(ss => ss.map((s, k) => (k === i ? { ...s, ...p } : s)))
@@ -43,8 +45,9 @@ export default function Setup({ onStart, onBack }: { onStart: (p: SetupPlayer[],
         <span>Медалей до победы:</span>
         <div className="seg">{[1, 2, 3].map(n => <button key={n} className={medals === n ? 'on' : ''} onClick={() => setMedals(n)}>{n}</button>)}</div>
       </div>
+      <SetPicker value={sets} onChange={setSets} />
       <p className="hint">Несколько людей — играют по очереди на одном телефоне («передайте телефон»).</p>
-      <button className="btn wide gold" disabled={!ok} onClick={() => onStart(seats.map(s => ({ ...s, name: s.name.trim() })), medals)}>В бой!</button>
+      <button className="btn wide gold" disabled={!ok} onClick={() => onStart(seats.map(s => ({ ...s, name: s.name.trim() })), medals, sets)}>В бой!</button>
 
       {pick != null && (
         <WizardPicker value={seats[pick].portrait} taken={seats.filter((_, k) => k !== pick).map(s => s.portrait)}

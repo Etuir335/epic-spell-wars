@@ -66,9 +66,9 @@ export default function App() {
         </div>
       )}
       {screen === 'setup' && (
-        <Setup onBack={() => setScreen('menu')} onStart={(players, medals) => {
+        <Setup onBack={() => setScreen('menu')} onStart={(players, medals, sets) => {
           clearLocal()
-          setGame(newLocalGame(players, medals))
+          setGame(newLocalGame(players, medals, sets))
           setGen(g => g + 1)
           setScreen('game')
         }} />

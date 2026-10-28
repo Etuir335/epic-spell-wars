@@ -1,7 +1,7 @@
 // Локальная партия (на одном телефоне): состояние в localStorage. Сетевой store (фаза 5) — с тем же интерфейсом.
 import { useCallback, useState } from 'react'
 import { create, tryReduce } from '../game/engine'
-import type { Action, GameState, SetupPlayer } from '../game/types'
+import type { Action, GameState, SetupPlayer, CardSet } from '../game/types'
 
 export interface GameStore {
   state: GameState
@@ -25,8 +25,8 @@ function save(s: GameState, key = KEY) {
 
 export const saveLocal = save
 
-export function newLocalGame(players: SetupPlayer[], medalsToWin: number): GameState {
-  const s = create(players, (Math.random() * 2 ** 31) | 0, medalsToWin)
+export function newLocalGame(players: SetupPlayer[], medalsToWin: number, sets?: CardSet[]): GameState {
+  const s = create(players, (Math.random() * 2 ** 31) | 0, medalsToWin, undefined, sets)
   save(s)
   return s
 }

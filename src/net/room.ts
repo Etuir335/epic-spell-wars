@@ -7,7 +7,7 @@ import {
   type Timestamp, type Unsubscribe,
 } from 'firebase/firestore'
 import { create } from '../game/engine.ts'
-import type { Action, GameState } from '../game/types.ts'
+import type { Action, CardSet, GameState } from '../game/types.ts'
 import { getDb } from './firebase.ts'
 
 export const ROOMS = 'esw'
@@ -19,6 +19,7 @@ export interface Room {
   host: string
   status: 'lobby' | 'game'
   medalsToWin: number
+  sets?: CardSet[] // дружеский бой: наборы карт (нет — база)
   bots: BotSeat[]
   state: string | null // JSON GameState
   v: number
@@ -100,7 +101,7 @@ export async function startGame(room: Room, members: Member[]) {
     ...members.map(m => ({ uid: m.uid, name: m.name, portrait: m.portrait })),
     ...room.bots.map(b => ({ name: b.name, portrait: b.portrait, bot: b.level })),
   ]
-  const state = create(players, Math.floor(Math.random() * 2 ** 31), room.medalsToWin)
+  const state = create(players, Math.floor(Math.random() * 2 ** 31), room.medalsToWin, undefined, room.sets)
   await updateRoom(room.code, { status: 'game', state: JSON.stringify(state), v: 1, open: false, startAt: null })
 }
 

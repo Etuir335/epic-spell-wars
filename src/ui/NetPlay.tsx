@@ -7,6 +7,7 @@ import { claimAdmin, deleteSong, uploadSong, watchLibrary, type LibSong } from '
 import { shareInvite, tgUser } from '../telegram'
 import { Portrait } from './cards'
 import WizardPicker from './WizardPicker'
+import SetPicker, { setsLabel } from './SetPicker'
 import { wizardName } from '../wizards'
 import Game from './Game'
 
@@ -112,7 +113,7 @@ function RoomList({ onBack, onJoin, busy, err, canJoin }: { onBack: () => void; 
           <div className="seat-row room-row" key={r.code}>
             <div className="seat-main">
               <b>{r.quick ? '⚡ ' : ''}Комната {r.hostName ?? r.code}</b>
-              <small className="hint">Колдунов: {n}/{MAX_SEATS}{r.bots.length ? ` (ботов ${r.bots.length})` : ''} · медалей до победы: {r.medalsToWin}</small>
+              <small className="hint">Колдунов: {n}/{MAX_SEATS}{r.bots.length ? ` (ботов ${r.bots.length})` : ''} · медалей до победы: {r.medalsToWin} · {setsLabel(r.sets)}</small>
             </div>
             <button className="btn gold" disabled={busy || !canJoin} onClick={() => onJoin(r.code)}>Войти</button>
           </div>
@@ -267,9 +268,10 @@ function RoomView({ code, uid, onLeave, onBack }: { code: string; uid: string; o
             <span>Медалей до победы:</span>
             <div className="seg">{[1, 2, 3].map(n => <button key={n} className={room.medalsToWin === n ? 'on' : ''} onClick={() => void updateRoom(code, { medalsToWin: n })}>{n}</button>)}</div>
           </div>
+          <SetPicker value={room.sets} onChange={sets => void updateRoom(code, { sets })} />
           <button className="btn gold wide" disabled={total < 2} onClick={begin}>{total < 2 ? 'Нужно хотя бы 2 колдуна' : 'В бой!'}</button>
         </>
-      ) : <p className="hint">Ждём, когда хост начнёт турнир…</p>}
+      ) : <p className="hint">Карты: {setsLabel(room.sets)}. Ждём, когда хост начнёт турнир…</p>}
       <button className="btn wide ghost" onClick={() => { if (g.isHost) void updateRoom(code, { open: false, startAt: null }); void leaveRoom(code, uid); onLeave() }}>Выйти из комнаты</button>
       {pick && me && <PortraitPicker value={me.portrait} onPick={p => { void updateMember(code, uid, { portrait: p }); setPick(false) }} onClose={() => setPick(false)} />}
       {toast && <div className="toast">{toast}</div>}
