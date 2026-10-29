@@ -70,3 +70,25 @@ export function arenaFight(i: number, me: { name: string; portrait: number }): {
   if (i === 3) return { setup: [me, rival(2), rival(2), rival(2)], mods: [], sets: ['swamp'] }
   return { setup: [me, rival(1), rival(1)], mods: [] }
 }
+
+// Правила арен для турнира и сетевой игры: обычные, с боссом (добавляется бот-босс), безумные (2 случайных правила).
+export type Rules = 'plain' | 'boss' | 'mad'
+export const RULES: { v: Rules; label: string; arena: number }[] = [
+  { v: 'plain', label: '⚔️ Обычные', arena: 0 },
+  { v: 'boss', label: '👴 Босс', arena: 1 },
+  { v: 'mad', label: '🌀 Безумные', arena: 2 },
+]
+export function withRules(rules: Rules | undefined, players: SetupPlayer[], net = false): { players: SetupPlayer[]; mods: Mod[] } {
+  const r = (n: number) => Math.floor(Math.random() * n)
+  if (rules === 'boss' && players.length < 6) { // за полным столом босс не помещается
+    const kinds = Object.keys(BOSS_INFO) as BossKind[]
+    const boss = kinds[r(kinds.length)], b = BOSS_INFO[boss], me = players[0]
+    return { players: [...players, { name: boss === 'mirror' ? `Зеркальный ${me.name}` : b.name, portrait: b.portrait < 0 ? me.portrait : b.portrait, bot: 2, boss }], mods: [] }
+  }
+  if (rules === 'mad') {
+    // «Колдовская лихорадка» в сети не работает — там свой таймер
+    const pool = MODS.filter(m => !net || m !== 'fever')
+    return { players, mods: [pool.splice(r(pool.length), 1)[0], pool.splice(r(pool.length), 1)[0]] }
+  }
+  return { players, mods: [] }
+}

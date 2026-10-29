@@ -1,5 +1,5 @@
 // Выбор набора карт для турнира и дружеского боя: только то, что открыто на аренах.
-import { ARENAS } from '../arenas'
+import { ARENAS, RULES, type Rules } from '../arenas'
 import type { CardSet } from '../game/types'
 import { useStatsData } from './useStats'
 
@@ -13,6 +13,23 @@ function useUnlocked(): (set: CardSet) => boolean {
   const st = useStatsData()
   return set => set === 'base' || !!st.arenaSkip || ARENAS.some((a, i) => a.sets?.includes(set) && i <= (st.arena ?? 0))
 }
+export const rulesLabel = (r?: Rules) => RULES.find(x => x.v === (r ?? 'plain'))!.label
+
+// Правила арены: открываются вместе с ареной
+export function RulesPicker({ value, onChange }: { value?: Rules; onChange: (r: Rules) => void }) {
+  const st = useStatsData()
+  const ok = (a: number) => !!st.arenaSkip || a <= (st.arena ?? 0)
+  return (
+    <div className="set-pick">
+      <span>Правила:</span>
+      <div className="seg">
+        {RULES.map(r => <button key={r.v} className={(value ?? 'plain') === r.v ? 'on' : ''} disabled={!ok(r.arena)} onClick={() => onChange(r.v)}>{ok(r.arena) ? r.label : '🔒 ' + r.label.split(' ').slice(1).join(' ')}</button>)}
+      </div>
+      {(value ?? 'plain') !== 'plain' && <small className="hint">{value === 'boss' ? 'За стол садится случайный босс — он враг всем.' : 'В каждом турнире — два случайных безумных правила.'}</small>}
+    </div>
+  )
+}
+
 export const setsLabel = (sets?: CardSet[]) => CHOICES.find(c => c.sets.join() === (sets ?? ['base']).join())?.label ?? '🌋 Основа'
 
 export default function SetPicker({ value, onChange }: { value?: CardSet[]; onChange: (sets: CardSet[]) => void }) {
