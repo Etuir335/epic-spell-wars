@@ -69,6 +69,11 @@ export function rollEv(s: GameState, p: PlayerState, dice: number[], total: numb
   log(s, `🎲 ${p.name}${label ? ` (${label})` : ''}: ${dice.join('+')}${dice.length > 1 || total !== dice[0] ? ` = ${total}` : ''}.`)
 }
 
+// Трюк босса / безумное правило: баннер на экране + строка журнала
+export function madEv(s: GameState, icon: string, title: string, sub: string, p?: number) {
+  ev(s, { k: 'mad', icon, title, sub, ...(p != null ? { p } : {}) })
+  log(s, `${icon} ${title} ${sub}`)
+}
 export function log(s: GameState, text: string) {
   ev(s, { k: 'log', t: text })
   s.log.push(text)
@@ -242,7 +247,7 @@ export function damage(ctx: Ctx, p: PlayerState | null, n: number) {
     ctx.s.hits = (ctx.s.hits ?? 0) + 1
     const att = ctx.s.players[from]
     if (ctx.s.hits % 3 === 0 && att.alive) {
-      log(ctx.s, `🪞 Отражающий щит! Удар по ${p.name} отлетает в ${att.name}.`)
+      madEv(ctx.s, '🪞', 'Отражающий щит!', `Удар по ${p.name} отлетает в ${att.name}.`, att.id)
       p = att
     }
   }
@@ -253,7 +258,7 @@ export function damage(ctx: Ctx, p: PlayerState | null, n: number) {
   if (p.life <= 0) kill(ctx, p)
   else if (p.boss === 'slime' && n >= 5) {
     p.slimes = (p.slimes ?? 0) + 1
-    log(ctx.s, `🟢 ${p.name} отпочковывает слизняка! Слизняков: ${p.slimes}.`)
+    madEv(ctx.s, '🟢', 'Слизняк отпочковался!', `${p.name}: слизняков уже ${p.slimes} — каждый плюётся каждый раунд.`, p.id)
   }
 }
 // Тварь заслоняет хозяина от урона врага (сбрасывается). Возвращает true, если урон поглощён.
@@ -298,7 +303,7 @@ export function kill(ctx: Ctx, p: PlayerState) {
   drawDead(ctx, p)
   const killer = s.turn ? s.players[s.turn.actor] : null
   if (hasMod(s, 'blood') && killer && killer !== p && killer.alive) {
-    log(s, `🩸 Кровавая луна: ${killer.name} пьёт силу жертвы.`)
+    madEv(s, '🩸', 'Кровавая луна!', `${killer.name} пьёт силу жертвы: +5 ❤.`, killer.id)
     heal(ctx, killer, 5)
   }
   if (alive(s).length <= 1) throw new GameOver()

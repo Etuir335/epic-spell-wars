@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Tutorial, { tutorialSeen } from './Tutorial'
 import { useStatsTracker } from './useStats'
-import { MOD_INFO } from '../daily'
+import { BOSS_INFO, MOD_INFO } from '../daily'
 import { DEAD, SPELLS, TREASURES } from '../data/cards'
 import { T } from '../game/core'
 import { waitingFor } from '../game/engine'
@@ -469,6 +469,7 @@ function Seat({ s, p, life, alive, casting, count, onClick }: {
       <div className="seat-info">
         {p.treasures.length > 0 && <span>💰{p.treasures.length}</span>}
         {!!p.creatures?.length && <span>🐾{p.creatures.length}</span>}
+        {p.boss && <span className="boss-tag" title={BOSS_INFO[p.boss].text}>{BOSS_INFO[p.boss].icon} босс{p.slimes ? ` · 🟢${p.slimes}` : ''}</span>}
         {alive && s.phase === 'build' && (p.spell ? <span className="ready">✓</span> : <span className="think">…</span>)}
         {n != null && <Backs n={n} />}
       </div>

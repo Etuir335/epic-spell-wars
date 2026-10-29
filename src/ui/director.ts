@@ -69,6 +69,7 @@ export function applyScene(sc: Scene, e: Ev, s: GameState): Scene {
     }
     case 'roll': return { ...sc, roll: { ...e, key: Math.random() } }
     case 'end': return { ...sc, cards: sc.cards.map(c => ({ ...c, on: false, done: true })), roll: null }
+    case 'mad': return { ...sc, banner: { text: `${e.icon} ${e.title}`, sub: e.sub, key: Math.random(), kind: 'mad' } }
     case 'over': {
       const w = e.winner >= 0 ? name(e.winner) : null
       return { ...sc, banner: { text: w ? `${w} — недобитый колдун!` : 'Все сдохли!', sub: e.champion ? 'Победа в турнире!' : '🏅', key: Math.random(), kind: 'over' } }
@@ -98,6 +99,7 @@ function duration(e: Ev, sc: Scene): number {
     case 'dead': return 500
     case 'end': return 450
     case 'over': return 1800
+    case 'mad': return 1900
   }
   void sc
   return 300
@@ -131,6 +133,7 @@ function play(e: Ev, sc: Scene) {
     case 'lose': floater(e.p, '−💰', 'lose'); break
     case 'dead': floater(e.p, '🪦', 'skull'); break
     case 'over': sfx.fanfare(); break
+    case 'mad': sfx.boom(); if (e.p != null) { glow(e.p, '#b14dff'); shake(e.p, 0, true) } break
   }
 }
 

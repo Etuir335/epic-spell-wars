@@ -2,7 +2,7 @@
 // останавливается (pending) и при ответе перезапускается с начала с накопленными ответами (RNG — в состоянии).
 import { DEAD, SPELLS, TREASURES } from '../data/cards.ts'
 import {
-  BOSS_LIFE, D, SD, ST, GameOver, creatureTreasures, isEternal, isLast, NeedInput, START_LIFE, T, hasMod, alive, ask, cardName, choosePlayer, d6, damage, deadOf, drawDead, drawSpell, enemies, fillHand,
+  BOSS_LIFE, D, SD, ST, GameOver, madEv, creatureTreasures, isEternal, isLast, NeedInput, START_LIFE, T, hasMod, alive, ask, cardName, choosePlayer, d6, damage, deadOf, drawDead, drawSpell, enemies, fillHand,
   ev, gainTreasure, heal, isWild, leftEnemy, log, rand, rollEv, rightEnemy, shuffle, spellOf, treasureName, chooseHandCard, type Ctx,
 } from './core.ts'
 import { addToSpell, cardInfo, replaceWild } from './effects.ts'
@@ -142,9 +142,10 @@ function roundMadness(ctx: Ctx) {
   if (hasMod(s, 'swap') && live.length > 1) {
     const hands = live.map(p => p.hand)
     live.forEach((p, i) => { p.hand = hands[(i - 1 + live.length) % live.length] })
-    log(s, '🔄 Обмен телами: все отдают руку соседу слева.')
+    madEv(s, '🔄', 'Обмен телами!', 'Все отдают руку соседу слева.')
   }
   if (hasMod(s, 'greedy')) {
+    madEv(s, '💰', 'Жадный дед раздаёт!', 'Всем по сокровищу. Больше трёх — кусаются.')
     for (const p of live) gainTreasure(ctx, p)
     for (const p of alive(s)) if (p.treasures.length > 3) { log(s, `💰 Сокровища кусают ${p.name}!`); damage(ctx, p, p.treasures.length - 3) }
   }
@@ -153,17 +154,17 @@ function roundMadness(ctx: Ctx) {
       const prey = alive(s).filter(q => q !== z)
       if (!prey.length) break
       const v = prey[rand(s, prey.length)]
-      log(s, `🧟 Зомби ${z.name} кусает ${v.name}!`)
+      madEv(s, '🧟', `Зомби ${z.name} кусается!`, `Жертва — ${v.name}.`, z.id)
       damage(ctx, v, Math.ceil(d6(s) / 2))
     }
   }
   for (const b of alive(s).filter(p => p.boss)) {
     if (b.boss === 'grandpa') {
-      log(s, `👴 ${b.name} орёт: «В моё время колдовали лучше!» — всем по 1 урону.`)
+      madEv(s, '👴', `${b.name} орёт!`, '«В моё время колдовали лучше!» — всем по 1 урону.', b.id)
       for (const q of enemies(s, b)) damage(ctx, q, 1)
     }
     if (b.boss === 'slime' && b.slimes) {
-      log(s, `🟢 Слизняки (${b.slimes}) плюются!`)
+      madEv(s, '🟢', `Слизняки плюются!`, `${b.slimes} слизн. — каждому врагу по ${b.slimes} урона.`, b.id)
       for (const q of enemies(s, b)) damage(ctx, q, b.slimes)
     }
   }
@@ -253,7 +254,7 @@ function mirrorSpell(s: GameState, p: PlayerState) {
       break
     }
   }
-  log(s, `🪞 ${p.name} повторяет твоё прошлое заклинание!`)
+  madEv(s, '🪞', `${p.name} кривляется!`, 'Повторяет твоё прошлое заклинание.', p.id)
 }
 
 // Применить следующую карту заклинания (несколько карт одного типа — в выбранном порядке).

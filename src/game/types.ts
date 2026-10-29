@@ -94,6 +94,7 @@ export type Ev =
   | { k: 'lose'; p: number; t: number }
   | { k: 'dead'; p: number; c: CardId }
   | { k: 'end'; p: number }
+  | { k: 'mad'; icon: string; title: string; sub: string; p?: number } // трюк босса или безумное правило — баннер
   | { k: 'over'; winner: number; champion: boolean; tr?: number[][] } // tr — сокровища до сброса в конце игры (для показа)
 
 export interface TurnRecord { game: number; round: number; actor: number; cards: CardId[]; at: number }
