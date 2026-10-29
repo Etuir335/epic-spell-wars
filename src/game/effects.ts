@@ -352,7 +352,7 @@ export const EFFECTS: Record<number, (e: E) => void> = {
   // 63 От Зачуханного Комбайна
   63: e => {
     const have = signs(e.p)
-    revealAndAdd(e, 2, c => { const sc = spellOf(c).school; return !!sc && have[sc] > 0 })
+    revealAndAdd(e, 2, c => [spellOf(c).school, spellOf(c).school2].some(sc => !!sc && have[sc] > 0))
   },
 }
 

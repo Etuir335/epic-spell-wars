@@ -278,7 +278,7 @@ function resolveNext(ctx: Ctx, p: PlayerState) {
   if (cur) {
     cur.done = true
     const info = cardInfo(cur.id)
-    if (info.school === 'dark') for (const q of enemies(s, p)) if (q.treasures.includes(T.crown)) damage(ctx, p, 1)
+    if (info.school === 'dark' || info.school2 === 'dark') for (const q of enemies(s, p)) if (q.treasures.includes(T.crown)) damage(ctx, p, 1)
     if (!p.alive) return
     applyCard(ctx, p, cur.id, cur)
     return
