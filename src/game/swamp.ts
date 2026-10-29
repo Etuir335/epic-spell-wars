@@ -297,6 +297,8 @@ export const SWAMP_EFFECTS: Record<number, (e: E) => void> = {
   // 59 Сиськокрут
   [at(59)]: e => { const v = victims(e, () => [chooseFoe(e)]), t = M(e); if (t === 0) discardRandom(e, e.p); else hitAll(e, v, t === 1 ? 2 : 3) },
 }
+// в общую таблицу — чтобы «Дискотечный» и «От Брадостреля» могли скопировать и карту болота
+Object.assign(EFFECTS, SWAMP_EFFECTS)
 
 // Эффект карты по индексу (база или болото), с пережором
 export function applyCard(ctx: Ctx, p: PlayerState, id: CardId, cur?: SpellCard) {
