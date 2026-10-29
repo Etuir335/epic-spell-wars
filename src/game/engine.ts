@@ -79,6 +79,19 @@ function startGame(ctx: Ctx) {
   s.phase = 'build'
 }
 
+// «Шальной вторник»: выложенные карты всех колдунов перемешиваются между ними по видам —
+// у каждого столько же заводил, наворотов и приходов, сколько он выложил, но чьих — неизвестно.
+function shuffleSpells(ctx: Ctx) {
+  const { s } = ctx
+  const live = alive(s).filter(p => p.spell?.length)
+  for (const slot of ['source', 'quality', 'delivery'] as const) {
+    const owners = live.filter(p => p.spell!.some(c => c.slot === slot && c.id >= 0))
+    const pool = shuffle(s, owners.map(p => p.spell!.find(c => c.slot === slot && c.id >= 0)!.id))
+    owners.forEach((p, i) => { p.spell!.find(c => c.slot === slot && c.id >= 0)!.id = pool[i] })
+  }
+  madEv(s, '🌀', 'Шальной вторник!', 'Заклинания перемешаны: у каждого те же виды карт, но чужие.')
+}
+
 // Ключ очерёдности: ранец «последним» → Нетерпеливый → меньше карт → больше инициатива → бросок кубика.
 function orderKey(p: PlayerState, reverse = false): number[] {
   const sp = p.spell ?? []
@@ -203,8 +216,7 @@ function reveal(ctx: Ctx, p: PlayerState) {
   log(s, `${p.name} открывает: ${sp.map(c => cardName(c.id)).join(' + ')}.`)
   s.turns.push({ game: s.game, round: s.round, actor: p.id, cards: sp.map(c => c.id), at: s.logBase + s.log.length - 1 })
   if (s.turns.length > 12) s.turns.shift()
-  const allWild = hasMod(s, 'wild')
-  for (const c of sp.filter(c => c.id === TRAP || isWild(c.id) || (allWild && c.id >= 0))) {
+  for (const c of sp.filter(c => c.id === TRAP || isWild(c.id))) {
     turn.hadWild = true
     p.spell = p.spell!.filter(x => x !== c)
     if (c.id === TRAP) p.treasures.push(T.trap)
@@ -347,6 +359,7 @@ function step(ctx: Ctx): boolean {
     for (const p of alive(s)) if (!p.spell && !p.hand.length && !p.treasures.includes(T.trap)) p.spell = []
     if (alive(s).some(p => !p.spell)) return false
     s.phase = 'resolve'
+    if (hasMod(s, 'wild')) shuffleSpells(ctx)
     ev(s, { k: 'built', counts: s.players.map(p => (p.alive ? p.spell!.length : -1)) })
     log(s, 'Заклинания выложены: ' + alive(s).map(p => `${p.name} — ${p.spell!.length}`).join(', ') + '.')
     return true

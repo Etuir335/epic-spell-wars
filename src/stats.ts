@@ -201,7 +201,8 @@ export function applyEvents(st: Stats, tr: Track, evs: Ev[], s: GameState, seat:
 // Любимая карта — сыгранная чаще всех
 export function favoriteCard(st: Stats): { index: number; n: number } | null {
   let best: { index: number; n: number } | null = null
-  for (const [k, n] of Object.entries(st.cards)) if (!best || n > best.n) best = { index: Number(k), n }
+  // «Шальная магия» (0) — в каждой колоде по 8 штук, любимой ей быть нечестно
+  for (const [k, n] of Object.entries(st.cards)) if (k !== '0' && (!best || n > best.n)) best = { index: Number(k), n }
   return best
 }
 

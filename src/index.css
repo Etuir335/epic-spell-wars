@@ -103,7 +103,7 @@ h1, h2, h3, h4 { margin: 0; font-family: var(--title); font-weight: 400; letter-
 .game { max-width: 560px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; overflow: hidden; padding-bottom: env(safe-area-inset-bottom); }
 
 /* ПК: три колонки — колдуны и журнал | игра | карта и сокровища */
-.game-wrap.desk { display: grid; grid-template-columns: 280px minmax(420px, 560px) minmax(300px, 460px); grid-template-rows: minmax(0, 1fr) auto; justify-content: center; column-gap: 14px; row-gap: 4px; padding: 10px 14px 4px; background: linear-gradient(90deg, #0b050cf2, #0b050c99 30%, #0b050c66 50%, #0b050c99 70%, #0b050cf2), linear-gradient(#0b050cdd, transparent 30%, transparent 60%, #0b050cee), var(--bg-img) center 30% / cover no-repeat; }
+.game-wrap.desk { display: grid; grid-template-columns: minmax(300px, 420px) minmax(420px, 580px) minmax(300px, 460px); grid-template-rows: minmax(0, 1fr) auto; justify-content: center; column-gap: 14px; row-gap: 4px; padding: 10px 14px 4px; background: linear-gradient(90deg, #0b050cf2, #0b050c99 30%, #0b050c66 50%, #0b050c99 70%, #0b050cf2), linear-gradient(#0b050cdd, transparent 30%, transparent 60%, #0b050cee), var(--bg-img) center 30% / cover no-repeat; }
 .desk .game { grid-row: 1; margin: 0; min-height: 0; height: 100%; }
 .desk .side { grid-row: 1; }
 /* ПК: я и рука — полосой на всю ширину под колонками, карты крупнее */
@@ -112,21 +112,23 @@ h1, h2, h3, h4 { margin: 0; font-family: var(--title); font-weight: 400; letter-
 .side { display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow-y: auto; }
 .side > .panel:not(.grow) { flex-shrink: 0; } /* колдуны и памятка не сжимаются — иначе их низ уезжает под соседнюю панель */
 .panel { background: #120914d9; border: 1px solid #ffc53133; border-radius: 16px; padding: 12px 14px; box-shadow: 0 8px 24px #0009; }
-.panel.grow { flex: 1; min-height: 0; overflow-y: auto; }
+.panel.grow { flex: 1; min-height: 160px; overflow-y: auto; }
 .panel h4 { color: var(--gold); font-size: 17px; margin-bottom: 10px; }
 .side-pl { display: flex; gap: 10px; align-items: flex-start; padding: 6px; border-radius: 12px; cursor: pointer; border: 2px solid transparent; }
 .side-pl:hover { background: #ffffff0d; }
 .side-pl.casting { border-color: var(--gold); background: #4a341655; }
 .side-pl.dead { opacity: .6; }
-.side-pl-main { flex: 1; min-width: 0; font-size: 15px; display: flex; flex-direction: column; gap: 2px; }
+.side-pl-main { flex: 1; min-width: 0; font-size: 16px; display: flex; flex-direction: column; gap: 2px; }
 .side-pl-main em { font-style: normal; font-family: var(--title); color: #ff7b6e; font-size: 17px; }
 .side-tr { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; }
-.side-tr .card { width: 32px; border-radius: 4px; }
-.side-tr.many { gap: 3px; } .side-tr.many .card { width: 25px; border-radius: 3px; } /* много сокровищ и дохлых карт — помельче */
+.side-tr .card { width: 54px; border-radius: 5px; }
+.side-tr.many { gap: 3px; } .side-tr.many .card { width: 42px; border-radius: 4px; } /* много сокровищ и дохлых карт — помельче */
 .side-log { font-size: 14px; line-height: 1.4; }
 .side-log div { padding: 3px 0; border-bottom: 1px solid #ffffff0d; color: var(--dim); }
 .side-log .fresh { color: var(--text); font-weight: 600; }
 .memo { font-size: 14px; line-height: 1.45; color: var(--dim); margin: 0; }
+.memo-list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.4; color: var(--dim); }
+.memo-list b { color: var(--text); }
 .memo b { color: var(--text); }
 .cinfo > img { display: block; width: 100%; max-width: 300px; margin: 0 auto; border-radius: 12px; box-shadow: 0 0 0 2px #ffc53155, 0 10px 30px #000c; }
 .cinfo-text { margin-top: 10px; font-size: 16px; line-height: 1.45; }

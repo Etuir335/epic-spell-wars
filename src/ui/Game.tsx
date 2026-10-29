@@ -410,7 +410,7 @@ function LeftPanel({ s, pos, shown, viewer, caster, onPick }: {
         <h4>Колдуны</h4>
         {s.players.map(p => (
           <div key={p.id} className={`side-pl${caster === p.id ? ' casting' : ''}${shown[p.id].alive ? '' : ' dead'}`} onClick={() => onPick(p.id)}>
-            <Portrait i={p.portrait} size={42} dead={!shown[p.id].alive} />
+            <Portrait i={p.portrait} size={56} dead={!shown[p.id].alive} />
             <div className="side-pl-main">
               <b>{p.bot ? '🤖 ' : ''}{p.name}{p.id === viewer ? ' (ты)' : ''}{awayText(p)}</b>
               <span>{shown[p.id].alive ? <>❤ <em>{shown[p.id].life}</em></> : '☠ дохлый'} {p.medals > 0 && '🏅'.repeat(p.medals)}</span>
@@ -423,16 +423,34 @@ function LeftPanel({ s, pos, shown, viewer, caster, onPick }: {
           </div>
         ))}
       </div>
+      <div className="panel">
+        <h4>Памятка</h4>
+        <p className="memo">Заклинание — 1–3 карты разных типов: <b>заводила</b>, <b>наворот</b>, <b>приход</b>. Меньше карт — ходишь раньше; при равенстве — выше инициатива прихода. Могучий бросок: кубик за каждую карту того же знака. Последний живой получает медаль, {s.medalsToWin} 🏅 — победа в турнире.</p>
+        <MemoExtra s={s} />
+      </div>
       <div className="panel grow">
         <h4>Журнал боя</h4>
         <div className="side-log">{logs.map((l, i) => <div key={i} className={i === 0 ? 'fresh' : ''}>{l}</div>)}</div>
       </div>
-      <div className="panel">
-        <h4>Памятка</h4>
-        <p className="memo">Заклинание — 1–3 карты разных типов: <b>заводила</b>, <b>наворот</b>, <b>приход</b>. Меньше карт — ходишь раньше; при равенстве — выше инициатива прихода. Могучий бросок: кубик за каждую карту того же знака. Последний живой получает медаль, {s.medalsToWin} 🏅 — победа в турнире.</p>
-      </div>
     </aside>
   )
+}
+
+// Памятка о том, что есть именно в этой партии: безумные правила, боссы, механики дополнений
+const SWAMP_MEMO: [string, string][] = [
+  ['🐾 Твари', '«СТОЯТЬ!» — остаётся и бьёт каждый твой ход; может принять удар врага вместо тебя.'],
+  ['✨ Колдунство', 'сбрось 2 карты нужного вида — и карта с руки идёт в заклинание.'],
+  ['🍄 Пережор', '4+ разных знака — эффект ещё раз.'],
+  ['💥 Нежданчик', 'подох раньше этой карты — сыграй колдунства с руки.'],
+]
+function MemoExtra({ s }: { s: GameState }) {
+  const items: [string, string][] = [
+    ...(s.mods ?? []).map(m => [`${MOD_INFO[m].icon} ${MOD_INFO[m].name}`, MOD_INFO[m].text] as [string, string]),
+    ...[...new Set(s.players.filter(p => p.boss).map(p => p.boss!))].map(b => [`${BOSS_INFO[b].icon} ${BOSS_INFO[b].name}`, BOSS_INFO[b].text] as [string, string]),
+    ...(s.sets?.includes('swamp') ? SWAMP_MEMO : []),
+  ]
+  if (!items.length) return null
+  return <ul className="memo-list">{items.map(([k, v]) => <li key={k}><b>{k}:</b> {v}</li>)}</ul>
 }
 
 // Справа — только наведённая карта во весь рост (крупно, чтобы читался текст на самой карте).
