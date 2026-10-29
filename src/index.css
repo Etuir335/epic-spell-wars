@@ -571,3 +571,8 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .set-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 8px 0; }
 .set-pick .seg button:disabled { opacity: .45; }
 .set-pick small { flex-basis: 100%; }
+.ps-ava { position: relative; background: none; border: 0; padding: 0; flex: none; }
+.ps-ava span { position: absolute; right: -4px; bottom: -4px; font-size: 16px; background: #0b050cd0; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: 1px solid #ffc53166; }
+.arena-opts { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px; margin: 0 0 12px; text-align: center; }
+.arena-opts small { flex-basis: 100%; color: var(--dim); font-size: 12px; }
+.btn.net-fight { background: linear-gradient(#2f6bb0, #1b3d6e); border-color: #8fc2ff66; margin-top: 4px; }

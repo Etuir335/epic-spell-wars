@@ -17,7 +17,13 @@ const SKIP_ASK = [
   'Последнее слово: открыть все арены? Обратно не закрыть',
 ]
 
-export default function Arenas({ onPlay, onBack }: { onPlay: (s: GameState) => void; onBack: () => void }) {
+// медалей до победы на арене — запоминаем выбор
+const MEDALS_KEY = 'esw-arena-medals'
+const savedMedals = () => { try { return Math.min(3, Math.max(1, Number(localStorage.getItem(MEDALS_KEY)) || 1)) } catch { return 1 } }
+
+export default function Arenas({ onPlay, onBack, onNet }: { onPlay: (s: GameState) => void; onBack: () => void; onNet: () => void }) {
+  const [medals, setMedals] = useState(savedMedals)
+  const pickMedals = (n: number) => { setMedals(n); try { localStorage.setItem(MEDALS_KEY, String(n)) } catch { /* не важно */ } }
   const st = useStatsData()
   const cups = st.cups ?? 0, cur = st.arena ?? 0
   const open = (i: number) => ARENAS[i].ready && (!!st.arenaSkip || i <= cur)
@@ -34,7 +40,7 @@ export default function Arenas({ onPlay, onBack }: { onPlay: (s: GameState) => v
   const fight = (i: number) => {
     if (i > (st.arenaSeen ?? 0) && ARENAS[i].intro.length) { setIntro(i); return }
     const f = arenaFight(i, dailyMe())
-    const s = create(f.setup, (Math.random() * 2 ** 31) | 0, 1, f.mods, f.sets)
+    const s = create(f.setup, (Math.random() * 2 ** 31) | 0, medals, f.mods, f.sets)
     saveLocal(s, ARENA_KEY)
     onPlay(s)
   }
@@ -51,6 +57,11 @@ export default function Arenas({ onPlay, onBack }: { onPlay: (s: GameState) => v
           <span>{next ? next.icon : '👑'}</span>
         </div>
         <small>{next ? `До арены «${next.name}» — ${Math.max(0, next.cups - cups)} 🏆` : 'Все арены пройдены!'}</small>
+      </div>
+      <div className="arena-opts">
+        <span>Медалей до победы:</span>
+        <div className="seg">{[1, 2, 3].map(n => <button key={n} className={medals === n ? 'on' : ''} onClick={() => pickMedals(n)}>{n}</button>)}</div>
+        <small>{medals === 1 ? 'Одна схватка — быстро.' : `Турнир до ${medals} медалей: схваток больше — и кубков за него больше (кубки за каждую схватку).`}</small>
       </div>
       <div className="arena-road">
         {ARENAS.map((a, i) => ({ a, i })).reverse().map(({ a, i }) => (
@@ -71,7 +82,9 @@ export default function Arenas({ onPlay, onBack }: { onPlay: (s: GameState) => v
           </div>
         ))}
       </div>
-      <p className="hint center">Победа +40 🏆, поражение −5, по месту в бою на многих. Против живых ×1,5, первая победа за день +50, испытание дня +20. Ниже порога своей арены кубки не падают.</p>
+      <button className="btn wide net-fight" onClick={onNet}>🌐 Бой с живыми людьми</button>
+      <p className="hint center">На аренах ты бьёшься с ботами. С живыми людьми — во вкладке «По сети» (быстрая игра или комната с друзьями): там кубки тоже идут, и плюсы ×1,5.</p>
+      <p className="hint center">За каждую схватку: победа +40 🏆, поражение −5, по месту в бою на многих. Против живых ×1,5, первая победа за день +50, испытание дня +20. Ниже порога своей арены кубки не падают.</p>
       {!st.arenaSkip && ARENAS.some((a, i) => a.ready && i > cur) && (
         <button className={`skip-all${sure ? ' warn' : ''}`} onClick={() => {
           if (sure < SKIP_ASK.length) { setSure(sure + 1); return }

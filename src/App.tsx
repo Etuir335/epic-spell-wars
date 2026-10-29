@@ -78,7 +78,7 @@ export default function App() {
       {screen === 'daily' && <DailyScreen last={dailyLast} onBack={() => setScreen('menu')} onPlay={s => { setDaily(s); setDailyLast(null); setGen(g => g + 1); setScreen('dailyGame') }} />}
       {screen === 'dailyGame' && daily && <LocalGame key={gen} initial={daily} storeKey={DAILY_KEY}
         onFinish={s => setDailyLast(finishDaily(s, dailyOf()))} onExit={() => setScreen('daily')} />}
-      {screen === 'arenas' && <Arenas onBack={() => setScreen('menu')} onPlay={s => { setArena(s); setGen(g => g + 1); setScreen('arenaGame') }} />}
+      {screen === 'arenas' && <Arenas onBack={() => setScreen('menu')} onNet={() => setScreen('net')} onPlay={s => { setArena(s); setGen(g => g + 1); setScreen('arenaGame') }} />}
       {screen === 'arenaGame' && arena && <LocalGame key={gen} initial={arena} storeKey={ARENA_KEY} ranked onExit={() => setScreen('arenas')} />}
       {screen === 'profile' && <Profile onBack={() => setScreen('menu')} />}
       {screen === 'gallery' && <Gallery onBack={() => setScreen('menu')} />}

@@ -497,11 +497,12 @@ function MyBar({ s, p, life, alive, casting, onClick }: { s: GameState; p: Playe
 }
 
 function PlayerSheet({ s, p, onClose }: { s: GameState; p: PlayerState; onClose: () => void }) {
+  const [look, setLook] = useState(false) // планшет колдуна в полный рост
   return (
     <div className="sheet-back" onClick={onClose}>
       <div className="sheet" onClick={e => e.stopPropagation()}>
         <div className="ps-head">
-          <Portrait i={p.portrait} size={72} dead={!p.alive} />
+          <button className="ps-ava" onClick={() => setLook(true)} title="Посмотреть колдуна"><Portrait i={p.portrait} size={72} dead={!p.alive} /><span>🔍</span></button>
           <div><h3>{p.name}</h3>{p.alive ? `❤ ${p.life}` : '☠ дохлый'}{p.medals > 0 && ' · ' + '🏅'.repeat(p.medals)}<br /><small>Карт на руке: {p.hand.length}</small></div>
         </div>
         <h4>Сокровища{!p.treasures.length && ': нет'}</h4>
@@ -523,6 +524,12 @@ function PlayerSheet({ s, p, onClose }: { s: GameState; p: PlayerState; onClose:
         <p className="hint">Игра {s.game} · медалей до победы: {s.medalsToWin}</p>
         <button className="btn wide ghost" onClick={onClose}>Закрыть</button>
       </div>
+      {look && (
+        <div className="wiz-look" onClick={e => { e.stopPropagation(); setLook(false) }}>
+          <img src={cardUrl('wizards', p.portrait)} alt={p.name} />
+          <button className="btn wide ghost">Закрыть</button>
+        </div>
+      )}
     </div>
   )
 }
