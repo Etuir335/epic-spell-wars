@@ -18,6 +18,7 @@ import { simpleBotMove } from './simpleBot'
 import { isMuted, setMuted, sfx } from './sound'
 import { music, useMusic } from './music'
 import type { GameStore } from './store'
+import { useDeskLayout, type PanelDef } from './DeskLayout'
 
 const noHover = () => {}
 
@@ -139,6 +140,7 @@ export default function Game({ store, onExit, net, ranked }: { store: GameStore;
   const [mute, setMute] = useState(isMuted())
   const [hovered, setHovered] = useState<CardRef | null>(null)
   const desk = useIsDesktop()
+  const layout = useDeskLayout(DESK_PANELS)
   const canHover = typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches // на телефоне касание — не наведение
   const dir = useDirector(s)
   useBots(s, store.dispatch, dir.done && (!net || net.isHost))
@@ -244,10 +246,18 @@ export default function Game({ store, onExit, net, ranked }: { store: GameStore;
     </>
   )
 
+  const panels: PanelDef[] = desk ? [
+    { id: 'players', title: 'Колдуны', node: <PlayersPanel s={vs} shown={shown} viewer={viewer} caster={dir.done ? null : dir.scene.caster} onPick={p => setSheet({ player: p })} /> },
+    { id: 'memo', title: 'Памятка', node: <><p className="memo">Заклинание — 1–3 карты разных типов: <b>заводила</b>, <b>наворот</b>, <b>приход</b>. Меньше карт — ходишь раньше; при равенстве — выше инициатива прихода. Могучий бросок: кубик за каждую карту того же знака. Последний живой получает медаль, {s.medalsToWin} 🏅 — победа в турнире.</p><MemoExtra s={s} /></> },
+    { id: 'log', title: 'Журнал боя', grow: true, node: <BattleLog s={vs} pos={dir.pos} /> },
+    { id: 'card', title: 'Карта', grow: true, node: <BigCard hovered={hovered} /> },
+  ] : []
+
   return (
     <HoverCtx.Provider value={canHover ? setHovered : noHover}>
-    <div className={`game-wrap${desk ? ' desk' : ''}`} style={{ ['--bg-img' as string]: `url(${assetUrl('assets/ui/arena-bg.webp')})` }}>
-    {desk && <LeftPanel s={vs} pos={dir.pos} shown={shown} viewer={viewer} caster={dir.done ? null : dir.scene.caster} onPick={p => setSheet({ player: p })} />}
+    <div className={`game-wrap${desk ? ' desk' : ''}`} style={{ ['--bg-img' as string]: `url(${assetUrl('assets/ui/arena-bg.webp')})`, ...(desk ? { gridTemplateColumns: layout.cols } : {}) }}>
+    {desk && layout.column('left', panels)}
+    {desk && layout.split('left')}
     <div className="game">
       <div className="top-bar">
         <button onClick={() => setSheet('menu')}>☰</button>
@@ -375,7 +385,8 @@ export default function Game({ store, onExit, net, ranked }: { store: GameStore;
       {tut && <Tutorial onClose={() => setTut(false)} />}
       {ach && <div className="ach-toast" key={ach.id}><span>{ach.icon}</span><div><small>Достижение!</small><b>{ach.name}</b><em>{ach.text}</em></div></div>}
     </div>
-    {desk && <RightPanel hovered={hovered} />}
+    {desk && layout.split('right')}
+    {desk && layout.column('right', panels)}
     {desk && <div className="desk-dock">{bottom}</div>}
     {!desk && hovered && <div className="hover-float"><CardInfo c={hovered} /></div>}
     </div>
@@ -400,40 +411,32 @@ function CardInfo({ c }: { c: CardRef }) {
   )
 }
 
-function LeftPanel({ s, pos, shown, viewer, caster, onPick }: {
-  s: GameState; pos: number; shown: { life: number; alive: boolean }[]; viewer: number; caster: number | null; onPick: (p: number) => void
+const DESK_PANELS = ['players', 'memo', 'log', 'card']
+
+function PlayersPanel({ s, shown, viewer, caster, onPick }: {
+  s: GameState; shown: { life: number; alive: boolean }[]; viewer: number; caster: number | null; onPick: (p: number) => void
 }) {
-  const logs = s.ev.slice(0, Math.max(0, pos - s.evBase)).filter(e => e.k === 'log').map(e => (e as { t: string }).t).slice(-80).reverse()
-  return (
-    <aside className="side left">
-      <div className="panel">
-        <h4>Колдуны</h4>
-        {s.players.map(p => (
-          <div key={p.id} className={`side-pl${caster === p.id ? ' casting' : ''}${shown[p.id].alive ? '' : ' dead'}`} onClick={() => onPick(p.id)}>
-            <Portrait i={p.portrait} size={56} dead={!shown[p.id].alive} />
-            <div className="side-pl-main">
-              <b>{p.bot ? '🤖 ' : ''}{p.name}{p.id === viewer ? ' (ты)' : ''}{awayText(p)}</b>
-              <span>{shown[p.id].alive ? <>❤ <em>{shown[p.id].life}</em></> : '☠ дохлый'} {p.medals > 0 && '🏅'.repeat(p.medals)}</span>
-              <div className={`side-tr${p.treasures.length + p.deadCards.length + (p.creatures?.length ?? 0) > 4 ? ' many' : ''}`}>
-                {p.creatures?.map(c => <Card key={'c' + c} c={{ deck: 'spells', index: Math.floor(c / 10) }} size="s" caption={false} />)}
-                {p.treasures.map(t => <Card key={t} c={{ deck: 'treasures', index: t }} size="s" caption={false} />)}
-                {p.deadCards.map(c => <Card key={'d' + c} c={{ deck: 'dead', index: Math.floor(c / 10) }} size="s" caption={false} />)}
-              </div>
-            </div>
+  return <>
+    {s.players.map(p => (
+      <div key={p.id} className={`side-pl${caster === p.id ? ' casting' : ''}${shown[p.id].alive ? '' : ' dead'}`} onClick={() => onPick(p.id)}>
+        <Portrait i={p.portrait} size={56} dead={!shown[p.id].alive} />
+        <div className="side-pl-main">
+          <b>{p.bot ? '🤖 ' : ''}{p.name}{p.id === viewer ? ' (ты)' : ''}{awayText(p)}</b>
+          <span>{shown[p.id].alive ? <>❤ <em>{shown[p.id].life}</em></> : '☠ дохлый'} {p.medals > 0 && '🏅'.repeat(p.medals)}</span>
+          <div className={`side-tr${p.treasures.length + p.deadCards.length + (p.creatures?.length ?? 0) > 4 ? ' many' : ''}`}>
+            {p.creatures?.map(c => <Card key={'c' + c} c={{ deck: 'spells', index: Math.floor(c / 10) }} size="s" caption={false} />)}
+            {p.treasures.map(t => <Card key={t} c={{ deck: 'treasures', index: t }} size="s" caption={false} />)}
+            {p.deadCards.map(c => <Card key={'d' + c} c={{ deck: 'dead', index: Math.floor(c / 10) }} size="s" caption={false} />)}
           </div>
-        ))}
+        </div>
       </div>
-      <div className="panel">
-        <h4>Памятка</h4>
-        <p className="memo">Заклинание — 1–3 карты разных типов: <b>заводила</b>, <b>наворот</b>, <b>приход</b>. Меньше карт — ходишь раньше; при равенстве — выше инициатива прихода. Могучий бросок: кубик за каждую карту того же знака. Последний живой получает медаль, {s.medalsToWin} 🏅 — победа в турнире.</p>
-        <MemoExtra s={s} />
-      </div>
-      <div className="panel grow">
-        <h4>Журнал боя</h4>
-        <div className="side-log">{logs.map((l, i) => <div key={i} className={i === 0 ? 'fresh' : ''}>{l}</div>)}</div>
-      </div>
-    </aside>
-  )
+    ))}
+  </>
+}
+
+function BattleLog({ s, pos }: { s: GameState; pos: number }) {
+  const logs = s.ev.slice(0, Math.max(0, pos - s.evBase)).filter(e => e.k === 'log').map(e => (e as { t: string }).t).slice(-150).reverse()
+  return <div className="side-log">{logs.map((l, i) => <div key={i} className={i === 0 ? 'fresh' : ''}>{l}</div>)}</div>
 }
 
 // Памятка о том, что есть именно в этой партии: безумные правила, боссы, механики дополнений
@@ -453,16 +456,14 @@ function MemoExtra({ s }: { s: GameState }) {
   return <ul className="memo-list">{items.map(([k, v]) => <li key={k}><b>{k}:</b> {v}</li>)}</ul>
 }
 
-// Справа — только наведённая карта во весь рост (крупно, чтобы читался текст на самой карте).
-function RightPanel({ hovered }: { hovered: CardRef | null }) {
+// Наведённая карта во весь рост (крупно, чтобы читался текст на самой карте).
+function BigCard({ hovered }: { hovered: CardRef | null }) {
   return (
-    <aside className="side right">
-      <div className={`panel grow big-card${hovered ? '' : ' empty'}`}>
-        {hovered
-          ? <img src={cardUrl(hovered.deck, hovered.index)} alt={cardTitle(hovered)} />
-          : <p className="hint">Наведи мышь на любую карту — она появится здесь во весь рост.</p>}
-      </div>
-    </aside>
+    <div className={`big-card${hovered ? '' : ' empty'}`}>
+      {hovered
+        ? <img src={cardUrl(hovered.deck, hovered.index)} alt={cardTitle(hovered)} />
+        : <p className="hint">Наведи мышь на любую карту — она появится здесь во весь рост.</p>}
+    </div>
   )
 }
 

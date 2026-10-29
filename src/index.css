@@ -103,8 +103,31 @@ h1, h2, h3, h4 { margin: 0; font-family: var(--title); font-weight: 400; letter-
 .game { max-width: 560px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; overflow: hidden; padding-bottom: env(safe-area-inset-bottom); }
 
 /* ПК: три колонки — колдуны и журнал | игра | карта и сокровища */
-.game-wrap.desk { display: grid; grid-template-columns: minmax(300px, 420px) minmax(420px, 580px) minmax(300px, 460px); grid-template-rows: minmax(0, 1fr) auto; justify-content: center; column-gap: 14px; row-gap: 4px; padding: 10px 14px 4px; background: linear-gradient(90deg, #0b050cf2, #0b050c99 30%, #0b050c66 50%, #0b050c99 70%, #0b050cf2), linear-gradient(#0b050cdd, transparent 30%, transparent 60%, #0b050cee), var(--bg-img) center 30% / cover no-repeat; }
-.desk .game { grid-row: 1; margin: 0; min-height: 0; height: 100%; }
+.game-wrap.desk { display: grid; grid-template-rows: minmax(0, 1fr) auto; column-gap: 0; row-gap: 4px; padding: 10px 14px 4px; background: linear-gradient(90deg, #0b050cf2, #0b050c99 30%, #0b050c66 50%, #0b050c99 70%, #0b050cf2), linear-gradient(#0b050cdd, transparent 30%, transparent 60%, #0b050cee), var(--bg-img) center 30% / cover no-repeat; }
+.desk .game { grid-row: 1; grid-column: 3; margin: 0 6px; min-height: 0; height: 100%; width: calc(100% - 12px); max-width: 680px; justify-self: center; }
+/* панели на ПК: перетаскиваются, сворачиваются, меняют высоту; колонки — ширину */
+.dl-col { grid-row: 1; display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow-y: auto; }
+.dl-col.left { grid-column: 1; } .dl-col.right { grid-column: 5; }
+.dl-split { grid-row: 1; position: relative; cursor: col-resize; touch-action: none; }
+.dl-split.left { grid-column: 2; } .dl-split.right { grid-column: 4; }
+.dl-split::after { content: ''; position: absolute; top: 12%; bottom: 12%; left: 3px; width: 2px; border-radius: 2px; background: #ffc5311f; transition: background .15s; }
+.dl-split:hover::after { background: var(--gold); }
+.panel.dpanel { display: flex; flex-direction: column; flex-shrink: 0; padding: 8px 12px 0; }
+.panel.dpanel.grow { flex: 1 1 0; min-height: 160px; overflow: hidden; }
+.dp-head { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; cursor: grab; user-select: none; }
+.dp-head h4 { flex: 1; margin: 0; }
+.dp-head .grip { color: var(--dim); font-size: 15px; }
+.dp-btn { background: none; border: 0; color: var(--dim); width: 26px; height: 26px; border-radius: 7px; font-size: 14px; cursor: pointer; }
+.dp-btn:hover { background: #ffffff14; color: var(--text); }
+.dp-body { min-height: 0; overflow-y: auto; }
+.dpanel.grow .dp-body { flex: 1; }
+.dp-resize { flex-shrink: 0; height: 12px; cursor: ns-resize; position: relative; touch-action: none; }
+.dp-resize::after { content: ''; position: absolute; left: 50%; top: 4px; width: 40px; height: 3px; margin-left: -20px; border-radius: 2px; background: #ffc53133; }
+.dp-resize:hover::after { background: var(--gold); }
+.dl-dropzone { display: none; }
+.dl-col.dragging .dl-dropzone { display: block; padding: 18px; border: 2px dashed #ffc53155; border-radius: 14px; text-align: center; color: var(--dim); }
+.dl-restore { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; color: var(--dim); }
+.dl-restore button { background: #120914d9; color: var(--gold); border: 1px solid #ffc53144; border-radius: 10px; padding: 4px 10px; cursor: pointer; }
 .desk .side { grid-row: 1; }
 /* ПК: я и рука — полосой на всю ширину под колонками, карты крупнее */
 .desk-dock { grid-column: 1 / -1; grid-row: 2; position: relative; z-index: 5; width: 100%; max-width: 1280px; justify-self: center; }
@@ -359,9 +382,9 @@ h1, h2, h3, h4 { margin: 0; font-family: var(--title); font-weight: 400; letter-
 .side .cinfo-text { flex: 0 1 auto; max-height: 45%; min-height: 0; overflow-y: auto; }
 
 /* ПК, правая колонка: наведённая карта во весь рост */
-.panel.big-card { display: flex; align-items: center; justify-content: center; padding: 8px; overflow: hidden; }
-.panel.big-card img { width: 100%; height: 100%; min-height: 0; object-fit: contain; filter: drop-shadow(0 10px 28px #000e); animation: fadeIn .12s; }
-.panel.big-card.empty { align-items: flex-start; }
+.big-card { height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.big-card img { width: 100%; height: 100%; min-height: 0; object-fit: contain; filter: drop-shadow(0 10px 28px #000e); animation: fadeIn .12s; }
+.big-card.empty { align-items: flex-start; }
 .room-chip { width: auto !important; padding: 0 10px; font-family: var(--title); color: var(--gold); letter-spacing: 1px; }
 /* игра по сети */
 .join-row { display: flex; gap: 8px; margin: 6px 0; }
