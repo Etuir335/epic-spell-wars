@@ -10,7 +10,7 @@ import {
 } from '../progression'
 import { Portrait } from './cards'
 import { emoteImg } from './Emotes'
-import { sfx } from './sound'
+import { sfx, uiSfx } from './sound'
 import { updateStats, useStatsData } from './useStats'
 import { dailyMe } from './Daily'
 
@@ -93,7 +93,7 @@ function ChestOpen({ loot, onDone }: { loot: Loot; onDone: () => void }) {
   const st = useStatsData()
   const steps: Step[] = [{ t: 'gold', n: loot.gold }, ...loot.cards.map(c => ({ t: 'card' as const, c })), ...(loot.emote ? [{ t: 'emote' as const, id: loot.emote.id }] : [])]
   const [i, setI] = useState(-1) // −1 — сундук ещё закрыт
-  useEffect(() => { const t = setTimeout(() => setI(0), 1100); return () => clearTimeout(t) }, [])
+  useEffect(() => { uiSfx.rattle(); const t = setTimeout(() => { uiSfx.chestOpen(); setI(0) }, 1100); return () => clearTimeout(t) }, [])
   const step = steps[i]
   useEffect(() => {
     if (!step) return
@@ -193,9 +193,9 @@ function WizardSheet({ w, onClose, onNav }: { w: number; onClose: () => void; on
     <div className="sheet-back" onClick={onClose}>
       <div className={`sheet wiz-detail r-${r}`} onClick={e => e.stopPropagation()}>
         <div className="wd-head">
-          <button className="btn" onClick={() => onNav(-1)}>←</button>
+          <button className="btn" data-swipe="prev" onClick={() => onNav(-1)}>←</button>
           <div><b>{wizardName(w)}</b><small className={`rar r-${r}`}>{RARITY_NAME[r]}</small></div>
-          <button className="btn" onClick={() => onNav(1)}>→</button>
+          <button className="btn" data-swipe="next" onClick={() => onNav(1)}>→</button>
         </div>
         <div className={`wd-art${l ? '' : ' locked'}`}>
           <img src={cardUrl('wizards', w)} alt="" />

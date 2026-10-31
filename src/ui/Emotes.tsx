@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { assetUrl } from '../assets'
 import { battleEmotes, emoteById, isGolden, type Emote } from '../emotes'
 import type { GameState } from '../game/types'
-import { isMuted } from './sound'
+import { playSound, preloadSound } from './sound'
 import { getStats } from './useStats'
 
 export const emoteImg = (id: string) => assetUrl(`assets/emotes/${id}.webp`)
@@ -33,7 +33,7 @@ export function EmoteLayer() {
       const b: Bubble = { key: ++seq, pid, id, gold, x: r ? r.left + r.width / 2 : innerWidth / 2, y: r ? r.top : innerHeight / 2 }
       setList(l => [...l.filter(o => o.pid !== pid), b])
       setTimeout(() => setList(l => l.filter(o => o.key !== b.key)), 2600)
-      if (!isMuted()) { const a = new Audio(emoteSnd(id)); a.volume = gold ? 0.9 : 0.7; void a.play().catch(() => {}) }
+      playSound(emoteSnd(id), gold ? 0.9 : 0.7)
     }
     window.addEventListener(EV, on)
     return () => window.removeEventListener(EV, on)
@@ -50,10 +50,12 @@ export function EmoteButton({ pid, portrait, onSend }: { pid: number; portrait: 
   const [open, setOpen] = useState(false)
   const st = getStats()
   const list = battleEmotes(st, portrait)
+  // звуки скачать заранее — тогда эмоция и звук появляются вместе
+  useEffect(() => { list.forEach(e => preloadSound(emoteSnd(e.id))); BOT_KILL.concat('mad', 'cry').forEach(id => preloadSound(emoteSnd(id))) }, [portrait]) // eslint-disable-line react-hooks/exhaustive-deps
   const send = (e: Emote) => { setOpen(false); const g = isGolden(st, e); if (showEmote(pid, e.id, g)) onSend?.(e.id, g) }
   return <>
     <button className="emote-btn" onClick={ev => { ev.stopPropagation(); setOpen(o => !o) }} title="Эмоции">😆</button>
-    {open && <div className="emote-pick" onClick={() => setOpen(false)}>
+    {open && <div className="emote-pick" data-nosfx onClick={() => setOpen(false)}>
       <div className="emote-grid" onClick={ev => ev.stopPropagation()}>
         {list.map(e => (
           <button key={e.id} className={`${e.kind === 'wiz' ? 'wiz' : ''}${isGolden(st, e) ? ' gold' : ''}`} onClick={() => send(e)} title={e.name}>

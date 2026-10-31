@@ -16,7 +16,7 @@ import { useStatsData } from './ui/useStats'
 import { rankOf } from './stats'
 import { ARENAS } from './arenas'
 import { Chests, Wizards, chestBadge } from './ui/Treasury'
-import { canUpgrade, WIZ_COUNT } from './progression'
+import { canUpgrade, roadReady, WIZ_COUNT } from './progression'
 
 const NetPlay = lazy(() => import('./ui/NetPlay')) // Firebase — отдельным куском, только для сетевой игры
 
@@ -40,7 +40,7 @@ export default function App() {
       {screen === 'menu' && (
         <div className="screen menu" style={{ ['--bg-img' as string]: `url(${assetUrl('assets/ui/menu-bg.webp')})` }}>
           <div className="menu-top">
-            <button className="chip cups" onClick={() => setScreen('arenas')}>🏆 {st.cups ?? 0}</button>
+            <button className="chip cups" style={{ position: 'relative' }} onClick={() => setScreen('arenas')}>🏆 {st.cups ?? 0}{roadReady(st).length > 0 && <span className="menu-badge">{roadReady(st).length}</span>}</button>
             <button className="chip gold-chip" onClick={() => setScreen('wizards')}>🪙 {st.gold ?? 0}</button>
             <button className="chip" onClick={() => setScreen('profile')}>{rank.icon} {rank.name}</button>
           </div>

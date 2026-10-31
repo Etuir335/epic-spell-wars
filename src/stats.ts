@@ -32,6 +32,7 @@ export interface Stats {
   at: number // когда менялась (для выбора между устройством и облаком)
   sv?: number // версия счёта: 2 — после починки двойного подсчёта
   emotes?: string[] // эмоции из сундуков (см. emotes.ts)
+  road?: number[] // забранные награды дороги кубков (progression.ts ROAD)
   wiz?: Record<number, { lvl: number; cards: number }> // колдуны: уровень и карточки (прогрессия)
   newEmote?: string // только что выпавшая эмоция — показать игроку
   gold?: number

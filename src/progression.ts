@@ -19,6 +19,7 @@ export interface Progress {
   chests?: (ChestSlot | null)[]
   freeChestDay?: string
   emotes?: string[]
+  road?: number[] // забранные награды дороги кубков (ROAD)
   cups: number
 }
 
@@ -110,7 +111,7 @@ function fillChest(st: Progress, c: ChestSlot, rnd: () => number): Loot {
   const k = CHESTS[c.kind], mul = 1 + Math.min(6, c.arena) / 6 // ×1 … ×2 к арене 7
   const counts = new Map<number, number>()
   const add = (w: number, n: number) => counts.set(w, (counts.get(w) ?? 0) + n)
-  const pick = (r: Rarity) => { const pool = ABILITIES.map((a, w) => (a.rarity === r ? w : -1)).filter(w => w >= 0); return pool[Math.floor(rnd() * pool.length)] }
+  const pick = (r: Rarity) => { let pool = ABILITIES.map((a, w) => (a.rarity === r && wizArena(w) <= c.arena ? w : -1)).filter(w => w >= 0); if (!pool.length) pool = ABILITIES.map((a, w) => (a.rarity === r ? w : -1)).filter(w => w >= 0); return pool[Math.floor(rnd() * pool.length)] }
   const roll = (min?: Rarity): Rarity => {
     const order: Rarity[] = ['common', 'rare', 'epic', 'legend'], from = min ? order.indexOf(min) : 0
     const left = order.slice(from)
@@ -162,4 +163,35 @@ export function withAbil(players: SetupPlayer[], mode: AbilMode = 'own'): SetupP
     const l = p.boss || mode === 'off' ? 0 : mode === 'lvl3' ? 3 : lvl ?? (p.bot ? Math.min(MAX_LVL, 1 + p.bot) : 0)
     return l > 0 ? { ...rest, lvl: l } : rest
   })
+}
+
+// Колдуны, которые открываются с аренами (как карты в Clash Royale): в сундуках выпадают только с этой арены.
+// Остальные — с первой арены. Новых колдунов дополнений добавлять сюда же.
+export const ARENA_WIZ: Record<number, number[]> = {
+  1: [10, 21, 7, 2],     // Логово Деда
+  2: [34, 27, 40, 30, 24], // Безумная гора
+  3: [19, 22, 15, 35],   // Грибучее Болото
+}
+export const wizArena = (w: number) => Number(Object.keys(ARENA_WIZ).find(a => ARENA_WIZ[+a].includes(w)) ?? 0)
+
+// Дорога кубков: награды забираются вручную на экране арен (Progress.road — забранные пороги).
+export type RoadPrize = { cups: number } & ({ t: 'emote'; id: string } | { t: 'gold'; n: number } | { t: 'chest'; kind: ChestKind } | { t: 'wiz'; w: number })
+export const ROAD: RoadPrize[] = [
+  { cups: 15, t: 'gold', n: 40 }, { cups: 30, t: 'emote', id: 'hehe' }, { cups: 50, t: 'chest', kind: 'wood' }, { cups: 70, t: 'emote', id: 'yawn' }, { cups: 85, t: 'gold', n: 80 },
+  { cups: 100, t: 'wiz', w: 10 }, { cups: 120, t: 'emote', id: 'pancakes' }, { cups: 140, t: 'chest', kind: 'silver' }, { cups: 180, t: 'emote', id: 'hog' }, { cups: 215, t: 'gold', n: 150 },
+  { cups: 250, t: 'wiz', w: 34 }, { cups: 260, t: 'emote', id: 'skelcry' }, { cups: 300, t: 'chest', kind: 'silver' }, { cups: 350, t: 'emote', id: 'nowifi' }, { cups: 400, t: 'gold', n: 250 },
+  { cups: 450, t: 'wiz', w: 19 }, { cups: 500, t: 'emote', id: 'hi' }, { cups: 560, t: 'chest', kind: 'gold' }, { cups: 620, t: 'gold', n: 400 }, { cups: 650, t: 'emote', id: 'bye' },
+  { cups: 680, t: 'chest', kind: 'epic' },
+]
+export const roadTaken = (st: Progress, r: RoadPrize) => !!st.road?.includes(r.cups)
+export const roadReady = (st: Progress) => ROAD.filter(r => st.cups >= r.cups && !roadTaken(st, r))
+// забрать награду; false — некуда положить (сундук при занятых слотах)
+export function claimRoad(st: Progress, r: RoadPrize): boolean {
+  if (st.cups < r.cups || roadTaken(st, r)) return false
+  if (r.t === 'chest' && grantChest(st, r.kind) < 0) return false
+  if (r.t === 'gold') st.gold = (st.gold ?? 0) + r.n
+  if (r.t === 'emote') st.emotes = [...new Set([...(st.emotes ?? []), r.id])]
+  if (r.t === 'wiz') { st.wiz ??= {}; const x = st.wiz[r.w]; st.wiz[r.w] = { lvl: Math.max(1, x?.lvl ?? 0), cards: x?.cards ?? 0 } }
+  st.road = [...(st.road ?? []), r.cups]
+  return true
 }

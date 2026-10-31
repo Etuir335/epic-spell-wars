@@ -108,7 +108,7 @@ export const wizLevelOf = (st: EmoteOwner, portrait: number) => st.wiz?.[portrai
 
 export function hasEmote(st: EmoteOwner, e: Emote): boolean {
   if (e.kind === 'base') return true
-  if (e.kind === 'road') return EMOTE_ROAD.some(r => r.id === e.id && st.cups >= r.cups) || !!st.emotes?.includes(e.id)
+  if (e.kind === 'road') return !!st.emotes?.includes(e.id) // забирается на дороге кубков (progression.ts ROAD)
   if (e.kind === 'wiz') return wizLevelOf(st, e.wiz!) >= 3
   return !!st.emotes?.includes(e.id)
 }

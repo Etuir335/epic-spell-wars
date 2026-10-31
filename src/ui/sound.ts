@@ -21,8 +21,10 @@ function ac(): AudioContext | null {
 // разблокировать звук на первом касании (требование браузеров)
 if (typeof window !== 'undefined') window.addEventListener('pointerdown', () => { ac() }, { once: true })
 
+let lastTone = 0 // когда прозвучал последний звук (чтобы не накладывать щелчок кнопки)
 function tone(freq: number, dur: number, type: OscillatorType = 'sine', vol = 0.2, delay = 0, slideTo?: number) {
   const a = ac(); if (!a) return
+  lastTone = performance.now()
   const t = a.currentTime + delay
   const o = a.createOscillator(), g = a.createGain()
   o.type = type
@@ -36,6 +38,7 @@ function tone(freq: number, dur: number, type: OscillatorType = 'sine', vol = 0.
 }
 function noise(dur: number, vol = 0.2, delay = 0, freq = 1200, q = 0.8, type: BiquadFilterType = 'bandpass', sweepTo?: number) {
   const a = ac(); if (!a) return
+  lastTone = performance.now()
   const t = a.currentTime + delay
   const len = Math.floor(a.sampleRate * dur)
   const buf = a.createBuffer(1, len, a.sampleRate)
@@ -70,4 +73,62 @@ export const sfx = {
   round: () => { tone(196, 0.5, 'triangle', 0.15); tone(294, 0.6, 'triangle', 0.12, 0.12) },
   myTurn: () => { tone(784, 0.18, 'sine', 0.12); tone(988, 0.3, 'sine', 0.12, 0.12) },
   fanfare: () => { [392, 523, 659, 784, 659, 784, 1047].forEach((f, i) => tone(f, i === 6 ? 0.8 : 0.2, 'square', 0.07, i * 0.13)) },
+}
+
+// звуки интерфейса
+let last = 0
+const ui = (f: () => void) => () => { last = performance.now(); f() }
+export const uiSfx = {
+  click: ui(() => { noise(0.03, 0.18, 0, 2400, 2); tone(420, 0.05, 'triangle', 0.07) }),
+  press: ui(() => { noise(0.05, 0.25, 0, 900, 1); tone(330, 0.08, 'square', 0.06); tone(660, 0.12, 'triangle', 0.07, 0.04) }),
+  back: ui(() => { noise(0.03, 0.15, 0, 1800, 2); tone(360, 0.07, 'triangle', 0.07, 0, 240) }),
+  open: ui(() => { noise(0.22, 0.14, 0, 600, 0.7, 'bandpass', 2600); tone(300, 0.15, 'sine', 0.05, 0.05, 520) }),
+  close: ui(() => noise(0.18, 0.12, 0, 2400, 0.7, 'bandpass', 500)),
+  rattle: ui(() => { for (let i = 0; i < 6; i++) { noise(0.06, 0.28, i * 0.16, 700 + i * 80, 3); tone(140, 0.06, 'square', 0.04, i * 0.16) } }),
+  chestOpen: ui(() => { tone(180, 0.35, 'sawtooth', 0.05, 0, 520); noise(0.5, 0.3, 0.15, 3000, 0.5, 'bandpass', 600); [784, 988, 1175, 1568].forEach((f, i) => tone(f, 0.3, 'sine', 0.08, 0.3 + i * 0.06)) }),
+  reveal: ui(() => { noise(0.12, 0.2, 0, 3500, 0.6, 'bandpass', 900); [1047, 1319, 1568].forEach((f, i) => tone(f, 0.25, 'sine', 0.06, 0.05 + i * 0.05)) }),
+  swipe: ui(() => noise(0.12, 0.14, 0, 1200, 0.8, 'bandpass', 3000)),
+}
+// кнопка без своего звука — щелчок (свой звук обработчика уже прозвучал раньше всплытия до document)
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', e => {
+    const el = (e.target as HTMLElement).closest?.('button, a, [role=button], .clickable, .card-pick') as HTMLElement | null
+    if (!el || (el as HTMLButtonElement).disabled || el.closest('[data-nosfx]')) return
+    if (performance.now() - Math.max(last, lastTone) < 60) return
+    const t = el.textContent?.trim() ?? ''
+    if (el.closest('.top-bar') && t === '←') uiSfx.back()
+    else if (el.classList.contains('gold')) uiSfx.press()
+    else uiSfx.click()
+  })
+  // окна (шторки снизу, увеличенная карта) — шорох при открытии и закрытии
+  new MutationObserver(ms => {
+    let add = 0, rem = 0
+    for (const m of ms) {
+      m.addedNodes.forEach(n => { if (n instanceof HTMLElement && (n.matches('.sheet-back, .zoom') || n.querySelector('.sheet-back, .zoom'))) add++ })
+      m.removedNodes.forEach(n => { if (n instanceof HTMLElement && (n.matches('.sheet-back, .zoom') || n.querySelector('.sheet-back, .zoom'))) rem++ })
+    }
+    if (add) { if (document.querySelector('.zoom')) uiSfx.reveal(); else uiSfx.open() } else if (rem) uiSfx.close()
+  }).observe(document.documentElement, { childList: true, subtree: true })
+}
+
+// звуковые файлы (эмоции): заранее скачать и разобрать, чтобы играли сразу, без задержки
+const bufs = new Map<string, Promise<AudioBuffer | null>>()
+export function preloadSound(url: string) {
+  const a = ac(); if (!a) return null
+  let p = bufs.get(url)
+  if (!p) {
+    p = fetch(url).then(r => r.arrayBuffer()).then(b => a.decodeAudioData(b)).catch(() => null)
+    bufs.set(url, p)
+  }
+  return p
+}
+export function playSound(url: string, vol = 0.7) {
+  const a = ac(); if (!a) return
+  lastTone = performance.now()
+  void preloadSound(url)?.then(buf => {
+    if (!buf) return
+    const src = a.createBufferSource(), g = a.createGain()
+    src.buffer = buf; g.gain.value = vol
+    src.connect(g).connect(a.destination); src.start()
+  })
 }
