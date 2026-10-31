@@ -8,7 +8,6 @@ import {
   CHESTS, MAX_LVL, WIZ_COUNT, canUpgrade, chestSlots, freeChestReady, nextCost, openChest, opening, owned, rarityOf, ready, rushChest, rushCost, startOpening, upgrade,
   wizCards, wizLvl, type ChestKind, type Loot,
 } from '../progression'
-import { Portrait } from './cards'
 import { emoteImg } from './Emotes'
 import EmoteDeck from './EmoteDeck'
 import { dailyMe } from './Daily'
@@ -129,7 +128,7 @@ function ChestOpen({ loot, onDone }: { loot: Loot; onDone: () => void }) {
         <h3>{CHESTS[loot.kind].name} сундук</h3>
         <div className="loot-grid">
           <div className="loot-mini"><span>🪙</span><b>{loot.gold}</b></div>
-          {loot.cards.map(c => <div key={c.w} className={`loot-mini r-${rarityOf(c.w)}`}><Portrait i={c.w} size={48} /><b>×{c.n}</b>{c.fresh && <em>новый</em>}</div>)}
+          {loot.cards.map(c => <div key={c.w} className={`loot-mini card r-${rarityOf(c.w)}`}><img className="lm-card" src={cardUrl('wizards', c.w)} alt="" /><b>×{c.n}</b>{c.fresh && <em>новый</em>}</div>)}
           {loot.emote && <div className="loot-mini"><img src={emoteImg(loot.emote.id)} alt="" /></div>}
         </div>
         <button className="btn wide gold" onClick={onDone}>Забрать</button>
@@ -147,10 +146,27 @@ function LootCard({ c, lvl, cards }: { c: Loot['cards'][number]; lvl: number; ca
     </div>
     <b className="loot-n">×{c.n}</b>
     <span className="loot-name">{wizardName(c.w)} <small className={`rar r-${r}`}>{RARITY_NAME[r]}</small></span>
-    {need ? <Bar have={cards} need={need.cards} /> : c.spare ? <small>макс. уровень — +{c.spare} 🪙</small> : null}
+    {need ? <CountBar from={Math.max(0, cards - c.n + (c.fresh ? 1 : 0))} to={cards} need={need.cards} /> : c.spare ? <small>макс. уровень — +{c.spare} 🪙</small> : null}
   </>
 }
 
+// полоска копий в сундуке: было → стало, счётчик бежит, полоска заполняется, при полной — вспышка «можно улучшить»
+function CountBar({ from, to, need }: { from: number; to: number; need: number }) {
+  const [v, setV] = useState(from)
+  useEffect(() => {
+    if (to <= from) return
+    let n = from, t = 0
+    const step = Math.max(60, Math.min(220, 900 / (to - from)))
+    const go = () => { n++; setV(n); sfx.tap(); if (n >= need && n - 1 < need) sfx.chime(); if (n < to) t = window.setTimeout(go, step) }
+    t = window.setTimeout(go, 650)
+    return () => clearTimeout(t)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  return <div className={`count-bar${v >= need ? ' ready' : ''}`}>
+    <Bar have={v} need={need} />
+    {v > from && <b key={v} className="count-plus">+{v - from}</b>}
+    {v >= need && <small className="count-up">⬆ можно улучшить!</small>}
+  </div>
+}
 function Bar({ have, need }: { have: number; need: number }) {
   return <div className={`wiz-bar${have >= need ? ' full' : ''}`}><i style={{ width: `${Math.min(100, (have / need) * 100)}%` }} /><span>{have} / {need}</span></div>
 }
