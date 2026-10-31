@@ -1,5 +1,6 @@
 // Способности колдунов (transcript/progression.md): у каждого колдуна (портрет 0..40) своя, уровни 1..5.
 // Нет p.lvl — способности нет. Счётчики: p.ab — на игру, p.abR — на раунд, p.abT — на турнир.
+import { LOOT_BAG } from '../data/extra.ts'
 import {
   ab, alive, ask, choosePlayer, chooseHandCard, d6, damage, drawFrom, drawSpell, enemies, giveTreasure, hasMod, heal, isEternal,
   log, madEv, T, maxLife, moveTreasure, rand, rollEv, spellOf, cardName, type Ctx,
@@ -412,6 +413,15 @@ ab.death = (ctx, p, killer) => {
     if (hasMod(s, 'loot') && loot().length) {
       madEv(s, '💰', 'Мародёрство!', `${killer.name} обчищает ${p.name}.`, killer.id)
       for (const t of loot()) moveTreasure(s, p, killer, t)
+    }
+    if (killer.treasures.includes(LOOT_BAG) && loot().length) {
+      const list = loot()
+      const t = list.length > 1 ? (ask(ctx, {
+        player: killer.id, prompt: `«Мешок мародёра»: что забрать у ${p.name}?`,
+        options: list.map(t => ({ v: t, label: TREASURES[t].name, card: { deck: 'treasures' as const, index: t } })),
+      }) as number) : list[0]
+      moveTreasure(s, p, killer, t)
+      banner(s, killer, `Мешок мародёра: ${TREASURES[t].name}.`)
     }
     const l = lv(killer, 8)
     if (l) {

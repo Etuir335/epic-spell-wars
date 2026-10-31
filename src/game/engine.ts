@@ -1,5 +1,6 @@
 // Движок: reduce(state, action) — чистая функция. Ход партии идёт шагами; шаг, которому нужен ответ игрока,
 // останавливается (pending) и при ответе перезапускается с начала с накопленными ответами (RNG — в состоянии).
+import '../data/extra.ts' // свои карты — до сборки колод
 import { DEAD, SPELLS, TREASURES } from '../data/cards.ts'
 import {
   BOSS_LIFE, D, SD, ST, GameOver, madEv, creatureTreasures, isEternal, isLast, NeedInput, START_LIFE, T, hasMod, alive, ask, cardName, choosePlayer, d6, damage, deadOf, drawDead, drawSpell, enemies, fillHand,

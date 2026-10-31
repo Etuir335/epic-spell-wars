@@ -1,6 +1,7 @@
 // Картинки карт, подписи и просмотр на весь экран.
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { DEAD, SCHOOL_NAMES, SPELLS, TREASURES, TYPE_NAMES, type School } from '../data/cards'
+import '../data/extra' // свои карты
 import { assetUrl, cardUrl } from '../assets'
 
 export type Deck = 'spells' | 'treasures' | 'dead'
