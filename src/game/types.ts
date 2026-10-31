@@ -77,6 +77,7 @@ export interface Question {
   prompt: string
   options: QOption[]
   optional?: boolean // можно отказаться (ответ null)
+  friendly?: boolean // выбор, кому помочь: боты выбирают себя
 }
 export interface Pending extends Question {
   answers: (number | string | null)[] // уже данные ответы в этом шаге

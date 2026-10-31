@@ -62,6 +62,11 @@ export function fastMove(s: GameState, p: number): Action | null {
   if (s.pending) {
     if (s.pending.player !== p) return null
     const o = s.pending.options
+    if (s.pending.friendly) {
+      const me = o.find(x => x.player === p)
+      if (me || !s.pending.optional) return { type: 'choose', player: p, value: (me ?? o[0]).v }
+      return { type: 'choose', player: p, value: null }
+    }
     if (s.pending.optional && Math.random() < 0.4) return { type: 'choose', player: p, value: null }
     if (o.every(x => x.player != null) && Math.random() < 0.7) {
       const foes = o.filter(x => x.player !== p)

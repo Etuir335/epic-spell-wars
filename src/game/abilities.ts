@@ -16,41 +16,41 @@ const V = {
   spore: { hits: [1, 1, 2, 2, 99], n: [1, 2, 2, 3, 1] },
   pig: { take: [1, 1, 2, 2, 3], from: [1, 2, 2, 3, 3] },
   koschei: [1, 2, 3, 4, 3],
-  angel: { uses: [1, 1, 2, 2, 3], heal: [0, 1, 0, 2, 2] },
+  angel: { uses: [1, 1, 1, 1, 1], heal: [0, 0, 1, 1, 2] },
   skull: { n: [1, 1, 1, 2, 2] },
-  umka: { uses: [1, 1, 2, 2, 3], n: [1, 2, 1, 2, 2] },
+  umka: { uses: [1, 1, 2, 2, 3], n: [2, 2, 3, 3, 4] },
   stink: [0, 1, 1, 2, 2],
   zanz: { uses: [1, 1, 2, 2, 3], bonus: [0, 1, 0, 1, 1] },
   borya: [2, 3, 3, 4, 5],
-  pies: { uses: [1, 1, 2, 2, 3], n: [3, 4, 4, 5, 5] },
+  pies: { uses: [1, 1, 1, 2, 2], n: [2, 3, 3, 3, 4] },
   drama: { life: [5, 6, 6, 8, 8], n: [1, 1, 2, 2, 3] },
   winner: { heal: [1, 1, 2, 2, 2], start: [0, 0, 2, 3, 4] },
   vera: { uses: [1, 1, 2, 2, 3], from: [1, 2, 2, 3, 3] },
   brita: { hits: [1, 1, 2, 2, 3], n: [1, 2, 2, 3, 3] },
   don: { uses: [1, 1, 2, 2, 3], n: [3, 4, 4, 5, 5] },
-  meat: { uses: [1, 1, 2, 2, 3], n: [1, 2, 2, 3, 3] },
+  meat: { uses: [1, 1, 1, 2, 2], n: [1, 2, 2, 2, 2] },
   stick: { uses: [1, 1, 2, 2, 3], need: [4, 3, 3, 3, 3], n: [2, 2, 2, 3, 3] },
-  fairy: [1, 1, 2, 2, 3],
+  fairy: [1, 1, 2, 2, 2],
   eye: { uses: [1, 1, 2, 2, 3] },
   moss: [2, 3, 4, 5, 6],
-  baron: { uses: [1, 1, 2, 2, 3], heal: [0, 1, 0, 2, 2] },
+  baron: { uses: [1, 1, 2, 2, 2], heal: [0, 1, 0, 1, 1] },
   ohren: { uses: [1, 1, 2, 2, 3], n: [1, 1, 1, 2, 2] },
   jung: { all: [1, 1, 2, 2, 3], two: [0, 1, 0, 1, 1] },
   granny: { uses: [1, 1, 2, 2, 3], from: [1, 2, 2, 3, 3] },
   metal: [4, 4, 3, 3, 2],
   tickle: { uses: [1, 1, 2, 2, 3], n: [1, 2, 2, 3, 3] },
   flick: { uses: [1, 1, 2, 2, 0], n: [1, 2, 2, 3, 1] },
-  booze: { uses: [1, 1, 1, 1, 2], n: [4, 5, 5, 6, 6] },
+  booze: { uses: [1, 1, 1, 1, 1], n: [2, 3, 4, 5, 7] },
   swap: { uses: [1, 1, 2, 2, 3] },
-  cat: [6, 6, 5, 5, 4],
+  cat: [6, 6, 6, 5, 5],
   laser: { uses: [1, 1, 2, 2, 3], n: [2, 3, 3, 4, 4] },
-  admiral: [1, 1, 2, 2, 3],
+  admiral: [1, 1, 1, 1, 2],
   dark: { uses: [1, 1, 2, 2, 3] },
   epic: [1, 1, 2, 2, 3],
   smoke: { uses: [1, 1, 2, 2, 3], n: [1, 2, 2, 3, 3] },
   fierce: { kill: [1, 1, 2, 2, 3], medal: [1, 2, 2, 3, 3] },
   horn: { uses: [1, 1, 2, 2, 0], n: [2, 3, 3, 4, 1] },
-  hater: [1, 1, 2, 2, 3],
+  hater: [1, 1, 1, 2, 2],
   zah: [1, 1, 2, 2, 3],
   medal: { life: [3, 4, 4, 5, 6], tr: [0, 0, 1, 1, 2] },
   clown: { uses: [1, 1, 2, 2, 3] },
@@ -200,15 +200,15 @@ export function abTurnStart(ctx: Ctx, p: PlayerState) {
   const l = p.lvl ?? 0, w = p.portrait
   if (!l || p.boss || !p.alive) return
   const foes = enemies(s, p)
-  const target = (k: string, uses: number, prompt: string, list = foes) => {
+  const target = (k: string, uses: number, prompt: string, list = foes, friendly = false) => {
     if (!left(p, k, uses) || !list.length) return null
-    const v = ask(ctx, { player: p.id, prompt, optional: true, options: list.map(q => ({ v: q.id, label: q.name, player: q.id })) })
+    const v = ask(ctx, { player: p.id, prompt, optional: true, friendly, options: list.map(q => ({ v: q.id, label: q.name, player: q.id })) })
     if (v == null) return null
     inc(p, k)
     return s.players[v as number]
   }
   if (w === 9) {
-    const q = target('use', at(V.pies.uses, l), `«Пирожки»: кому вылечить ${at(V.pies.n, l)} ❤? (можно не сейчас)`, alive(s).filter(q => q.life < maxLife(q)))
+    const q = target('use', at(V.pies.uses, l), `«Пирожки»: кому вылечить ${at(V.pies.n, l)} ❤? (можно не сейчас)`, alive(s).filter(q => q.life < maxLife(q)), true)
     if (q) { banner(s, p, `Пирожки для ${q.name}.`); heal(ctx, q, at(V.pies.n, l)) }
   }
   if (w === 14 && p.spell?.length && left(p, 'use', at(V.don.uses, l))) {
