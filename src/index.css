@@ -790,3 +790,21 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 @media (prefers-reduced-motion: reduce) { .chest, .chest i, .loot-item, .loot-card, .chest-rays { animation-duration: .01s !important; } }
 @keyframes soft-blink { 50% { opacity: .5; } }
 .wiz-grid button { position: relative; }
+
+/* дорога наград: эмоции между аренами */
+.road-mark { height: auto; min-height: 54px; flex-direction: column; gap: 10px; padding: 10px 0; }
+.road-mark span:not(.got) { filter: grayscale(.6) brightness(.8); }
+.road-emote { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.road-emote .re-pic { position: relative; width: 62px; height: 62px; border-radius: 16px; padding: 4px; background: linear-gradient(#3a2a4a, #1b1226); border: 3px solid #ffffff22; box-shadow: 0 4px 0 #0009, inset 0 0 12px #0008; }
+.road-emote img { width: 100%; height: 100%; object-fit: contain; filter: grayscale(1) brightness(.45); }
+.road-emote .re-pic i { position: absolute; inset: 0; display: grid; place-items: center; font-style: normal; font-size: 22px; text-shadow: 0 2px 4px #000; }
+.road-emote small { position: relative; font-size: 11px; color: var(--dim); background: #000a; padding: 1px 8px; border-radius: 10px; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.road-emote.got .re-pic { background: radial-gradient(circle at 50% 35%, #ffe9a0, #e9a21c 60%, #8a4a06); border-color: #ffe07a; box-shadow: 0 4px 0 #7a3a00, 0 0 16px #ffb11f88; }
+.road-emote.got img { filter: drop-shadow(0 2px 2px #0008); animation: float 3s ease-in-out infinite; }
+.road-emote.got small { color: var(--gold); }
+.road-emote.fresh .re-pic { animation: road-pop .7s cubic-bezier(.3, 1.6, .5, 1) both, road-glow 1.6s ease-in-out .7s infinite; }
+.road-emote.fresh small { color: #2b1300; background: linear-gradient(#ffe07a, #e07c0a); font-weight: bold; animation: soft-blink 1.2s ease-in-out infinite; }
+.road-emote.fresh::before { content: ''; position: absolute; top: 31px; left: 50%; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%;
+  background: repeating-conic-gradient(#ffd34a55 0 12deg, transparent 12deg 30deg); animation: spin 6s linear infinite; pointer-events: none; }
+@keyframes road-glow { 50% { box-shadow: 0 4px 0 #7a3a00, 0 0 30px #ffd34a; } }
+@keyframes road-pop { from { transform: scale(0) rotate(-20deg); } }

@@ -5,6 +5,8 @@ import { create } from '../game/engine'
 import type { GameState } from '../game/types'
 import { dailyMe } from './Daily'
 import { wizLvl } from '../progression'
+import { EMOTE_ROAD, emoteById } from '../emotes'
+import { emoteImg } from './Emotes'
 import { assetUrl } from '../assets'
 import { saveLocal } from './store'
 import Tutorial from './Tutorial'
@@ -20,6 +22,7 @@ const SKIP_ASK = [
 
 // медалей до победы на арене — запоминаем выбор
 const MEDALS_KEY = 'esw-arena-medals'
+const ROAD_KEY = 'esw-road-seen'
 const savedMedals = () => { try { return Math.min(3, Math.max(1, Number(localStorage.getItem(MEDALS_KEY)) || 1)) } catch { return 1 } }
 
 export default function Arenas({ onPlay, onBack, onNet }: { onPlay: (s: GameState) => void; onBack: () => void; onNet: () => void }) {
@@ -46,6 +49,14 @@ export default function Arenas({ onPlay, onBack, onNet }: { onPlay: (s: GameStat
     saveLocal(s, ARENA_KEY)
     onPlay(s)
   }
+  // эмоции дороги, открытые с прошлого захода, — с анимацией «Новая!»
+  const [fresh] = useState(() => {
+    let was: string[] = []
+    try { was = JSON.parse(localStorage.getItem(ROAD_KEY) ?? '[]') } catch { /* пусто */ }
+    const got = EMOTE_ROAD.filter(r => cups >= r.cups).map(r => r.id)
+    try { localStorage.setItem(ROAD_KEY, JSON.stringify(got)) } catch { /* не важно */ }
+    return new Set(got.filter(id => !was.includes(id)))
+  })
   const seen = (i: number) => updateStats(x => { x.arenaSeen = Math.max(x.arenaSeen ?? 0, i) })
 
   return (
@@ -80,7 +91,16 @@ export default function Arenas({ onPlay, onBack, onNet }: { onPlay: (s: GameStat
               <em>{a.text}</em>
               {open(i) && <button className={`btn gold arena-go${i === cur ? ' hot' : ''}`} onClick={() => fight(i)}>⚔️ В бой</button>}
             </div>
-            {i > 0 && <div className="road-mark"><span>🏆 {a.cups}</span></div>}
+            {i > 0 && <div className="road-mark">
+              <span className={cups >= a.cups ? 'got' : ''}>🏆 {a.cups}</span>
+              {EMOTE_ROAD.filter(r => r.cups < a.cups && r.cups > ARENAS[i - 1].cups).reverse().map(r => {
+                const got = cups >= r.cups, e = emoteById(r.id)
+                return <div key={r.id} className={`road-emote${got ? ' got' : ''}${fresh.has(r.id) ? ' fresh' : ''}`} title={e?.name}>
+                  <div className="re-pic"><img src={emoteImg(r.id)} alt={e?.name} loading="lazy" />{!got && <i>🔒</i>}</div>
+                  <small>{fresh.has(r.id) ? 'Новая!' : got ? e?.name : `🏆 ${r.cups}`}</small>
+                </div>
+              })}
+            </div>}
           </div>
         ))}
       </div>
