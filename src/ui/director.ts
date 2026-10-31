@@ -98,7 +98,7 @@ function duration(e: Ev, sc: Scene): number {
     case 'treasure': return 700
     case 'lose': return 350
     case 'dead': return 500
-    case 'tomb': return 1300
+    case 'tomb': return 4700
     case 'end': return 450
     case 'over': return 1800
     case 'mad': return 1900
@@ -134,7 +134,7 @@ function play(e: Ev, sc: Scene, s: GameState) {
       break
     case 'lose': floater(e.p, '−💰', 'lose'); break
     case 'dead': floater(e.p, '🪦', 'skull'); break
-    case 'tomb': sfx.ghost(); showTomb(e.p, e.c, s.players[e.p].name, e.i, e.n); setTimeout(() => glow(e.p, '#7dffd0'), 1100); break
+    case 'tomb': sfx.ghost(); showTomb(e.p, e.c, s.players[e.p].name, e.i, e.n); setTimeout(() => glow(e.p, '#ffd34a'), 2600); setTimeout(() => sfx.burn(), 2700); break
     case 'over': sfx.fanfare(); break
     case 'mad': sfx.boom(); if (e.p != null) { glow(e.p, '#b14dff'); shake(e.p, 0, true) } break
   }

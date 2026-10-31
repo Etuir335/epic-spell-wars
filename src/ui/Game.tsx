@@ -7,14 +7,14 @@ import { useStatsTracker } from './useStats'
 import { EmoteButton, EmoteLayer, useBotEmotes } from './Emotes'
 import { TombLayer } from './Tombs'
 import { BOSS_INFO, MOD_INFO } from '../daily'
-import { DEAD, SPELLS, TREASURES } from '../data/cards'
+import { DEAD, SCHOOL_NAMES, SPELLS, TREASURES } from '../data/cards'
 import { T } from '../game/core'
 import { waitingFor } from '../game/engine'
 import { ABILITIES, RARITY_NAME } from '../game/abilities'
 import type { Action, GameState, PlayerState } from '../game/types'
 import { think } from '../ai/mcts'
 import Arena from './Arena'
-import { Card, cardText, cardTitle, HoverCtx, Portrait, SpellMeta, useIsDesktop, type CardRef } from './cards'
+import { Card, cardText, cardTitle, HoverCtx, Portrait, SchoolIcon, SpellMeta, useIsDesktop, type CardRef } from './cards'
 import { shownLives, shownState, useDirector } from './director'
 import { shakeEl } from './fx'
 import { assetUrl, cardUrl } from '../assets'
@@ -484,6 +484,7 @@ function Seat({ s, p, life, alive, casting, count, onClick }: {
     <button className={`seat${casting ? ' casting' : ''}${alive ? '' : ' dead'}`} onClick={onClick}>
       <div className="ava" data-pid={p.id}>
         <Portrait i={p.portrait} size={56} dead={!alive} />
+        <DeadSigns p={p} />
         <span className="orb">{alive ? life : '☠'}</span>
         {p.medals > 0 && <span className="medal">{'🏅'.repeat(p.medals)}</span>}
       </div>
@@ -513,6 +514,7 @@ function MyBar({ s, p, life, alive, casting, onClick, onEmote }: { s: GameState;
     <div className={`mybar${casting ? ' casting' : ''}`}>
       <div className="ava" data-pid={p.id} onClick={onClick}>
         <Portrait i={p.portrait} size={50} dead={!alive} />
+        <DeadSigns p={p} />
         <span className="orb big">{alive ? life : '☠'}</span>
       </div>
       <div className="mybar-main" onClick={onClick}>
@@ -588,4 +590,12 @@ function GameOver({ s, onNext, onExit }: { s: GameState; onNext: (() => void) | 
       </div>
     </div>
   )
+}
+
+// Знаки с карт дохлых колдунов: действуют всю игру — значок на портрете, чтобы было видно
+function DeadSigns({ p }: { p: PlayerState }) {
+  if (!p.deadSigns?.length) return null
+  return <span className="ava-signs" title={`Всю игру в каждом заклинании: ${p.deadSigns.map(x => `знак «${SCHOOL_NAMES[x]}»`).join(', ')} (карта дохлого колдуна)`}>
+    {p.deadSigns.map((x, i) => <SchoolIcon key={i} s={x} size={16} />)}
+  </span>
 }

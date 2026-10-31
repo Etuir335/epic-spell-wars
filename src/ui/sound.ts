@@ -67,6 +67,7 @@ export const sfx = {
   zap: () => { tone(1200, 0.25, 'sawtooth', 0.07, 0, 150); noise(0.2, 0.12, 0, 4000, 1, 'highpass') },
   hit: () => { noise(0.18, 0.45, 0, 500, 0.7, 'lowpass', 120); tone(180, 0.2, 'square', 0.12, 0, 60) },
   ghost: () => { tone(220, 1.4, 'sine', 0.09, 0, 660); tone(330, 1.2, 'triangle', 0.05, 0.15, 990); tone(110, 1.6, 'sine', 0.07, 1.0, 55) },
+  burn: () => { noise(2.1, 0.07, 0, 500, 0.5, 'lowpass', 2400); noise(1.6, 0.05, 0.3, 3000, 1.2, 'bandpass'); for (let i = 0; i < 9; i++) noise(0.04, 0.09, 0.15 + Math.random() * 1.8, 2500 + Math.random() * 3000, 3) },
   heal: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.25, 'sine', 0.1, i * 0.07)) },
   coin: () => { tone(1568, 0.12, 'square', 0.06); tone(2093, 0.35, 'square', 0.06, 0.08) },
   death: () => { tone(300, 1.1, 'sawtooth', 0.12, 0, 40); noise(0.9, 0.25, 0.1, 300, 0.5, 'lowpass', 60) },
