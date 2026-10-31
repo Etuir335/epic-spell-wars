@@ -68,6 +68,7 @@ export interface NetInfo {
   setTurn: (key: string | null, end: number | null) => void
   onLeave: () => void
   sendingSince?: number | null // мой ход ушёл хосту и ещё не разобран
+  sendEmote?: (id: string, gold: boolean) => void // показать мою эмоцию остальным
 }
 
 // время на заклинание и на ответ (для проверки в dev-сборке: localStorage esw-turn-sec = секунд)
@@ -232,7 +233,7 @@ export default function Game({ store, onExit, net, ranked }: { store: GameStore;
       </div>
     ) : me ? (
       <>
-        <MyBar s={vs} p={vs.players[viewer]} life={shown[viewer].life} alive={shown[viewer].alive} casting={dir.scene.caster === viewer && !dir.done}
+        <MyBar onEmote={net?.sendEmote} s={vs} p={vs.players[viewer]} life={shown[viewer].life} alive={shown[viewer].alive} casting={dir.scene.caster === viewer && !dir.done}
           onClick={() => setSheet({ player: viewer })} />
         {botMe ? (
           <div className="wait bot-me">
@@ -509,7 +510,7 @@ function AbTag({ p }: { p: PlayerState }) {
   return <span className={`ab-tag r-${a.rarity}`} title={`«${a.name}», ур. ${p.lvl}: ${a.text(p.lvl!)}`}>{a.icon}<b>{p.lvl}</b></span>
 }
 
-function MyBar({ s, p, life, alive, casting, onClick }: { s: GameState; p: PlayerState; life: number; alive: boolean; casting: boolean; onClick: () => void }) {
+function MyBar({ s, p, life, alive, casting, onClick, onEmote }: { s: GameState; p: PlayerState; life: number; alive: boolean; casting: boolean; onClick: () => void; onEmote?: (id: string, gold: boolean) => void }) {
   return (
     <div className={`mybar${casting ? ' casting' : ''}`}>
       <div className="ava" data-pid={p.id} onClick={onClick}>
@@ -520,7 +521,7 @@ function MyBar({ s, p, life, alive, casting, onClick }: { s: GameState; p: Playe
         <b>{p.name}</b> <AbTag p={p} /> {p.medals > 0 && '🏅'.repeat(p.medals)}
         <small>{s.medalsToWin} 🏅 до победы</small>
       </div>
-      {!p.bot && <EmoteButton pid={p.id} portrait={p.portrait} />}
+      {!p.bot && <EmoteButton pid={p.id} portrait={p.portrait} onSend={onEmote} />}
       <div className="mybar-tr">
         {p.creatures?.map(c => <Card key={'c' + c} c={{ deck: 'spells', index: Math.floor(c / 10) }} size="s" caption={false} />)}
         {p.treasures.map(t => <Card key={t} c={{ deck: 'treasures', index: t }} size="s" caption={false} />)}

@@ -13,7 +13,9 @@ import { getDb } from './firebase.ts'
 
 export const ROOMS = 'esw'
 
-export interface Member { uid: string; name: string; portrait: number; joinedAt: number; beat?: Timestamp | null }
+export interface Member { uid: string; name: string; portrait: number; joinedAt: number; beat?: Timestamp | null; emote?: MemberEmote | null }
+// последняя эмоция участника: остальные показывают её, когда меняется at
+export interface MemberEmote { id: string; gold: boolean; at: number }
 export interface BotSeat { id: string; name: string; portrait: number; level: number }
 export interface Room {
   code: string

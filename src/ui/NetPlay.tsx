@@ -10,6 +10,7 @@ import WizardPicker from './WizardPicker'
 import SetPicker, { RulesPicker, rulesLabel, setsLabel } from './SetPicker'
 import { wizardName } from '../wizards'
 import Game from './Game'
+import { showEmote } from './Emotes'
 
 const PROFILE = 'esw-profile'
 const ROOM = 'esw-net-room'
@@ -184,6 +185,19 @@ function RoomView({ code, uid, onLeave, onBack }: { code: string; uid: string; o
     if (lobbyHost && left === 0 && total >= 2) begin()
   }, [left]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // эмоции других игроков: в карточке участника меняется emote.at — показываем над его колдуном
+  const seenEmote = useRef<Record<string, number>>({})
+  useEffect(() => {
+    for (const m of g.members) {
+      const e = m.emote, was = seenEmote.current[m.uid]
+      if (!e) continue
+      seenEmote.current[m.uid] = e.at
+      if (was === undefined || was === e.at || m.uid === uid) continue // первое знакомство — старую не показываем
+      const pid = g.state?.players.findIndex(p => p.uid === m.uid) ?? -1
+      if (pid >= 0) showEmote(pid, e.id, e.gold)
+    }
+  }, [g.members]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (g.room === undefined) return <Shell onBack={onBack}><p className="hint">Загружаем комнату {code}…</p></Shell>
   if (g.room === null) return <Shell onBack={onLeave}><p className="hint">Комнаты {code} нет.</p><button className="btn wide" onClick={onLeave}>Назад</button></Shell>
 
@@ -210,6 +224,7 @@ function RoomView({ code, uid, onLeave, onBack }: { code: string; uid: string; o
             setTurn: (turnKey, turnEnd) => void updateRoom(code, { turnKey, turnEnd }).catch(() => {}),
             onLeave: () => void leaveGame(),
             sendingSince: g.sendingSince,
+            sendEmote: (id, gold) => void updateMember(code, uid, { emote: { id, gold, at: Date.now() } }).catch(() => {}),
           }} />
         {toast && <div className="toast">{toast}</div>}
       </>
