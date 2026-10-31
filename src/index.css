@@ -546,7 +546,7 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .road-step { display: flex; flex-direction: column; align-items: center; }
 .road-mark { position: relative; height: 54px; width: 100%; display: flex; align-items: center; justify-content: center; }
 .road-mark::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 10px; margin-left: -5px; background: repeating-linear-gradient(#ffc53155 0 10px, #ffc53122 10px 20px); border-radius: 5px; }
-.road-mark span { position: relative; padding: 4px 12px; border-radius: 20px; background: linear-gradient(#ffe07a, #e07c0a); color: #2b1300; font-family: var(--title); font-size: 15px; box-shadow: 0 2px 0 #7a3a00, 0 0 12px #ffb11f88; }
+.road-mark > span { position: relative; padding: 4px 12px; border-radius: 20px; background: linear-gradient(#ffe07a, #e07c0a); color: #2b1300; font-family: var(--title); font-size: 15px; box-shadow: 0 2px 0 #7a3a00, 0 0 12px #ffb11f88; }
 .arena-card { position: relative; width: 100%; border-radius: 22px; overflow: hidden; display: flex; flex-direction: column; align-items: center; padding: 0 0 14px; text-align: center;
   background: radial-gradient(ellipse at 50% 30%, var(--s1) 0%, var(--s2) 45%, var(--s3) 100%); border: 3px solid #ffffff2a; box-shadow: 0 10px 24px #000b, inset 0 0 40px #0008; }
 .arena-card.cur { border-color: var(--gold); box-shadow: 0 0 0 2px #9a2a10, 0 0 34px #ffb11f88, 0 10px 24px #000b; }
@@ -793,7 +793,7 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 
 /* дорога наград: эмоции между аренами */
 .road-mark { height: auto; min-height: 54px; flex-direction: column; gap: 10px; padding: 10px 0; }
-.road-mark span:not(.got) { filter: grayscale(.6) brightness(.8); }
+.road-mark > span:not(.got) { filter: grayscale(.6) brightness(.8); }
 .road-emote { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .road-emote .re-pic { position: relative; width: 62px; height: 62px; border-radius: 16px; padding: 4px; background: linear-gradient(#3a2a4a, #1b1226); border: 3px solid #ffffff22; box-shadow: 0 4px 0 #0009, inset 0 0 12px #0008; }
 .road-emote img { width: 100%; height: 100%; object-fit: contain; filter: grayscale(1) brightness(.45); }
@@ -847,3 +847,28 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .arena-wiz span { border-radius: 50%; filter: grayscale(.8) brightness(.6); }
 .arena-wiz span.got { filter: none; box-shadow: 0 0 0 2px var(--gold); }
 .menu-badge { position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: #e3262a; color: #fff; font: bold 13px/22px sans-serif; text-align: center; border: 2px solid #fff; box-shadow: 0 2px 4px #000a; animation: soft-bounce 1.4s ease-in-out infinite; z-index: 2; }
+.chest-rush { margin-top: 2px; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; color: #2b1300; background: linear-gradient(#ffe07a, #e07c0a); box-shadow: 0 2px 0 #7a3a00; white-space: nowrap; }
+.chest-rush.ask { background: linear-gradient(#ff9a7a, #d0401a); color: #fff; animation: soft-blink 1s infinite; }
+.chest-rush.poor { filter: grayscale(.8) brightness(.7); }
+.arena-wiz span { cursor: pointer; }
+.wiz-look { flex-direction: column; gap: 8px; }
+.wiz-look img { width: min(86vw, 420px); height: auto; border-radius: 16px; box-shadow: 0 0 40px #ffb11f66; animation: road-pop .35s cubic-bezier(.3, 1.6, .5, 1) both; }
+.wiz-look b { font-family: var(--title); font-size: 24px; color: var(--gold); text-shadow: 0 2px 0 #000; }
+.wiz-look small { color: var(--dim); }
+.emo-open { margin: 0 0 10px; }
+.deck-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-width: 420px; margin: 6px auto 10px; padding: 10px; border-radius: 16px; background: linear-gradient(#2a1a34, #1a0f22); border: 2px solid #ffc53155; }
+.deck-slots button { aspect-ratio: 1; border-radius: 12px; border: 2px solid #ffffff22; background: #ffffff0d; padding: 4px; display: grid; place-items: center; }
+.deck-slots button img { width: 100%; height: 100%; object-fit: contain; }
+.deck-slots button.empty span { font-size: 26px; color: #ffffff40; }
+.deck-slots.swap button { border-color: #ff9a7a; animation: wobble 1.2s ease-in-out infinite; }
+.deck-sig { width: 28px; height: 28px; vertical-align: middle; object-fit: contain; }
+.emote-coll .in-deck { border-color: var(--gold); box-shadow: 0 0 8px #ffb11f66; }
+.emote-coll .on { background: #ffc53133; }
+.emote-deck { padding-bottom: 150px; }
+.deck-look { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: flex; gap: 12px; align-items: center; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: linear-gradient(#3a2446, #1f1228); border-top: 2px solid #ffc53166; animation: sheetUp .2s ease-out; }
+.deck-look > img { width: 96px; height: 96px; object-fit: contain; animation: road-pop .3s cubic-bezier(.3, 1.6, .5, 1) both; }
+.deck-look > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.deck-look b { font-family: var(--title); font-size: 18px; color: var(--gold); }
+.deck-look-btns { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.deck-look-btns .btn { padding: 8px 12px; font-size: 15px; }
+.deck-look-btns small { color: var(--dim); font-size: 12px; }

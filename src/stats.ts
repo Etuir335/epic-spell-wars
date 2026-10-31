@@ -34,6 +34,7 @@ export interface Stats {
   emotes?: string[] // эмоции из сундуков (см. emotes.ts)
   road?: number[] // забранные награды дороги кубков (progression.ts ROAD)
   wiz?: Record<number, { lvl: number; cards: number }> // колдуны: уровень и карточки (прогрессия)
+  emoteDeck?: string[] // колода эмоций на бой
   newEmote?: string // только что выпавшая эмоция — показать игроку
   gold?: number
   chests?: (ChestSlot | null)[] // 4 слота сундуков (progression.ts)

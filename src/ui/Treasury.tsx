@@ -5,14 +5,15 @@ import { ABILITIES, RARITY_NAME, type Rarity } from '../game/abilities'
 import { wizardName } from '../wizards'
 import { emoteById } from '../emotes'
 import {
-  CHESTS, MAX_LVL, WIZ_COUNT, canUpgrade, chestSlots, freeChestReady, nextCost, openChest, opening, owned, rarityOf, ready, startOpening, upgrade,
+  CHESTS, MAX_LVL, WIZ_COUNT, canUpgrade, chestSlots, freeChestReady, nextCost, openChest, opening, owned, rarityOf, ready, rushChest, rushCost, startOpening, upgrade,
   wizCards, wizLvl, type ChestKind, type Loot,
 } from '../progression'
 import { Portrait } from './cards'
 import { emoteImg } from './Emotes'
+import EmoteDeck from './EmoteDeck'
+import { dailyMe } from './Daily'
 import { sfx, uiSfx } from './sound'
 import { updateStats, useStatsData } from './useStats'
-import { dailyMe } from './Daily'
 
 const useNow = (ms = 1000) => {
   const [now, setNow] = useState(Date.now())
@@ -52,6 +53,15 @@ export function Chests({ onBack }: { onBack: () => void }) {
     if (ready(c, now)) open(i)
     else if (c.until == null && busy < 0) { sfx.chime(); updateStats(x => { startOpening(x, i) }) }
   }
+  // быстро открыть за золото: первое нажатие — спросить, второе — открыть
+  const [rushAsk, setRushAsk] = useState(-1)
+  const rush = (i: number) => {
+    if (rushAsk !== i) { setRushAsk(i); return }
+    setRushAsk(-1)
+    let got: Loot | null = null
+    updateStats(x => { if (rushChest(x, i)) got = openChest(x, i) })
+    if (got) { sfx.coin(); sfx.boom(); setLoot(got) } else sfx.hit()
+  }
   const free = freeChestReady(st)
   const tomorrow = new Date(); tomorrow.setHours(24, 0, 0, 0)
 
@@ -72,6 +82,8 @@ export function Chests({ onBack }: { onBack: () => void }) {
               <b>{k.name}</b>
               <small>{isReady ? 'ОТКРЫТЬ!' : ticking ? fmtLeft(c.until! - now) : busy >= 0 ? fmtLeft(k.ms) : `▶ ${fmtLeft(k.ms)}`}</small>
               <em>Арена {c.arena + 1}</em>
+              {!isReady && <span className={`chest-rush${rushAsk === i ? ' ask' : ''}${(st.gold ?? 0) < rushCost(c, now) ? ' poor' : ''}`} data-nosfx onClick={e => { e.stopPropagation(); rush(i) }}>
+                {rushAsk === i ? 'Точно?' : '⚡'} 🪙{rushCost(c, now)}</span>}
             </button>
           )
         })}
@@ -148,6 +160,7 @@ const ORDER: Rarity[] = ['common', 'rare', 'epic', 'legend']
 export function Wizards({ onBack }: { onBack: () => void }) {
   const st = useStatsData()
   const [look, setLook] = useState<number | null>(null)
+  const [emo, setEmo] = useState(false)
   const all = Array.from({ length: WIZ_COUNT }, (_, w) => w)
   const mine = all.filter(w => owned(st, w)).sort((a, b) => ORDER.indexOf(rarityOf(a)) - ORDER.indexOf(rarityOf(b)) || wizLvl(st, b) - wizLvl(st, a))
   const locked = all.filter(w => !owned(st, w)).sort((a, b) => ORDER.indexOf(rarityOf(a)) - ORDER.indexOf(rarityOf(b)))
@@ -162,9 +175,11 @@ export function Wizards({ onBack }: { onBack: () => void }) {
       </button>
     )
   }
+  if (emo) return <EmoteDeck portrait={dailyMe().portrait} onBack={() => setEmo(false)} />
   return (
     <div className="screen wizards-screen">
       <div className="top-bar"><button onClick={onBack}>←</button><h2>Колдуны</h2><span className="gold-chip">🪙 {st.gold ?? 0}</span></div>
+      <button className="btn wide emo-open" onClick={() => setEmo(true)}>😆 Эмоции на бой — выбрать 8</button>
       <h3 className="ach-head">Открыто <span>{mine.length} / {WIZ_COUNT}</span></h3>
       <div className="wiz-coll">{mine.map(tile)}</div>
       {locked.length > 0 && <><h3 className="ach-head">Ещё не найдены</h3><p className="hint">Выпадают из сундуков. Чем реже колдун, тем сильнее способность.</p><div className="wiz-coll">{locked.map(tile)}</div></>}

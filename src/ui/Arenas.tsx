@@ -10,7 +10,7 @@ import { Portrait } from './cards'
 import { wizardName } from '../wizards'
 import { sfx, uiSfx } from './sound'
 import { emoteImg } from './Emotes'
-import { assetUrl } from '../assets'
+import { assetUrl, cardUrl } from '../assets'
 import { saveLocal } from './store'
 import Tutorial from './Tutorial'
 import { updateStats, useStatsData } from './useStats'
@@ -54,12 +54,14 @@ export default function Arenas({ onPlay, onBack, onNet }: { onPlay: (s: GameStat
   // награды дороги: забираются нажатием — вспышка, всплывающая надпись и звук
   const [taken, setTaken] = useState<{ cups: number; text: string } | null>(null)
   const [full, setFull] = useState(false)
+  // колдун крупно: нажатие на портрет (и сразу после получения с дороги)
+  const [look, setLook] = useState<number | null>(null)
   const ready = roadReady(st)
   const claim = (r: RoadPrize) => {
     let ok = false
     updateStats(x => { ok = claimRoad(x, r) })
     if (!ok) { setFull(true); sfx.hit(); setTimeout(() => setFull(false), 1800); return }
-    if (r.t === 'gold') sfx.coin(); else if (r.t === 'chest') uiSfx.chestOpen(); else if (r.t === 'wiz') sfx.fanfare(); else uiSfx.reveal()
+    if (r.t === 'gold') sfx.coin(); else if (r.t === 'chest') uiSfx.chestOpen(); else if (r.t === 'wiz') { sfx.fanfare(); setTimeout(() => setLook(r.w), 700) } else uiSfx.reveal()
     setTaken({ cups: r.cups, text: prizeText(r) })
     setTimeout(() => setTaken(x => (x?.cups === r.cups ? null : x)), 1400)
   }
@@ -98,7 +100,7 @@ export default function Arenas({ onPlay, onBack, onNet }: { onPlay: (s: GameStat
               </div>
               <div className="arena-ribbon"><small>Арена {i + 1}</small><b>{a.name}</b></div>
               <em>{a.text}</em>
-              {ARENA_WIZ[i] && <div className="arena-wiz"><small>Колдуны арены:</small>{ARENA_WIZ[i].map(w => <span key={w} className={wizLvl(st, w) ? 'got' : ''} title={wizardName(w)}><Portrait i={w} size={34} /></span>)}</div>}
+              {ARENA_WIZ[i] && <div className="arena-wiz"><small>Колдуны арены:</small>{ARENA_WIZ[i].map(w => <span key={w} className={wizLvl(st, w) ? 'got' : ''} title={wizardName(w)} onClick={() => setLook(w)}><Portrait i={w} size={34} /></span>)}</div>}
               {open(i) && <button className={`btn gold arena-go${i === cur ? ' hot' : ''}`} onClick={() => fight(i)}>⚔️ В бой</button>}
             </div>
             {i > 0 && <div className="road-mark">
@@ -106,7 +108,7 @@ export default function Arenas({ onPlay, onBack, onNet }: { onPlay: (s: GameStat
               {ROAD.filter(r => r.cups < a.cups && r.cups >= ARENAS[i - 1].cups).reverse().map(r => {
                 const got = roadTaken(st, r), can = !got && cups >= r.cups
                 return <div key={r.cups} className={`road-prize t-${r.t}${got ? ' got' : can ? ' ready' : ''}`}>
-                  <button className="rp-pic" disabled={!can} data-nosfx onClick={() => claim(r)}><PrizePic r={r} />{!got && !can && <i>🔒</i>}{got && <b className="rp-check">✓</b>}</button>
+                  <button className="rp-pic" disabled={!can && r.t !== 'wiz'} data-nosfx onClick={() => (can ? claim(r) : r.t === 'wiz' && setLook(r.w))}><PrizePic r={r} />{!got && !can && <i>🔒</i>}{got && <b className="rp-check">✓</b>}</button>
                   <small>{can ? 'Забрать!' : got ? prizeText(r) : `🏆 ${r.cups}`}</small>
                   {taken?.cups === r.cups && <span className="rp-fly">{taken.text}</span>}
                 </div>
@@ -125,6 +127,13 @@ export default function Arenas({ onPlay, onBack, onNet }: { onPlay: (s: GameStat
         }}>{sure ? SKIP_ASK[sure - 1] : 'я уже играл в настолку…'}</button>
       )}
       {sure > 0 && <button className="skip-all" onClick={() => setSure(0)}>Нет, буду проходить по порядку</button>}
+      {look != null && (
+        <div className="zoom wiz-look" onClick={() => setLook(null)}>
+          <img src={cardUrl('wizards', look)} alt="" />
+          <b>{wizardName(look)}</b>
+          <small>{wizLvl(st, look) ? `Есть · ур. ${wizLvl(st, look)}` : 'Ещё не открыт'}</small>
+        </div>
+      )}
       {intro != null && (
         <Tutorial slides={ARENAS[intro].intro} done="Понятно!" onClose={() => { seen(intro); setIntro(null) }} />
       )}

@@ -87,6 +87,18 @@ export function startOpening(st: Progress, i: number, now = Date.now()) {
   st.chests = s
   return true
 }
+// открыть сразу за золото: 1 🪙 за 3 минуты ожидания, не меньше 5
+export const rushCost = (c: ChestSlot, now = Date.now()) => Math.max(5, Math.ceil((c.until != null ? Math.max(0, c.until - now) : CHESTS[c.kind].ms) / 180e3))
+export function rushChest(st: Progress, i: number, now = Date.now()) {
+  const s = chestSlots(st), c = s[i]
+  if (!c || ready(c, now)) return false
+  const cost = rushCost(c, now)
+  if ((st.gold ?? 0) < cost) return false
+  st.gold = (st.gold ?? 0) - cost
+  s[i] = { ...c, until: now }
+  st.chests = s
+  return true
+}
 export const dayKey = (d = new Date()) => d.toDateString()
 export const freeChestReady = (st: Progress) => st.freeChestDay !== dayKey()
 
