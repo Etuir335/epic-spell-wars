@@ -255,7 +255,7 @@ export function heal(ctx: Ctx, p: PlayerState | null, n: number) {
   if (p.life > before) log(ctx.s, `${p.name} накручивает ${p.life - before} ж. (${before}→${p.life}).`)
 }
 export function damage(ctx: Ctx, p: PlayerState | null, n: number) {
-  if (!p || !p.alive || n <= 0) return
+  if (!p || !p.alive || p.life <= 0 || n <= 0) return
   const from = ctx.s.turn?.actor ?? null
   const foe = from != null && from !== p.id ? ctx.s.players[from] : null
   if (foe && ab.dmg) n = ab.dmg(ctx, foe, p, n)
@@ -264,7 +264,7 @@ export function damage(ctx: Ctx, p: PlayerState | null, n: number) {
   if (hasMod(ctx.s, 'mirror') && from != null && from !== p.id) {
     ctx.s.hits = (ctx.s.hits ?? 0) + 1
     const att = ctx.s.players[from]
-    if (ctx.s.hits % 3 === 0 && att.alive) {
+    if (ctx.s.hits % 3 === 0 && att.alive && att.life > 0) {
       madEv(ctx.s, '🪞', 'Отражающий щит!', `Удар по ${p.name} отлетает в ${att.name}.`, att.id)
       p = att
     }
@@ -313,10 +313,19 @@ export function kill(ctx: Ctx, p: PlayerState) {
   // нежданчик: колдунства с руки из последних сил (лечение может спасти)
   if (hooks.surprise && p.spell?.some(c => !c.done && !c.on && c.id >= 0 && spellOf(c.id).surprise)) {
     p.life = 0
-    hooks.surprise(ctx, p)
+    try { hooks.surprise(ctx, p) } catch (e) {
+      // нежданчик закончил игру — подыхающий всё равно подыхает, победителем его не считать
+      if (e instanceof GameOver && p.alive && p.life <= 0) die(ctx, p)
+      throw e
+    }
     if (p.life > 0) return
   }
   if (ab.save?.(ctx, p)) return
+  die(ctx, p)
+  if (alive(s).length <= 1) throw new GameOver()
+}
+function die(ctx: Ctx, p: PlayerState) {
+  const { s } = ctx
   p.life = 0
   p.alive = false
   ev(s, { k: 'death', p: p.id })
@@ -338,7 +347,6 @@ export function kill(ctx: Ctx, p: PlayerState) {
     madEv(s, '🩸', 'Кровавая луна!', `${killer.name} пьёт силу жертвы: +5 ❤.`, killer.id)
     heal(ctx, killer, 5)
   }
-  if (alive(s).length <= 1) throw new GameOver()
 }
 
 // ---------- знаки и броски ----------
