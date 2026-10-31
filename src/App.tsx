@@ -5,6 +5,7 @@ import { ZoomProvider } from './ui/cards'
 import Game from './ui/Game'
 import Gallery from './ui/Gallery'
 import Profile from './ui/Profile'
+import MatchLog from './ui/MatchLog'
 import Arenas, { ARENA_KEY } from './ui/Arenas'
 import DailyScreen, { DAILY_KEY, finishDaily } from './ui/Daily'
 import { dailyOf } from './daily'
@@ -20,7 +21,7 @@ import { canUpgrade, roadReady, WIZ_COUNT } from './progression'
 
 const NetPlay = lazy(() => import('./ui/NetPlay')) // Firebase — отдельным куском, только для сетевой игры
 
-type Screen = 'menu' | 'setup' | 'game' | 'gallery' | 'net' | 'profile' | 'daily' | 'dailyGame' | 'arenas' | 'arenaGame' | 'chests' | 'wizards'
+type Screen = 'menu' | 'setup' | 'game' | 'gallery' | 'net' | 'profile' | 'daily' | 'dailyGame' | 'arenas' | 'arenaGame' | 'chests' | 'wizards' | 'history'
 const startRoom = tgStartRoom() // открыли по приглашению из Telegram
 
 export default function App() {
@@ -69,10 +70,12 @@ export default function App() {
             {game && game.phase !== 'tournament' && <button onClick={() => setScreen('setup')}><i>🎲</i>Новый турнир</button>}
             <button onClick={() => setScreen('profile')}><i>👤</i>Профиль</button>
             <button onClick={() => setScreen('gallery')}><i>🃏</i>Карты</button>
+            <button onClick={() => setScreen('history')}><i>📜</i>История</button>
             <button onClick={() => setTut(true)}><i>📖</i>Правила</button>
           </div>
         </div>
       )}
+      {screen === 'history' && <MatchLog onBack={() => setScreen('menu')} />}
       {screen === 'setup' && (
         <Setup onBack={() => setScreen('menu')} onStart={(players, medals, sets, rules) => {
           clearLocal()

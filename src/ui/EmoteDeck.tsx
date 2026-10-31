@@ -1,4 +1,4 @@
-// Колода эмоций на бой: 8 слотов сверху, ниже вся коллекция. Нажатие — посмотреть и послушать, «В колоду» / «Убрать».
+// Колода эмоций на бой: 10 слотов сверху, ниже вся коллекция. Нажатие — посмотреть и послушать, «В колоду» / «Убрать».
 import { useEffect, useRef, useState } from 'react'
 import { DECK_SIZE, EMOTES, emoteDeck, hasEmote, isGolden, wizEmote, type Emote } from '../emotes'
 import { emoteImg, emoteSnd } from './Emotes'
@@ -68,7 +68,7 @@ export default function EmoteDeck({ onBack, portrait }: { onBack: () => void; po
   return (
     <div className="screen emote-deck">
       <div className="top-bar"><button onClick={onBack}>←</button><h2>Эмоции</h2><span className="gold-chip">{deck.length} / {DECK_SIZE}</span></div>
-      <p className="hint center">{swap ? 'Колода полна — нажми эмоцию, которую заменить' : 'Эти 8 эмоций будут в бою. Зажми и перетащи, чтобы поменять. Фирменная эмоция колдуна добавится сама.'}</p>
+      <p className="hint center">{swap ? 'Колода полна — нажми эмоцию, которую заменить' : `Эти ${DECK_SIZE} эмоций будут в бою. Зажми и перетащи, чтобы поменять. Фирменная эмоция колдуна добавится сама.`}</p>
       <div className={`deck-slots${swap ? ' swap' : ''}`}>
         {Array.from({ length: DECK_SIZE }, (_, i) => (
           <button key={i} data-slot={i} className={`${deck[i] ? '' : 'empty'}${over === i ? ' over' : ''}${drag && deck[i]?.id === drag.id ? ' lift' : ''}`} data-nosfx onClick={() => tapOk() && slot(i)} {...(deck[i] ? dragProps(deck[i].id, i) : {})}>

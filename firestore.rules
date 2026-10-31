@@ -40,6 +40,13 @@ service cloud.firestore {
         && request.resource.data.score is int && request.resource.data.score >= 0 && request.resource.data.score <= 5000
         && request.resource.data.name is string && request.resource.data.name.size() <= 20;
     }
+    // Жалобы на спорные моменты: отправляет любой вошедший от своего имени, читают и удаляют — админы
+    match /reports/{id} {
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid
+        && request.resource.data.text is string && request.resource.data.text.size() <= 1000
+        && request.resource.data.lines is list && request.resource.data.lines.size() <= 200;
+      allow read, delete: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
     // Общая библиотека музыки: читают все вошедшие, меняют только админы
     match /music/{id} {
       allow read: if request.auth != null;

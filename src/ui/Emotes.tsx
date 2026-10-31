@@ -9,7 +9,7 @@ import { getStats } from './useStats'
 export const emoteImg = (id: string) => assetUrl(`assets/emotes/${id}.webp`)
 export const emoteSnd = (id: string) => assetUrl(`assets/emotes/${id}.ogg`)
 
-interface Bubble { key: number; pid: number; id: string; gold: boolean; x: number; y: number }
+interface Bubble { key: number; pid: number; id: string; gold: boolean; x: number; y: number; dx: number; down: boolean }
 const EV = 'esw-emote'
 let seq = 0
 const lastAt: Record<number, number> = {}
@@ -30,7 +30,10 @@ export function EmoteLayer() {
       const { pid, id, gold } = (e as CustomEvent).detail as { pid: number; id: string; gold: boolean }
       const el = document.querySelector(`.ava[data-pid="${pid}"]`)
       const r = el?.getBoundingClientRect()
-      const b: Bubble = { key: ++seq, pid, id, gold, x: r ? r.left + r.width / 2 : innerWidth / 2, y: r ? r.top : innerHeight / 2 }
+      // пузырь не вылезает за край экрана (хвостик всё равно смотрит на портрет); у верхних портретов — под ним
+      const ax = r ? r.left + r.width / 2 : innerWidth / 2, x = Math.min(innerWidth - 62, Math.max(62, ax))
+      const down = !!r && r.top < innerHeight * 0.4
+      const b: Bubble = { key: ++seq, pid, id, gold, x, dx: ax - x, down, y: r ? (down ? r.bottom + 6 : r.top) : innerHeight / 2 }
       setList(l => [...l.filter(o => o.pid !== pid), b])
       setTimeout(() => setList(l => l.filter(o => o.key !== b.key)), 2600)
       playSound(emoteSnd(id), gold ? 0.9 : 0.7)
@@ -39,7 +42,7 @@ export function EmoteLayer() {
     return () => window.removeEventListener(EV, on)
   }, [])
   return <>{list.map(b => (
-    <div key={b.key} className={`emote-bubble${b.gold ? ' gold' : ''}`} style={{ left: b.x, top: Math.max(70, b.y) }}>
+    <div key={b.key} className={`emote-bubble${b.gold ? ' gold' : ''}${b.down ? ' down' : ''}`} style={{ left: b.x, top: b.down ? b.y : Math.max(110, b.y), '--dx': `${Math.max(-34, Math.min(34, b.dx))}px` } as React.CSSProperties}>
       <img src={emoteImg(b.id)} alt="" />
     </div>
   ))}</>

@@ -195,7 +195,7 @@ export function Wizards({ onBack }: { onBack: () => void }) {
   return (
     <div className="screen wizards-screen">
       <div className="top-bar"><button onClick={onBack}>←</button><h2>Колдуны</h2><span className="gold-chip">🪙 {st.gold ?? 0}</span></div>
-      <button className="btn wide emo-open" onClick={() => setEmo(true)}>😆 Эмоции на бой — выбрать 8</button>
+      <button className="btn wide emo-open" onClick={() => setEmo(true)}>😆 Эмоции на бой — выбрать 10</button>
       <h3 className="ach-head">Открыто <span>{mine.length} / {WIZ_COUNT}</span></h3>
       <div className="wiz-coll">{mine.map(tile)}</div>
       {locked.length > 0 && <><h3 className="ach-head">Ещё не найдены</h3><p className="hint">Выпадают из сундуков. Чем реже колдун, тем сильнее способность.</p><div className="wiz-coll">{locked.map(tile)}</div></>}

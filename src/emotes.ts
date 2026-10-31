@@ -116,7 +116,7 @@ export function hasEmote(st: EmoteOwner, e: Emote): boolean {
 export const isGolden = (st: EmoteOwner, e: Emote) => e.kind === 'wiz' && wizLevelOf(st, e.wiz!) >= 5
 
 // колода эмоций на бой (как в Clash Royale): 8 общих, выбираются в «Колдуны → Эмоции»; без выбора — первые открытые
-export const DECK_SIZE = 8
+export const DECK_SIZE = 10
 export function emoteDeck(st: EmoteOwner): Emote[] {
   const own = (e?: Emote): e is Emote => !!e && e.kind !== 'wiz' && hasEmote(st, e)
   const d = (st.emoteDeck ?? []).map(emoteById).filter(own)

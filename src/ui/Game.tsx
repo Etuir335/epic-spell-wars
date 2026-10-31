@@ -1,5 +1,7 @@
 // Экран партии: враги сверху, арена в центре (режиссёр проигрывает ходы), я и рука веером снизу.
 import { useEffect, useMemo, useRef, useState } from 'react'
+import MatchLog from './MatchLog'
+import { useMatchRecorder } from '../history'
 import Tutorial, { tutorialSeen } from './Tutorial'
 import { useStatsTracker } from './useStats'
 import { EmoteButton, EmoteLayer, useBotEmotes } from './Emotes'
@@ -149,6 +151,7 @@ export default function Game({ store, onExit, net, ranked }: { store: GameStore;
   const dir = useDirector(s)
   useBots(s, store.dispatch, dir.done && (!net || net.isHost))
   useBotEmotes(s, dir.pos)
+  useMatchRecorder(s, net ? net.seat : humans[0] ?? -1, net ? 'По сети' : ranked ? 'Арена' : s.mods?.length ? 'Испытание' : 'Турнир')
   // локальная «Колдовская лихорадка»: свой срок хода вместо сетевого
   const [lt, setLt] = useState<{ key: string | null; end: number | null }>({ key: null, end: null })
   const timerNet: TurnNet | undefined = net ?? (s.mods?.includes('fever') ? { isHost: true, turnKey: lt.key, turnEnd: lt.end, setTurn: (key, end) => setLt({ key, end }) } : undefined)
@@ -324,14 +327,7 @@ export default function Game({ store, onExit, net, ranked }: { store: GameStore;
 
       {over && <GameOver s={s} onNext={!net || net.isHost ? () => act({ type: 'nextGame' }) : null} onExit={onExit} />}
 
-      {sheet === 'log' && (
-        <div className="sheet-back" onClick={() => setSheet(null)}>
-          <div className="sheet log-sheet">
-            <h3>Журнал</h3>
-            {[...s.log].reverse().map((l, i) => <div key={i}>{l}</div>)}
-          </div>
-        </div>
-      )}
+      {sheet === 'log' && <div className="ml-overlay"><MatchLog id={String(s.tid ?? 0)} ver={s.seq} onBack={() => setSheet(null)} /></div>}
       {sheet === 'music' && (
         <div className="sheet-back" onClick={() => setSheet(null)}>
           <div className="sheet music-sheet" onClick={e => e.stopPropagation()}>
