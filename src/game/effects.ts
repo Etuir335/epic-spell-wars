@@ -1,7 +1,7 @@
 // Эффекты карт заклинаний по индексу (тексты — transcript/spells.md, src/data/cards.ts).
 import { SPELLS, type School, type SpellType } from '../data/cards.ts'
 import {
-  alive, ask, choosePlayer, chooseHandCard, chooseTreasure, damage, drawDead, drawSpell, enemies, gainTreasure, heal,
+  alive, aoe, hitAll, ask, choosePlayer, chooseHandCard, chooseTreasure, damage, drawDead, drawSpell, enemies, gainTreasure, heal,
   ev, leftEnemy, log, loseTreasure, mightyRoll, moveTreasure, neighborsOf, rand, randomEnemy, rightEnemy, rollEv, rollOne, signs, spellOf,
   strongest, tier, uniqueSigns, weakest, yesNo, cardName, type Ctx,
 } from './core.ts'
@@ -11,7 +11,6 @@ export interface CardInfo { index: number; school: School | null; school2?: Scho
 export interface E extends Ctx { p: PlayerState; card: CardInfo; depth: number; cur?: SpellCard }
 
 const M = (e: E) => tier(mightyRoll(e, e.p, e.card))
-const hitAll = (e: E, list: PlayerState[], n: number) => { for (const q of list) damage(e, q, n) }
 const uniq = (list: (PlayerState | null)[]) => [...new Set(list.filter((q): q is PlayerState => !!q))]
 const enemiesOf = (e: E) => enemies(e.s, e.p)
 const chooseEnemy = (e: E, prompt = 'Выбери врага') => choosePlayer(e, e.p, enemiesOf(e), prompt)
@@ -258,7 +257,7 @@ export const EFFECTS: Record<number, (e: E) => void> = {
     log(e.s, `${q.name} сбрасывает наворот из своего заклинания.`)
   },
   // 37 Каменючный
-  37: e => enemiesOf(e).forEach((q, i) => damage(e, q, i + 1)),
+  37: e => aoe(e, () => enemiesOf(e).forEach((q, i) => damage(e, q, i + 1))),
   // 38 Аппетитный
   38: e => { const n = uniqueSigns(e.p); hitAll(e, enemiesOf(e).filter(q => q.life % 2 === 1), n) },
   // 39 Ядовый

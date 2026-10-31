@@ -12,6 +12,7 @@ export const MOD_INFO: Record<Mod, { icon: string; name: string; text: string }>
   greedy: { icon: '💰', name: 'Жадный дед', text: 'Каждый раунд — сокровище всем. Но больше трёх сокровищ кусаются: −1 ❤ за каждое лишнее.' },
   fever: { icon: '🥵', name: 'Колдовская лихорадка', text: 'На заклинание и ответ — 12 секунд. Не успел — ход пропущен.' },
   mirror: { icon: '🪞', name: 'Отражающий щит', text: 'Каждый третий удар отлетает в того, кто бил.' },
+  loot: { icon: '💀', name: 'Мародёрство', text: 'Кто добил колдуна, забирает все его сокровища.' },
 }
 export const BOSS_INFO: Record<BossKind, { icon: string; name: string; text: string; portrait: number }> = {
   grandpa: { icon: '👴', name: 'Дед Черепламень', text: '21 ❤. В начале каждого раунда орёт и бьёт тебя на 1.', portrait: 7 },

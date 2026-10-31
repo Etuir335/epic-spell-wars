@@ -15,7 +15,7 @@ export interface SpellCard {
 }
 
 // Безумные правила испытания дня и боссы
-export type Mod = 'wild' | 'reverse' | 'blood' | 'swap' | 'dice' | 'zombie' | 'greedy' | 'fever' | 'mirror'
+export type Mod = 'wild' | 'reverse' | 'blood' | 'swap' | 'dice' | 'zombie' | 'greedy' | 'fever' | 'mirror' | 'loot'
 export type BossKind = 'grandpa' | 'slime' | 'mirror'
 // Наборы карт: база «Битва на горе Черепламени» и дополнения
 export type CardSet = 'base' | 'swamp'
@@ -49,6 +49,11 @@ export interface PlayerState {
   deadSigns?: School[] // знаки с карт дохлых колдунов прошлой игры
   keep?: number[] // сокровища, которые не сбрасываются в конце этой игры («Дерьмо вопрос»)
   extraDraw?: number // «Текучий любимый кетчуп»: сколько лишних карт добрать
+  // способность колдуна (src/game/abilities.ts)
+  lvl?: number // 1..5 — уровень способности (нет — без способности)
+  ab?: Record<string, number> // счётчики способности на игру
+  abR?: Record<string, number> // на раунд
+  abT?: Record<string, number> // на турнир
 }
 
 export interface TurnState {
@@ -61,6 +66,9 @@ export interface TurnState {
   sorcHand?: string // рука, при которой колдунство уже предлагали
   first?: boolean // ходит первым в раунде
   creaturesDone?: boolean // сокровища-твари уже сработали
+  aoe?: boolean // сейчас бьёт карта «по всем» (несколько целей)
+  laser?: { t: number; n: number } // «Леди Лазерища»: +урон по цели в этот ход
+  rolls?: number // могучих бросков в этот ход
 }
 
 export interface QOption { v: number | string; label: string; card?: { deck: 'spells' | 'treasures' | 'dead'; index: number }; player?: number }
@@ -133,7 +141,7 @@ export interface GameState {
   seq: number // номер изменения (для сети)
 }
 
-export interface SetupPlayer { name: string; portrait: number; bot?: number; uid?: string; boss?: BossKind }
+export interface SetupPlayer { name: string; portrait: number; bot?: number; uid?: string; boss?: BossKind; lvl?: number }
 
 export type Action =
   | { type: 'submit'; player: number; cards: { id: CardId; slot: Exclude<SpellType, 'wild'> }[]; goLast?: boolean }

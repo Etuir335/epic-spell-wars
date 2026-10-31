@@ -29,6 +29,17 @@ export const isEternal = (t: number) => !!TREASURES[t].eternal
 export const creatureTreasures = (p: PlayerState) => p.treasures.filter(t => TREASURES[t].creature)
 // Хуки дополнения, которые ставит effects.ts (иначе — круговой импорт)
 export const hooks: { surprise?: (ctx: Ctx, p: PlayerState) => void; deadNow?: (ctx: Ctx, p: PlayerState, c: CardId) => boolean } = {}
+// Хуки способностей колдунов (ставит abilities.ts)
+export const ab: {
+  hand?: (p: PlayerState) => number
+  gain?: (ctx: Ctx, p: PlayerState) => void
+  dmg?: (ctx: Ctx, foe: PlayerState, p: PlayerState, n: number) => number // урон врага по p → сколько пройдёт
+  hit?: (ctx: Ctx, foe: PlayerState, p: PlayerState, n: number) => void // после удара врага
+  save?: (ctx: Ctx, p: PlayerState) => boolean // не умирает
+  death?: (ctx: Ctx, p: PlayerState, killer: PlayerState | null) => void // до сброса сокровищ мертвеца
+  dice?: (ctx: Ctx, p: PlayerState, dice: number[], name: string) => void // поменять кубики могучего броска
+  bonus?: (ctx: Ctx, p: PlayerState) => number
+} = {}
 
 // ---------- случайность (детерминированная, состояние в s.rng) ----------
 export function rand(s: GameState, n: number): number {
@@ -93,7 +104,7 @@ export function drawSpell(s: GameState): CardId | null {
   }
   return s.deck.pop()!
 }
-export const handSize = (p: PlayerState) => HAND + (p.treasures.includes(T.helmet) ? 1 : 0)
+export const handSize = (p: PlayerState) => HAND + (p.treasures.includes(T.helmet) ? 1 : 0) + (ab.hand?.(p) ?? 0)
 export function fillHand(s: GameState, p: PlayerState) {
   while (p.hand.length < handSize(p)) {
     const c = drawSpell(s)
@@ -102,7 +113,7 @@ export function fillHand(s: GameState, p: PlayerState) {
   }
 }
 
-function drawFrom<X>(s: GameState, deck: X[], discard: X[]): X | null {
+export function drawFrom<X>(s: GameState, deck: X[], discard: X[]): X | null {
   if (!deck.length) {
     if (!discard.length) return null
     deck.push(...shuffle(s, discard.splice(0)))
@@ -114,6 +125,10 @@ export function gainTreasure(ctx: Ctx, p: PlayerState) {
   if (!p.alive) return
   const t = drawFrom(s, s.treasureDeck, s.treasureDiscard)
   if (t == null) return log(s, `${p.name}: сокровищ не осталось.`)
+  giveTreasure(s, p, t)
+  ab.gain?.(ctx, p)
+}
+export function giveTreasure(s: GameState, p: PlayerState, t: number) {
   p.treasures.push(t)
   ev(s, { k: 'treasure', p: p.id, t })
   log(s, `${p.name} получает сокровище ${treasureName(t)}.`)
@@ -242,7 +257,10 @@ export function heal(ctx: Ctx, p: PlayerState | null, n: number) {
 export function damage(ctx: Ctx, p: PlayerState | null, n: number) {
   if (!p || !p.alive || n <= 0) return
   const from = ctx.s.turn?.actor ?? null
-  if (from != null && from !== p.id && guard(ctx, p, n)) return
+  const foe = from != null && from !== p.id ? ctx.s.players[from] : null
+  if (foe && ab.dmg) n = ab.dmg(ctx, foe, p, n)
+  if (n <= 0) return
+  if (foe && guard(ctx, p, n)) return
   if (hasMod(ctx.s, 'mirror') && from != null && from !== p.id) {
     ctx.s.hits = (ctx.s.hits ?? 0) + 1
     const att = ctx.s.players[from]
@@ -260,6 +278,18 @@ export function damage(ctx: Ctx, p: PlayerState | null, n: number) {
     p.slimes = (p.slimes ?? 0) + 1
     madEv(ctx.s, '🟢', 'Слизняк отпочковался!', `${p.name}: слизняков уже ${p.slimes} — каждый плюётся каждый раунд.`, p.id)
   }
+  if (foe && p !== foe && foe.alive) ab.hit?.(ctx, foe, p, n)
+}
+// Карта бьёт нескольких сразу — «бьёт всех» (для способностей)
+export function aoe(ctx: Ctx, f: () => void) {
+  const t = ctx.s.turn, was = t?.aoe
+  if (t) t.aoe = true
+  f()
+  if (t) t.aoe = was
+}
+export function hitAll(ctx: Ctx, list: PlayerState[], n: number) {
+  if (list.length < 2) { for (const q of list) damage(ctx, q, n); return }
+  aoe(ctx, () => { for (const q of list) damage(ctx, q, n) })
 }
 // Тварь заслоняет хозяина от урона врага (сбрасывается). Возвращает true, если урон поглощён.
 function guard(ctx: Ctx, p: PlayerState, n: number): boolean {
@@ -286,12 +316,15 @@ export function kill(ctx: Ctx, p: PlayerState) {
     hooks.surprise(ctx, p)
     if (p.life > 0) return
   }
+  if (ab.save?.(ctx, p)) return
   p.life = 0
   p.alive = false
   ev(s, { k: 'death', p: p.id })
   log(s, `☠ ${p.name} склеивает ласты!`)
   s.discard.push(...p.hand)
   p.hand = []
+  const killer = s.turn && s.turn.actor !== p.id ? s.players[s.turn.actor] : null
+  ab.death?.(ctx, p, killer)
   for (const t of [...p.treasures]) if (!isEternal(t)) loseTreasure(s, p, t)
   if (p.creatures?.length) { s.discard.push(...p.creatures); p.creatures = [] }
   // невыложенное заклинание мертвеца — в сброс (своё заклинание ходящий доигрывает в конце хода)
@@ -301,8 +334,7 @@ export function kill(ctx: Ctx, p: PlayerState) {
     p.spell = null
   }
   drawDead(ctx, p)
-  const killer = s.turn ? s.players[s.turn.actor] : null
-  if (hasMod(s, 'blood') && killer && killer !== p && killer.alive) {
+  if (hasMod(s, 'blood') && killer && killer.alive) {
     madEv(s, '🩸', 'Кровавая луна!', `${killer.name} пьёт силу жертвы: +5 ❤.`, killer.id)
     heal(ctx, killer, 5)
   }
@@ -372,7 +404,8 @@ export function mightyRoll(ctx: Ctx, p: PlayerState, card: { school: School | nu
       log(s, `${p.name} перебрасывает кубик (Справочник): ${show()}.`)
     }
   }
-  let bonus = 0
+  ab.dice?.(ctx, p, dice, card.name)
+  let bonus = ab.bonus?.(ctx, p) ?? 0
   if (has(T.guide)) bonus += 2
   if (has(T.crownStoned)) bonus += uniqueSigns(p)
   if (has(T.stick)) bonus += 2 * s.players.filter(q => !q.alive).length
@@ -381,7 +414,7 @@ export function mightyRoll(ctx: Ctx, p: PlayerState, card: { school: School | nu
   const total = dice.reduce((a, b) => a + b, 0) + bonus
   s.lastRoll = { player: p.id, dice, bonus, total, label: card.name }
   ev(s, { k: 'roll', p: p.id, dice: [...dice], bonus, total, label: card.name, card: card.index })
-  log(s, `🎲 ${p.name}, «${card.name}»: ${show()}${bonus ? ` +${bonus}` : ''} = ${total}.`)
+  log(s, `🎲 ${p.name}, «${card.name}»: ${show()}${bonus > 0 ? ` +${bonus}` : bonus < 0 ? ` −${-bonus}` : ''} = ${total}.`)
   if (has(T.embryo)) heal(ctx, p, dice.filter(d => d === 6).length)
   if (total <= 4) for (const q of alive(s)) if (q !== p && q.treasures.includes(T.foolsGold)) heal(ctx, q, 2)
   return total

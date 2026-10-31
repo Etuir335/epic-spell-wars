@@ -3,12 +3,12 @@
 // Тексты — transcript/swamp-*.md.
 import { SPELLS, TREASURES, type School, type SpellType } from '../data/cards.ts'
 import {
-  ST, SD, alive, ask, cardName, choosePlayer, chooseHandCard, chooseTreasure, creatureTreasures, d6, damage, drawDead, drawSpell,
+  ST, SD, T, alive, hitAll, ask, cardName, choosePlayer, chooseHandCard, chooseTreasure, creatureTreasures, d6, damage, drawDead, drawSpell,
   enemies, ev, gainTreasure, heal, hooks, isWild, leftEnemy, log, loseTreasure, mightyRoll, moveTreasure, rand, randomEnemy,
   rightEnemy, rollEv, signs, spellOf, strongest, tier, treasureName, uniqueSigns, weakest, yesNo, type Ctx,
 } from './core.ts'
 import { EFFECTS, addToSpell, cardInfo, type E } from './effects.ts'
-import type { CardId, PlayerState, SpellCard } from './types.ts'
+import { TRAP, type CardId, type PlayerState, type SpellCard } from './types.ts'
 
 type Slot = Exclude<SpellType, 'wild'>
 const OFF = 64
@@ -16,7 +16,6 @@ const at = (n: number) => OFF + n
 
 // ---------- помощники ----------
 const uniq = (list: (PlayerState | null)[]) => [...new Set(list.filter((q): q is PlayerState => !!q))]
-const hitAll = (e: Ctx, list: PlayerState[], n: number) => { for (const q of list) damage(e, q, n) }
 const foes = (e: E) => enemies(e.s, e.p)
 const chooseFoe = (e: E, list = foes(e), prompt = 'Выбери врага') => choosePlayer(e, e.p, list, prompt)
 const twoLeft = (e: E) => foes(e).slice(0, 2)
@@ -133,6 +132,7 @@ export const SWAMP_EFFECTS: Record<number, (e: E) => void> = {
     const out = q.spell.filter(c => !c.done && !c.on && (c.slot === 'source' || c.slot === 'quality'))
     q.spell = q.spell.filter(c => !out.includes(c))
     e.s.discard.push(...out.filter(c => c.id >= 0).map(c => c.id))
+    if (out.some(c => c.id === TRAP)) q.treasures.push(T.trap)
     log(e.s, `${q.name} сбрасывает из заклинания ${out.length} карт.`)
   },
   // 10 Травмоопасный: каждый может сбросить сокровище, чтобы не получать урон

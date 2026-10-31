@@ -7,6 +7,7 @@ import {
 } from './core.ts'
 import { addToSpell, cardInfo, replaceWild } from './effects.ts'
 import { applyCard, offers, treasureCreatures } from './swamp.ts'
+import { abBuilt, abEndTurn, abReveal, abRound, abStartGame, abTurnStart, asTwo } from './abilities.ts'
 import { TRAP, type Action, type CardId, type CardSet, type GameState, type Mod, type PlayerState, type SetupPlayer, type SpellCard } from './types.ts'
 
 const RANK = { source: 0, quality: 1, delivery: 2 } as const
@@ -18,7 +19,7 @@ export function create(setup: SetupPlayer[], seed: number, medalsToWin = 2, mods
   const s: GameState = {
     rng: seed | 0, tid: seed | 0, ...(mods?.length ? { mods } : {}), ...(sets.join() !== 'base' ? { sets } : {}), phase: 'start', game: 0, round: 0, medalsToWin,
     players: setup.map((p, id) => ({
-      id, name: p.name, portrait: p.portrait, ...(p.bot ? { bot: p.bot } : {}), ...(p.uid ? { uid: p.uid } : {}), ...(p.boss ? { boss: p.boss } : {}),
+      id, name: p.name, portrait: p.portrait, ...(p.bot ? { bot: p.bot } : {}), ...(p.uid ? { uid: p.uid } : {}), ...(p.boss ? { boss: p.boss } : {}), ...(p.lvl ? { lvl: p.lvl } : {}),
       life: START_LIFE, alive: true, hand: [], treasures: [], deadCards: [], medals: 0,
       spell: null, acted: false, extraDice: 0,
     })),
@@ -76,6 +77,7 @@ function startGame(ctx: Ctx) {
     if (p.reservedWild) { p.hand.push(...p.reservedWild); p.reservedWild = undefined }
   }
   for (const p of s.players) { s.deadDiscard.push(...p.deadCards); p.deadCards = [] }
+  abStartGame(ctx)
   s.phase = 'build'
 }
 
@@ -100,7 +102,7 @@ function orderKey(p: PlayerState, reverse = false): number[] {
   let init = del && del.id >= 0 && !isWild(del.id) ? spellOf(del.id).initiative ?? 0 : 0
   if (p.treasures.includes(T.jetpack)) init += 10
   if (p.treasures.includes(ST.purse)) init += 5
-  return [p.goLast ? 1 : 0, impatient ? 0 : 1, reverse ? -sp.length : sp.length, -init]
+  return [p.goLast ? 1 : 0, impatient ? 0 : 1, reverse ? -(asTwo(p) ? 2 : sp.length) : asTwo(p) ? 2 : sp.length, -init]
 }
 const cmp = (a: number[], b: number[]) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] - b[i]; return 0 }
 
@@ -145,6 +147,7 @@ function endRound(ctx: Ctx) {
   ev(s, { k: 'round', n: s.round })
   log(s, `— Раунд ${s.round} —`)
   for (const p of alive(s)) if (p.treasures.includes(ST.fly)) heal(ctx, p, (p.creatures?.length ?? 0) + creatureTreasures(p).length)
+  abRound(ctx)
   roundMadness(ctx)
 }
 
@@ -202,7 +205,8 @@ function startTurn(ctx: Ctx, p: PlayerState) {
       log(s, `${q.name} сбрасывает карту.`)
     }
   }
-  s.turn.stage = 'reveal'
+  abTurnStart(ctx, p)
+  if (s.turn && s.turn.stage === 'start') s.turn.stage = 'reveal'
 }
 
 function reveal(ctx: Ctx, p: PlayerState) {
@@ -223,6 +227,7 @@ function reveal(ctx: Ctx, p: PlayerState) {
     else s.discard.push(c.id)
     replaceWild(ctx, p, c.slot, c.id)
   }
+  abReveal(ctx, p)
   if (count <= 2 && p.treasures.includes(T.garters) && p.hand.length) {
     const id = p.hand[rand(s, p.hand.length)]
     p.hand = p.hand.filter(x => x !== id)
@@ -317,6 +322,7 @@ function endTurn(ctx: Ctx, p: PlayerState) {
   ev(s, { k: 'end', p: p.id })
   p.acted = true
   p.firstTurnDie = undefined
+  abEndTurn(ctx, p)
   s.turn = null
 }
 
@@ -360,6 +366,7 @@ function step(ctx: Ctx): boolean {
     if (alive(s).some(p => !p.spell)) return false
     s.phase = 'resolve'
     if (hasMod(s, 'wild')) shuffleSpells(ctx)
+    abBuilt(ctx)
     ev(s, { k: 'built', counts: s.players.map(p => (p.alive ? p.spell!.length : -1)) })
     log(s, 'Заклинания выложены: ' + alive(s).map(p => `${p.name} — ${p.spell!.length}`).join(', ') + '.')
     return true
