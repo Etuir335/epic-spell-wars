@@ -612,3 +612,29 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .ab-line p { margin: 4px 0 0; font-size: 13px; }
 .ab-line small { opacity: .7; }
 .ab-line.r-rare { border-color: #f0a030; } .ab-line.r-epic { border-color: #c050ff; } .ab-line.r-legend { border-color: #6ff; }
+
+/* ---------- эмоции ---------- */
+.emote-btn { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 2px solid #c9a35a; background: radial-gradient(#4a3a6a, #1d1430); font-size: 22px; line-height: 1; padding: 0; margin-left: 4px; }
+.emote-pick { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.35); display: flex; align-items: flex-end; justify-content: center; }
+.emote-grid { margin-bottom: 120px; max-width: min(420px, calc(100vw - 32px)); max-height: 50vh; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; padding: 10px; border-radius: 14px; background: linear-gradient(#2c4a8a, #1a2a55); border: 2px solid #8fb4ff; box-shadow: 0 6px 24px rgba(0,0,0,.6); }
+.emote-grid button { aspect-ratio: 1; padding: 2px; border-radius: 10px; border: 2px solid transparent; background: rgba(255,255,255,.08); }
+.emote-grid button img { width: 100%; height: 100%; object-fit: contain; }
+.emote-grid button.wiz { border-color: #b46cff; }
+.emote-grid button.gold, .emote-bubble.gold { border-color: #ffd34a; box-shadow: 0 0 10px #ffd34a, inset 0 0 8px rgba(255,211,74,.5); }
+.emote-bubble { position: fixed; z-index: 55; width: 96px; height: 96px; transform: translate(-50%, -100%); pointer-events: none; border-radius: 18px; background: #fff; border: 3px solid #fff; box-shadow: 0 4px 14px rgba(0,0,0,.5); animation: emote-pop 2.6s ease forwards; }
+.emote-bubble::after { content: ''; position: absolute; left: 50%; bottom: -10px; transform: translateX(-50%); border: 8px solid transparent; border-top-color: #fff; border-bottom: 0; }
+.emote-bubble img { width: 100%; height: 100%; object-fit: contain; }
+.emote-bubble.gold { background: radial-gradient(#fff8d8, #ffd34a); }
+.emote-bubble.gold::before { content: '✨'; position: absolute; top: -14px; right: -12px; font-size: 22px; animation: emote-spin 1s linear infinite; }
+@keyframes emote-pop { 0% { transform: translate(-50%, -100%) scale(.2); opacity: 0 } 10% { transform: translate(-50%, -100%) scale(1.12); opacity: 1 } 18% { transform: translate(-50%, -100%) scale(1) } 85% { opacity: 1 } 100% { transform: translate(-50%, -110%) scale(.9); opacity: 0 } }
+@keyframes emote-spin { to { transform: rotate(360deg) } }
+.emote-coll { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; margin: 8px 0 16px; }
+.emote-coll button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; border-radius: 10px; border: 2px solid rgba(255,255,255,.15); background: rgba(255,255,255,.06); color: inherit; }
+.emote-coll img { width: 60px; height: 60px; object-fit: contain; }
+.emote-coll small { font-size: 10px; line-height: 1.1; text-align: center; opacity: .85; }
+.emote-coll .locked img { filter: grayscale(1) brightness(.45); }
+.emote-coll .r-rare { border-color: #ff9a3c; } .emote-coll .r-epic { border-color: #c45cff; }
+.emote-coll .wiz { border-color: #b46cff; border-style: dashed; }
+.emote-coll .gold { border: 2px solid #ffd34a; box-shadow: 0 0 10px #ffd34a; }
+.emote-coll .new { animation: emote-new 1s ease-in-out infinite alternate; }
+@keyframes emote-new { to { box-shadow: 0 0 14px #7dff7a; border-color: #7dff7a } }

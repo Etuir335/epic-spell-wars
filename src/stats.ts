@@ -3,6 +3,7 @@
 import { spellOf } from './game/core.ts'
 import type { Ev, GameState } from './game/types.ts'
 import { ARENAS, arenaOf, cupsFor } from './arenas.ts'
+import { rollChestEmote } from './emotes.ts'
 
 export interface Stats {
   games: number // схваток сыграно
@@ -30,6 +31,9 @@ export interface Stats {
   dailyCupDay?: string // день, когда начислены кубки за испытание
   at: number // когда менялась (для выбора между устройством и облаком)
   sv?: number // версия счёта: 2 — после починки двойного подсчёта
+  emotes?: string[] // эмоции из сундуков (см. emotes.ts)
+  wiz?: Record<number, { lvl: number; cards: number }> // колдуны: уровень и карточки (прогрессия)
+  newEmote?: string // только что выпавшая эмоция — показать игроку
 }
 
 export const emptyStats = (): Stats => ({
@@ -41,8 +45,8 @@ export const emptyStats = (): Stats => ({
 // Обнуляем счётчики; рекорды, достижения, кубки и арены оставляем.
 export function fixStats(st: Stats): Stats {
   if ((st.sv ?? 1) >= 2) return st
-  const { bestHit, bestRoll, ach, cups, arena, arenaSkip, arenaSeen, winDay, dailyCupDay } = st
-  return { ...emptyStats(), bestHit, bestRoll, ach, cups, arena, arenaSkip, arenaSeen, winDay, dailyCupDay, at: Date.now() }
+  const { bestHit, bestRoll, ach, cups, arena, arenaSkip, arenaSeen, winDay, dailyCupDay, emotes, wiz } = st
+  return { ...emptyStats(), bestHit, bestRoll, ach, cups, arena, arenaSkip, arenaSeen, winDay, dailyCupDay, emotes, wiz, at: Date.now() }
 }
 
 // ---------- звания ----------
@@ -173,7 +177,12 @@ export function applyEvents(st: Stats, tr: Track, evs: Ev[], s: GameState, seat:
           const place = e.winner === me ? 1 : idx >= 0 ? n - idx : 2
           let d = cupsFor(place, n, seat.vsHumans)
           const day = new Date().toDateString()
-          if (e.winner === me && st.winDay !== day) { st.winDay = day; d += 50 }
+          if (e.winner === me && st.winDay !== day) {
+            st.winDay = day; d += 50
+            // пока нет сундуков: первая победа дня приносит эмоцию из сундучного набора
+            const em = rollChestEmote(st)
+            if (em) { st.emotes = [...(st.emotes ?? []), em.id]; st.newEmote = em.id }
+          }
           got.push(...addCups(st, d))
         }
         st.games++

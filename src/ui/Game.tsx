@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Tutorial, { tutorialSeen } from './Tutorial'
 import { useStatsTracker } from './useStats'
+import { EmoteButton, EmoteLayer, useBotEmotes } from './Emotes'
 import { BOSS_INFO, MOD_INFO } from '../daily'
 import { DEAD, SPELLS, TREASURES } from '../data/cards'
 import { T } from '../game/core'
@@ -145,6 +146,7 @@ export default function Game({ store, onExit, net, ranked }: { store: GameStore;
   const canHover = typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches // на телефоне касание — не наведение
   const dir = useDirector(s)
   useBots(s, store.dispatch, dir.done && (!net || net.isHost))
+  useBotEmotes(s, dir.pos)
   // локальная «Колдовская лихорадка»: свой срок хода вместо сетевого
   const [lt, setLt] = useState<{ key: string | null; end: number | null }>({ key: null, end: null })
   const timerNet: TurnNet | undefined = net ?? (s.mods?.includes('fever') ? { isHost: true, turnKey: lt.key, turnEnd: lt.end, setTurn: (key, end) => setLt({ key, end }) } : undefined)
@@ -258,6 +260,7 @@ export default function Game({ store, onExit, net, ranked }: { store: GameStore;
     <HoverCtx.Provider value={canHover ? setHovered : noHover}>
     <div className={`game-wrap${desk ? ' desk' : ''}`} style={{ ['--bg-img' as string]: `url(${assetUrl('assets/ui/arena-bg.webp')})`, ...(desk ? { gridTemplateColumns: layout.cols } : {}) }}>
     {desk && layout.column('left', panels)}
+    <EmoteLayer />
     {desk && layout.split('left')}
     <div className="game">
       <div className="top-bar">
@@ -517,6 +520,7 @@ function MyBar({ s, p, life, alive, casting, onClick }: { s: GameState; p: Playe
         <b>{p.name}</b> <AbTag p={p} /> {p.medals > 0 && '🏅'.repeat(p.medals)}
         <small>{s.medalsToWin} 🏅 до победы</small>
       </div>
+      {!p.bot && <EmoteButton pid={p.id} portrait={p.portrait} />}
       <div className="mybar-tr">
         {p.creatures?.map(c => <Card key={'c' + c} c={{ deck: 'spells', index: Math.floor(c / 10) }} size="s" caption={false} />)}
         {p.treasures.map(t => <Card key={t} c={{ deck: 'treasures', index: t }} size="s" caption={false} />)}

@@ -2,6 +2,15 @@
 import { ACHIEVEMENTS, favoriteCard, rankOf, RANKS } from '../stats'
 import { Card } from './cards'
 import { useStatsData } from './useStats'
+import { EMOTE_ROAD, EMOTES, hasEmote, isGolden, type Emote } from '../emotes'
+import { wizardName } from '../wizards'
+import { emoteImg } from './Emotes'
+import { assetUrl } from '../assets'
+import { isMuted } from './sound'
+
+const KIND_HINT = { base: 'есть сразу', chest: 'из сундука', road: '', wiz: '' }
+const howTo = (e: Emote) => e.kind === 'road' ? `${EMOTE_ROAD.find(r => r.id === e.id)?.cups} 🏆` : e.kind === 'wiz' ? `${wizardName(e.wiz!)}: ур. 3` : KIND_HINT[e.kind]
+const play = (id: string) => { if (!isMuted()) void new Audio(assetUrl(`assets/emotes/${id}.ogg`)).play().catch(() => {}) }
 
 export default function Profile({ onBack }: { onBack: () => void }) {
   const st = useStatsData()
@@ -52,6 +61,20 @@ export default function Profile({ onBack }: { onBack: () => void }) {
             <div><b>{a.name}</b><small>{a.text}</small></div>
           </div>
         ))}
+      </div>
+      <h3 className="ach-head">Эмоции <span>{EMOTES.filter(e => hasEmote(st, e)).length} / {EMOTES.length}</span></h3>
+      <p className="hint">Общие — с полосы наград и из сундуков. Фирменная эмоция колдуна открывается на 3-м уровне, на 5-м становится золотой — и бывает только у него.</p>
+      <div className="emote-coll">
+        {EMOTES.map(e => {
+          const own = hasEmote(st, e)
+          return (
+            <button key={e.id} className={`${own ? '' : 'locked'}${e.kind === 'wiz' ? ' wiz' : ''}${isGolden(st, e) ? ' gold' : ''}${st.newEmote === e.id ? ' new' : ''}${e.rarity ? ' r-' + e.rarity : ''}`}
+              onClick={() => own && play(e.id)} title={e.name}>
+              <img src={emoteImg(e.id)} alt="" loading="lazy" />
+              <small>{own ? e.name : howTo(e)}</small>
+            </button>
+          )
+        })}
       </div>
       <p className="hint center">Опыт: схватка +2, медаль +10, победа в турнире +30, враг +3, победа над живыми +10, достижение +5.</p>
     </div>
