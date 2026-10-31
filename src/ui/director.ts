@@ -4,6 +4,7 @@ import { SPELLS, TREASURES, type School } from '../data/cards'
 import type { CardId, Ev, GameState } from '../game/types'
 import { SCHOOL_COLOR, floater, glow, projectile, shake } from './fx'
 import { sfx } from './sound'
+import { showTomb } from './Tombs'
 
 export interface SceneCard { key: string; id: CardId | null; up: boolean; on?: boolean; done?: boolean; flash?: number; added?: boolean }
 export interface Scene {
@@ -97,6 +98,7 @@ function duration(e: Ev, sc: Scene): number {
     case 'treasure': return 700
     case 'lose': return 350
     case 'dead': return 500
+    case 'tomb': return 1300
     case 'end': return 450
     case 'over': return 1800
     case 'mad': return 1900
@@ -106,7 +108,7 @@ function duration(e: Ev, sc: Scene): number {
 }
 
 // Звуки и эффекты события.
-function play(e: Ev, sc: Scene) {
+function play(e: Ev, sc: Scene, s: GameState) {
   const color = sc.school ? SCHOOL_COLOR[sc.school] : '#ffcf4a'
   switch (e.k) {
     case 'game': case 'round': sfx.round(); break
@@ -132,6 +134,7 @@ function play(e: Ev, sc: Scene) {
       break
     case 'lose': floater(e.p, '−💰', 'lose'); break
     case 'dead': floater(e.p, '🪦', 'skull'); break
+    case 'tomb': sfx.ghost(); showTomb(e.p, e.c, s.players[e.p].name, e.i, e.n); setTimeout(() => glow(e.p, '#7dffd0'), 1100); break
     case 'over': sfx.fanfare(); break
     case 'mad': sfx.boom(); if (e.p != null) { glow(e.p, '#b14dff'); shake(e.p, 0, true) } break
   }
@@ -154,7 +157,7 @@ export function useDirector(s: GameState) {
     if (played.current !== p) { // каждое событие — один раз, даже если состояние обновилось во время показа
       played.current = p
       sc = applyScene(sc, e, s)
-      play(e, sc)
+      play(e, sc, s)
       setScene(sc)
     }
     const t = setTimeout(() => setPos(p + 1), duration(e, sc) * (fast ? 0.35 : 1))

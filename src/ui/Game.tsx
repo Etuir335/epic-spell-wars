@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Tutorial, { tutorialSeen } from './Tutorial'
 import { useStatsTracker } from './useStats'
 import { EmoteButton, EmoteLayer, useBotEmotes } from './Emotes'
+import { TombLayer } from './Tombs'
 import { BOSS_INFO, MOD_INFO } from '../daily'
 import { DEAD, SPELLS, TREASURES } from '../data/cards'
 import { T } from '../game/core'
@@ -262,6 +263,7 @@ export default function Game({ store, onExit, net, ranked }: { store: GameStore;
     <div className={`game-wrap${desk ? ' desk' : ''}`} style={{ ['--bg-img' as string]: `url(${assetUrl('assets/ui/arena-bg.webp')})`, ...(desk ? { gridTemplateColumns: layout.cols } : {}) }}>
     {desk && layout.column('left', panels)}
     <EmoteLayer />
+    <TombLayer />
     {desk && layout.split('left')}
     <div className="game">
       <div className="top-bar">

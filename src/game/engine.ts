@@ -51,11 +51,15 @@ function startGame(ctx: Ctx) {
     p.deadSigns = sg.length ? (sg as PlayerState['deadSigns']) : undefined
     fillHand(s, p)
   }
+  const all = s.players.reduce((n, p) => n + p.deadCards.length, 0)
+  let at = 0
+  const lift = (p: PlayerState, n: number) => { ev(s, { k: 'heal', p: p.id, n, before: p.life, after: p.life + n }); p.life += n }
   for (const p of s.players) {
     for (const c of p.deadCards) {
       const k = Math.floor(c / 10)
-      if (k === D.saint) p.life += 3
-      if (k === D.cosmic) p.life += 2
+      ev(s, { k: 'tomb', p: p.id, c, i: at++, n: all })
+      if (k === D.saint) lift(p, 3)
+      if (k === D.cosmic) lift(p, 2)
       if (k === D.small) for (let i = 0; i < 2; i++) { const x = drawSpell(s); if (x != null) p.hand.push(x) }
       if (k === D.artifact) gainTreasure(ctx, p)
       if (k === D.shangri) p.firstTurnDie = true

@@ -638,3 +638,33 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .emote-coll .gold { border: 2px solid #ffd34a; box-shadow: 0 0 10px #ffd34a; }
 .emote-coll .new { animation: emote-new 1s ease-in-out infinite alternate; }
 @keyframes emote-new { to { box-shadow: 0 0 14px #7dff7a; border-color: #7dff7a } }
+
+/* карты дохлых колдунов в начале игры: вылет от колдуна → срабатывание → призрачное пламя */
+.tomb-layer { position: fixed; inset: 0; pointer-events: none; z-index: 60; display: grid; place-items: center; }
+.tomb-layer::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(40, 255, 190, .16), rgba(10, 0, 30, .55) 70%); animation: tomb-dim 2.6s ease forwards; }
+.tomb { grid-area: 1 / 1; display: flex; flex-direction: column; align-items: center; gap: 10px; animation: tomb-fly 2.6s cubic-bezier(.2, .9, .3, 1.2) forwards; }
+.tomb-card { position: relative; width: min(46vw, 230px); border-radius: 12px; animation: tomb-burn 2.6s linear forwards; }
+.tomb-card img { display: block; width: 100%; border-radius: 12px; box-shadow: 0 0 0 2px #7dffd0, 0 0 26px #39ffb5, 0 0 60px #9b4dff; animation: tomb-aura 2.6s ease forwards; }
+.tomb-fire { position: absolute; left: -12%; right: -12%; height: 46%; bottom: -20%; border-radius: 50% 50% 0 0;
+  background: radial-gradient(ellipse at 20% 100%, #b6ffe9 0, #39ffb5 18%, transparent 46%), radial-gradient(ellipse at 55% 100%, #e4c8ff 0, #9b4dff 22%, transparent 52%),
+    radial-gradient(ellipse at 85% 100%, #b6ffe9 0, #2fe0a0 16%, transparent 44%);
+  filter: blur(6px); mix-blend-mode: screen; opacity: 0; animation: tomb-fire 2.6s linear forwards, tomb-flick .18s steps(2) infinite alternate; }
+.tomb-cap { font-weight: 800; color: #d9fff2; text-shadow: 0 0 10px #39ffb5, 0 2px 4px #000; text-align: center; font-size: 15px; animation: tomb-cap 2.6s ease forwards; }
+.tomb-cap small { display: block; font-size: 11px; opacity: .7; letter-spacing: 2px; }
+@keyframes tomb-dim { 0% { opacity: 0 } 15%, 70% { opacity: 1 } 100% { opacity: 0 } }
+@keyframes tomb-fly {
+  0% { transform: translate(var(--dx), var(--dy)) scale(.15) rotate(-25deg); opacity: 0 }
+  16% { transform: translate(0, 0) scale(1.08) rotate(3deg); opacity: 1 }
+  24%, 46% { transform: translate(0, 0) scale(1) rotate(0) }
+  50% { transform: scale(1.06) }
+  100% { transform: translate(0, -60px) scale(1.04) }
+}
+@keyframes tomb-aura { 0%, 40% { filter: none } 50% { filter: brightness(1.6) saturate(1.4) } 100% { filter: brightness(1.3) hue-rotate(60deg) } }
+@keyframes tomb-burn {
+  0%, 52% { clip-path: inset(-30% -30% -30% -30%); filter: none }
+  100% { clip-path: inset(-30% -30% 100% -30%); filter: drop-shadow(0 0 12px #39ffb5) }
+}
+@keyframes tomb-fire { 0%, 50% { opacity: 0; bottom: -20% } 55% { opacity: 1; bottom: -18% } 96% { opacity: 1; bottom: 82% } 100% { opacity: 0; bottom: 90% } }
+@keyframes tomb-flick { from { transform: scaleY(1) translateY(0) } to { transform: scaleY(1.18) translateY(-6%) } }
+@keyframes tomb-cap { 0%, 10% { opacity: 0; transform: translateY(8px) } 20%, 60% { opacity: 1; transform: none } 85%, 100% { opacity: 0 } }
+@media (prefers-reduced-motion: reduce) { .tomb, .tomb-card, .tomb-fire { animation-duration: .01s } }

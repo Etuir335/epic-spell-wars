@@ -63,6 +63,7 @@ export const sfx = {
   bigRoll: () => { tone(330, 0.15, 'square', 0.06); tone(495, 0.15, 'square', 0.06, 0.1); tone(660, 0.3, 'square', 0.07, 0.2) },
   zap: () => { tone(1200, 0.25, 'sawtooth', 0.07, 0, 150); noise(0.2, 0.12, 0, 4000, 1, 'highpass') },
   hit: () => { noise(0.18, 0.45, 0, 500, 0.7, 'lowpass', 120); tone(180, 0.2, 'square', 0.12, 0, 60) },
+  ghost: () => { tone(220, 1.4, 'sine', 0.09, 0, 660); tone(330, 1.2, 'triangle', 0.05, 0.15, 990); tone(110, 1.6, 'sine', 0.07, 1.0, 55) },
   heal: () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.25, 'sine', 0.1, i * 0.07)) },
   coin: () => { tone(1568, 0.12, 'square', 0.06); tone(2093, 0.35, 'square', 0.06, 0.08) },
   death: () => { tone(300, 1.1, 'sawtooth', 0.12, 0, 40); noise(0.9, 0.25, 0.1, 300, 0.5, 'lowpass', 60) },

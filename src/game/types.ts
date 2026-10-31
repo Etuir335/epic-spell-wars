@@ -101,6 +101,7 @@ export type Ev =
   | { k: 'treasure'; p: number; t: number; from?: number }
   | { k: 'lose'; p: number; t: number }
   | { k: 'dead'; p: number; c: CardId }
+  | { k: 'tomb'; p: number; c: CardId; i: number; n: number } // в начале игры срабатывает карта дохлого колдуна (i из n)
   | { k: 'end'; p: number }
   | { k: 'mad'; icon: string; title: string; sub: string; p?: number } // трюк босса или безумное правило — баннер
   | { k: 'over'; winner: number; champion: boolean; tr?: number[][] } // tr — сокровища до сброса в конце игры (для показа)
