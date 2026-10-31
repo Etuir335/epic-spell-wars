@@ -87,8 +87,13 @@ export function startOpening(st: Progress, i: number, now = Date.now()) {
   st.chests = s
   return true
 }
-// открыть сразу за золото: 1 🪙 за 3 минуты ожидания, не меньше 5
-export const rushCost = (c: ChestSlot, now = Date.now()) => Math.max(5, Math.ceil((c.until != null ? Math.max(0, c.until - now) : CHESTS[c.kind].ms) / 180e3))
+// открыть сразу за золото: всегда дороже золота внутри сундука (чистая трата, не заработок)
+// плюс доплата за оставшееся время — чем дольше ждать, тем дороже; почти готовый — только основа
+export function rushCost(c: ChestSlot, now = Date.now()) {
+  const k = CHESTS[c.kind], mul = 1 + Math.min(6, c.arena) / 6
+  const left = c.until != null ? Math.max(0, c.until - now) : k.ms, frac = left / k.ms
+  return Math.ceil(k.gold * mul * 1.2) + Math.ceil((k.gold * mul * 2 + k.ms / 60e3) * frac)
+}
 export function rushChest(st: Progress, i: number, now = Date.now()) {
   const s = chestSlots(st), c = s[i]
   if (!c || ready(c, now)) return false
