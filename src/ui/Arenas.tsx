@@ -51,9 +51,10 @@ export default function Arenas({ onPlay, onBack, onNet }: { onPlay: (s: GameStat
   }
   // эмоции дороги, открытые с прошлого захода, — с анимацией «Новая!»
   const [fresh] = useState(() => {
-    let was: string[] = []
-    try { was = JSON.parse(localStorage.getItem(ROAD_KEY) ?? '[]') } catch { /* пусто */ }
     const got = EMOTE_ROAD.filter(r => cups >= r.cups).map(r => r.id)
+    // первый заход — всё открытое считаем уже виденным
+    let was: string[] = got
+    try { const v = localStorage.getItem(ROAD_KEY); if (v) was = JSON.parse(v) } catch { /* пусто */ }
     try { localStorage.setItem(ROAD_KEY, JSON.stringify(got)) } catch { /* не важно */ }
     return new Set(got.filter(id => !was.includes(id)))
   })

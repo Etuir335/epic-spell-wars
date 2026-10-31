@@ -45,9 +45,9 @@ const V = {
   cat: [6, 6, 6, 5, 5],
   laser: { uses: [1, 1, 2, 2, 3], n: [2, 3, 3, 4, 4] },
   admiral: [1, 1, 1, 1, 2],
-  dark: { uses: [1, 1, 2, 2, 3] },
+  dark: { uses: [1, 2, 2, 3, 4] },
   epic: [1, 1, 2, 2, 3],
-  smoke: { uses: [1, 1, 2, 2, 3], n: [1, 2, 2, 3, 3] },
+  smoke: { uses: [2, 2, 3, 4, 5], n: [1, 2, 2, 3, 3] },
   fierce: { kill: [1, 1, 2, 2, 3], medal: [1, 2, 2, 3, 3] },
   horn: { uses: [1, 1, 2, 2, 0], n: [2, 3, 3, 4, 1] },
   hater: [1, 1, 1, 2, 2],
@@ -440,18 +440,19 @@ ab.death = (ctx, p, killer) => {
   }
 }
 
+const sum = (a: number[]) => a.reduce((x, y) => x + y, 0)
 ab.dice = (ctx, p, dice, name) => {
   const { s } = ctx
   let l: number
   if ((l = lv(p, 21)) && left(p, 'use', at(V.ohren.uses, l))) {
-    const v = ask(ctx, { player: p.id, prompt: `«${name}»: ${dice.join('+')}. «Охренеть»: докинуть ${at(V.ohren.n, l)} кубик(а)?`, optional: true, options: [opt(1, 'Докинуть')] })
+    const v = ask(ctx, { player: p.id, prompt: `«${name}»: ${dice.join('+')}. «Охренеть»: докинуть ${at(V.ohren.n, l)} кубик(а)?`, optional: true, hint: sum(dice) < 3.5 * dice.length ? 1 : null, options: [opt(1, 'Докинуть')] })
     if (v != null) { inc(p, 'use'); for (let i = 0; i < at(V.ohren.n, l); i++) dice.push(d6(s)); banner(s, p, `Докидывает: ${dice.join('+')}.`) }
   }
   const prev = s.lastRoll
   if ((l = lv(p, 34)) && prev && prev.player !== p.id && left(p, 'use', at(V.smoke.uses, l))) {
     const best = [...prev.dice].sort((a, b) => b - a), mine = [...dice].sort((a, b) => a - b)
     if (best[0] > mine[0]) {
-      const v = ask(ctx, { player: p.id, prompt: `«${name}»: ${dice.join('+')}. «Шмаль»: поменять худшие кубики на ${best.slice(0, at(V.smoke.n, l)).join(', ')} из броска ${s.players[prev.player].name}?`, optional: true, options: [opt(1, 'Подменить')] })
+      const v = ask(ctx, { player: p.id, prompt: `«${name}»: ${dice.join('+')}. «Шмаль»: поменять худшие кубики на ${best.slice(0, at(V.smoke.n, l)).join(', ')} из броска ${s.players[prev.player].name}?`, optional: true, hint: best[0] - mine[0] >= 2 ? 1 : null, options: [opt(1, 'Подменить')] })
       if (v != null) {
         inc(p, 'use')
         for (let k = 0; k < at(V.smoke.n, l) && k < best.length; k++) {
@@ -463,12 +464,12 @@ ab.dice = (ctx, p, dice, name) => {
     }
   }
   if ((l = lv(p, 32)) >= 2 && left(p, 'use', at(V.dark.uses, l)) && dice.some(d => d < 6)) {
-    const v = ask(ctx, { player: p.id, prompt: `«${name}»: ${dice.join('+')}. «Тьма»: перевернуть кубик на 6?`, optional: true, options: dice.map((d, i) => opt(i, `Кубик ${d}`)).filter((_, i) => dice[i] < 6) })
+    const v = ask(ctx, { player: p.id, prompt: `«${name}»: ${dice.join('+')}. «Тьма»: перевернуть кубик на 6?`, optional: true, hint: Math.min(...dice) <= 2 ? dice.indexOf(Math.min(...dice)) : null, options: dice.map((d, i) => opt(i, `Кубик ${d}`)).filter((_, i) => dice[i] < 6) })
     if (v != null) { inc(p, 'use'); dice[v as number] = 6; banner(s, p, `Кубик → 6: ${dice.join('+')}.`) }
   }
   for (const q of alive(s)) {
     if (q === p || !(l = lv(q, 32)) || !left(q, 'use', at(V.dark.uses, l)) || !dice.some(d => d >= 3)) continue
-    const v = ask(ctx, { player: q.id, prompt: `${p.name}, «${name}»: ${dice.join('+')}. «Тьма»: перевернуть кубик на 1?`, optional: true, options: dice.map((d, i) => opt(i, `Кубик ${d}`)).filter((_, i) => dice[i] >= 3) })
+    const v = ask(ctx, { player: q.id, prompt: `${p.name}, «${name}»: ${dice.join('+')}. «Тьма»: перевернуть кубик на 1?`, optional: true, hint: Math.max(...dice) >= 5 ? dice.indexOf(Math.max(...dice)) : null, options: dice.map((d, i) => opt(i, `Кубик ${d}`)).filter((_, i) => dice[i] >= 3) })
     if (v != null) { inc(q, 'use'); dice[v as number] = 1; banner(s, q, `Кубик ${p.name} → 1: ${dice.join('+')}.`) }
   }
 }
