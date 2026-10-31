@@ -1,5 +1,5 @@
 // Карты дохлых колдунов в начале игры: карта вылетает от колдуна в центр, показывает, что даёт (знак на всю игру —
-// улетает значком на портрет), и сгорает как настоящая — от краёв к центру, с обугливанием, тлеющей кромкой и искрами.
+// улетает значком на портрет), и сгорает как настоящая — от краёв к центру, с обугливанием, призрачно-голубой кромкой и искрами.
 import { useEffect, useRef, useState } from 'react'
 import { cardUrl } from '../assets'
 import { DEAD, SCHOOL_NAMES } from '../data/cards'
@@ -118,15 +118,15 @@ function BurningCard({ src }: { src: string }) {
             const e = th[i] - L
             if (e < 0) { px[j + 3] = 0; continue }
             let r = src0[j], g = src0[j + 1], b = src0[j + 2]
-            if (e < EMBER) { // тлеющая кромка: от белого жара к оранжевому
+            if (e < EMBER) { // тлеющая кромка: от белого к призрачно-голубому
               const k = e / EMBER
-              r = 255; g = 230 - 140 * k; b = 140 - 130 * k
-            } else if (e < CHAR) { // обугливание: тёмно-коричневое, к кромке почти чёрное
+              r = 230 - 190 * k; g = 255 - 70 * k; b = 255
+            } else if (e < CHAR) { // обугливание: иссиня-чёрное, к кромке темнее
               const c = ((e - EMBER) / (CHAR - EMBER)) ** 2 * .55
-              r = 42 + (r - 42) * c; g = 20 + (g - 20) * c; b = 12 + (b - 12) * c
-            } else if (e < HEAT) { // жар подсушивает бумагу — теплеет и темнеет
+              r = 8 + (r - 8) * c; g = 16 + (g - 16) * c; b = 34 + (b - 34) * c
+            } else if (e < HEAT) { // холодный огонь вытягивает краски — синеет и темнеет
               const k = 1 - (e - CHAR) / (HEAT - CHAR)
-              r = r * (1 - .25 * k) + 60 * k; g = g * (1 - .45 * k) + 20 * k; b = b * (1 - .6 * k)
+              r = r * (1 - .6 * k); g = g * (1 - .4 * k) + 20 * k; b = b * (1 - .2 * k) + 60 * k
             }
             px[j] = r; px[j + 1] = g; px[j + 2] = b; px[j + 3] = 255
           }
@@ -141,11 +141,11 @@ function BurningCard({ src }: { src: string }) {
           }
         }
         fctx.clearRect(0, 0, FW, FH)
-        if (p > 0 && p < 1) { // зарево от огня
+        if (p > 0 && p < 1) { // призрачное зарево
           fctx.globalCompositeOperation = 'lighter'
           const gl = fctx.createRadialGradient(FW / 2, FH / 2, W * .1, FW / 2, FH / 2, W * .9)
           const a = Math.sin(p * Math.PI) * .35 * (.85 + Math.random() * .15)
-          gl.addColorStop(0, `rgba(255,140,40,${a * .5})`); gl.addColorStop(.6, `rgba(255,90,20,${a})`); gl.addColorStop(1, 'rgba(255,60,0,0)')
+          gl.addColorStop(0, `rgba(120,220,255,${a * .5})`); gl.addColorStop(.6, `rgba(40,140,255,${a})`); gl.addColorStop(1, 'rgba(20,60,255,0)')
           fctx.fillStyle = gl; fctx.fillRect(0, 0, FW, FH)
         }
         for (let k = sparks.length - 1; k >= 0; k--) {
@@ -156,7 +156,7 @@ function BurningCard({ src }: { src: string }) {
           s.x += s.vx * dt; s.y += s.vy * dt
           const f = 1 - s.life / s.max
           fctx.globalCompositeOperation = s.smoke ? 'source-over' : 'lighter'
-          fctx.fillStyle = s.smoke ? `rgba(40,34,38,${.22 * f})` : `rgba(255,${150 + 90 * f | 0},${60 * f | 0},${f})`
+          fctx.fillStyle = s.smoke ? `rgba(70,110,150,${.18 * f})` : `rgba(${90 + 150 * f | 0},${200 + 55 * f | 0},255,${f})`
           fctx.beginPath(); fctx.arc(s.x, s.y, s.smoke ? s.r * (1.6 - f * .6) : s.r * (.6 + f * .6), 0, 7); fctx.fill()
         }
         fctx.globalCompositeOperation = 'source-over'

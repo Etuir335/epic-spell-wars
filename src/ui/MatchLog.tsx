@@ -105,7 +105,7 @@ function MatchView({ m, onBack }: { m: Match; ver?: number; onBack: () => void }
         })}
         {rows.length > shown.length && <button className="btn wide" onClick={() => setMore(x => x + 1)}>Показать ещё</button>}
       </div>
-      {marks.length > 0 && (
+      {marks.length > 0 && !target && (
         <div className="ml-bar">
           <span>Отмечено: {marks.length}</span>
           <button className="btn" onClick={() => setMarks([])}>Снять</button>
