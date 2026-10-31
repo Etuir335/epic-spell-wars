@@ -7,10 +7,14 @@ import { claimAdmin, deleteSong, uploadSong, watchLibrary, type LibSong } from '
 import { shareInvite, tgUser } from '../telegram'
 import { Portrait } from './cards'
 import WizardPicker from './WizardPicker'
-import SetPicker, { RulesPicker, rulesLabel, setsLabel } from './SetPicker'
+import SetPicker, { AbilPicker, RulesPicker, abilLabel, rulesLabel, setsLabel } from './SetPicker'
+import { STARTERS, wizLvl } from '../progression'
+import { getStats } from './useStats'
 import { wizardName } from '../wizards'
 import Game from './Game'
 import { showEmote } from './Emotes'
+
+const myLvl = (portrait: number) => wizLvl(getStats(), portrait)
 
 const PROFILE = 'esw-profile'
 const ROOM = 'esw-net-room'
@@ -24,7 +28,7 @@ export default function NetPlay({ onBack, startCode }: { onBack: () => void; sta
   const [uid, setUid] = useState<string | null>(null)
   const [err, setErr] = useState('')
   const [code, setCode] = useState<string | null>(() => load<string | null>(ROOM, null))
-  const [profile, setProfile] = useState(() => load(PROFILE, { name: tgUser()?.name ?? '', portrait: Math.floor(Math.random() * PORTRAITS) }))
+  const [profile, setProfile] = useState(() => load(PROFILE, { name: tgUser()?.name ?? '', portrait: STARTERS[Math.floor(Math.random() * STARTERS.length)] }))
   const [joinCode, setJoinCode] = useState(startCode ?? '')
   const [pick, setPick] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -43,13 +47,13 @@ export default function NetPlay({ onBack, startCode }: { onBack: () => void; sta
     setBusy(true); setErr('')
     try {
       let c = c0 ?? joinCode.trim().toUpperCase()
-      if (how === 'create') c = await createRoom(uid, name, profile.portrait, { public: pub })
-      else if (how === 'quick') c = await quickMatch(uid, name, profile.portrait)
+      if (how === 'create') c = await createRoom(uid, name, profile.portrait, myLvl(profile.portrait), { public: pub })
+      else if (how === 'quick') c = await quickMatch(uid, name, profile.portrait, myLvl(profile.portrait))
       else if (c.length === 6) { // 6 символов — код админа (проверяет база), комнаты — 5
         if (await claimAdmin(c)) { setView('music'); setJoinCode(''); return }
         throw new Error('Неверный код')
       }
-      else await joinRoom(c, uid, name, profile.portrait)
+      else await joinRoom(c, uid, name, profile.portrait, myLvl(profile.portrait))
       save(ROOM, c); setCode(c)
     } catch (e) { setErr((e as Error).message) } finally { setBusy(false) }
   }
@@ -135,7 +139,7 @@ function Shell({ onBack, children, title = 'Игра по сети' }: { onBack:
 }
 
 function PortraitPicker({ value, onPick, onClose }: { value: number; onPick: (p: number) => void; onClose: () => void }) {
-  return <WizardPicker value={value} onPick={onPick} onClose={onClose} />
+  return <WizardPicker value={value} onPick={onPick} onClose={onClose} mine />
 }
 
 function RoomView({ code, uid, onLeave, onBack }: { code: string; uid: string; onLeave: () => void; onBack: () => void }) {
@@ -261,7 +265,7 @@ function RoomView({ code, uid, onLeave, onBack }: { code: string; uid: string; o
       {g.members.map(m => (
         <div className="seat-row" key={m.uid}>
           <button className="seat-portrait" disabled={m.uid !== uid} onClick={() => setPick(true)}><Portrait i={m.portrait} size={52} /></button>
-          <div className="seat-main"><b>{m.uid === room.host && '👑 '}{m.name}{m.uid === uid && ' (ты)'}</b></div>
+          <div className="seat-main"><b>{m.uid === room.host && '👑 '}{m.name}{m.uid === uid && ' (ты)'}</b>{(room.abil ?? 'own') === 'own' && <small className="hint">{m.lvl ? `⭐ способность ур. ${m.lvl}` : 'без способности'}</small>}</div>
         </div>
       ))}
       {bots.map(b => (
@@ -285,11 +289,12 @@ function RoomView({ code, uid, onLeave, onBack }: { code: string; uid: string; o
           </div>
           <SetPicker value={room.sets} onChange={sets => void updateRoom(code, { sets })} />
           <RulesPicker value={room.rules} onChange={rules => void updateRoom(code, { rules })} />
+          <AbilPicker value={room.abil} onChange={abil => void updateRoom(code, { abil })} />
           <button className="btn gold wide" disabled={total < 2} onClick={begin}>{total < 2 ? 'Нужно хотя бы 2 колдуна' : 'В бой!'}</button>
         </>
-      ) : <p className="hint">Карты: {setsLabel(room.sets)} · правила: {rulesLabel(room.rules)}. Ждём, когда хост начнёт турнир…</p>}
+      ) : <p className="hint">Карты: {setsLabel(room.sets)} · правила: {rulesLabel(room.rules)} · {abilLabel(room.abil)}. Ждём, когда хост начнёт турнир…</p>}
       <button className="btn wide ghost" onClick={() => { if (g.isHost) void updateRoom(code, { open: false, startAt: null }); void leaveRoom(code, uid); onLeave() }}>Выйти из комнаты</button>
-      {pick && me && <PortraitPicker value={me.portrait} onPick={p => { void updateMember(code, uid, { portrait: p }); setPick(false) }} onClose={() => setPick(false)} />}
+      {pick && me && <PortraitPicker value={me.portrait} onPick={p => { void updateMember(code, uid, { portrait: p, lvl: myLvl(p) }); setPick(false) }} onClose={() => setPick(false)} />}
       {toast && <div className="toast">{toast}</div>}
     </Shell>
   )

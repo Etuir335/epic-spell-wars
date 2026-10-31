@@ -789,3 +789,4 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .btn:disabled { opacity: .5; filter: grayscale(.6); }
 @media (prefers-reduced-motion: reduce) { .chest, .chest i, .loot-item, .loot-card, .chest-rays { animation-duration: .01s !important; } }
 @keyframes soft-blink { 50% { opacity: .5; } }
+.wiz-grid button { position: relative; }

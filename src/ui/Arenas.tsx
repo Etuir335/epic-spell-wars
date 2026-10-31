@@ -4,6 +4,7 @@ import { ARENAS, arenaFight } from '../arenas'
 import { create } from '../game/engine'
 import type { GameState } from '../game/types'
 import { dailyMe } from './Daily'
+import { wizLvl } from '../progression'
 import { assetUrl } from '../assets'
 import { saveLocal } from './store'
 import Tutorial from './Tutorial'
@@ -39,7 +40,8 @@ export default function Arenas({ onPlay, onBack, onNet }: { onPlay: (s: GameStat
 
   const fight = (i: number) => {
     if (i > (st.arenaSeen ?? 0) && ARENAS[i].intro.length) { setIntro(i); return }
-    const f = arenaFight(i, dailyMe())
+    const me = dailyMe(), l = wizLvl(st, me.portrait)
+    const f = arenaFight(i, l ? { ...me, lvl: l } : me)
     const s = create(f.setup, (Math.random() * 2 ** 31) | 0, medals, f.mods, f.sets)
     saveLocal(s, ARENA_KEY)
     onPlay(s)

@@ -1,7 +1,9 @@
 // Настройка локальной партии: 2–6 мест (человек или бот), имена, портреты, медалей до победы.
 import { useState } from 'react'
 import type { CardSet, SetupPlayer } from '../game/types'
-import SetPicker, { RulesPicker } from './SetPicker'
+import SetPicker, { AbilPicker, RulesPicker } from './SetPicker'
+import { withAbil, wizLvl, type AbilMode } from '../progression'
+import { getStats } from './useStats'
 import type { Rules } from '../arenas'
 import { Portrait } from './cards'
 import WizardPicker from './WizardPicker'
@@ -18,6 +20,7 @@ export default function Setup({ onStart, onBack }: { onStart: (p: SetupPlayer[],
   const [medals, setMedals] = useState(2)
   const [sets, setSets] = useState<CardSet[]>(['base'])
   const [rules, setRules] = useState<Rules>('plain')
+  const [abil, setAbil] = useState<AbilMode>('own')
   const [pick, setPick] = useState<number | null>(null)
 
   const upd = (i: number, p: Partial<SetupPlayer>) => setSeats(ss => ss.map((s, k) => (k === i ? { ...s, ...p } : s)))
@@ -49,8 +52,9 @@ export default function Setup({ onStart, onBack }: { onStart: (p: SetupPlayer[],
       </div>
       <SetPicker value={sets} onChange={setSets} />
       <RulesPicker value={rules} onChange={setRules} />
+      <AbilPicker value={abil} onChange={setAbil} />
       <p className="hint">Несколько людей — играют по очереди на одном телефоне («передайте телефон»).</p>
-      <button className="btn wide gold" disabled={!ok} onClick={() => onStart(seats.map(s => ({ ...s, name: s.name.trim() })), medals, sets, rules)}>В бой!</button>
+      <button className="btn wide gold" disabled={!ok} onClick={() => onStart(withAbil(seats.map(s => ({ ...s, name: s.name.trim(), ...(s.bot ? {} : { lvl: wizLvl(getStats(), s.portrait) }) })), abil), medals, sets, rules)}>В бой!</button>
 
       {pick != null && (
         <WizardPicker value={seats[pick].portrait} taken={seats.filter((_, k) => k !== pick).map(s => s.portrait)}

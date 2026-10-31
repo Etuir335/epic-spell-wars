@@ -8,12 +8,13 @@ import {
 } from 'firebase/firestore'
 import { create } from '../game/engine.ts'
 import { withRules, type Rules } from '../arenas.ts'
+import { withAbil, type AbilMode } from '../progression.ts'
 import type { Action, CardSet, GameState } from '../game/types.ts'
 import { getDb } from './firebase.ts'
 
 export const ROOMS = 'esw'
 
-export interface Member { uid: string; name: string; portrait: number; joinedAt: number; beat?: Timestamp | null; emote?: MemberEmote | null }
+export interface Member { uid: string; name: string; portrait: number; lvl?: number; joinedAt: number; beat?: Timestamp | null; emote?: MemberEmote | null }
 // последняя эмоция участника: остальные показывают её, когда меняется at
 export interface MemberEmote { id: string; gold: boolean; at: number }
 export interface BotSeat { id: string; name: string; portrait: number; level: number }
@@ -24,6 +25,7 @@ export interface Room {
   medalsToWin: number
   sets?: CardSet[] // дружеский бой: наборы карт (нет — база)
   rules?: Rules // правила арены: обычные, с боссом, безумные
+  abil?: AbilMode // способности: свои уровни (lvl участника) / у всех ур. 3 / без
   bots: BotSeat[]
   state: string | null // JSON GameState
   v: number
@@ -56,7 +58,7 @@ const actionsCol = (code: string) => collection(getDb(), ROOMS, code, 'actions')
 
 export const parseState = (room: Room | null): GameState | null => (room?.state ? (JSON.parse(room.state) as GameState) : null)
 
-export async function createRoom(uid: string, name: string, portrait: number, opts: { public?: boolean; quick?: boolean } = {}): Promise<string> {
+export async function createRoom(uid: string, name: string, portrait: number, lvl: number, opts: { public?: boolean; quick?: boolean } = {}): Promise<string> {
   for (let i = 0; i < 6; i++) {
     const code = newCode()
     if ((await getDoc(roomRef(code))).exists()) continue
@@ -66,20 +68,20 @@ export async function createRoom(uid: string, name: string, portrait: number, op
       public: pub, quick: !!opts.quick, open: pub, count: 1, hostName: name, seenAt: Date.now(), startAt: null,
     }
     await setDoc(roomRef(code), { ...room, beat: serverTimestamp() })
-    await setDoc(memberRef(code, uid), { uid, name, portrait, joinedAt: Date.now() } satisfies Member)
+    await setDoc(memberRef(code, uid), { uid, name, portrait, lvl, joinedAt: Date.now() } satisfies Member)
     return code
   }
   throw new Error('Не удалось придумать свободный код комнаты, попробуйте ещё раз')
 }
 
-export async function joinRoom(code: string, uid: string, name: string, portrait: number) {
+export async function joinRoom(code: string, uid: string, name: string, portrait: number, lvl: number) {
   const snap = await getDoc(roomRef(code))
   if (!snap.exists()) throw new Error(`Комнаты ${code} нет`)
   const room = snap.data() as Room
   const existing = await getDoc(memberRef(code, uid))
   if (room.status === 'game' && !existing.exists()) throw new Error('Турнир уже идёт — новых участников не принимаем')
   if (!existing.exists() && (room.count ?? 0) + room.bots.length >= MAX_SEATS) throw new Error('В комнате уже 6 колдунов')
-  if (!existing.exists()) await setDoc(memberRef(code, uid), { uid, name, portrait, joinedAt: Date.now() } satisfies Member)
+  if (!existing.exists()) await setDoc(memberRef(code, uid), { uid, name, portrait, lvl, joinedAt: Date.now() } satisfies Member)
 }
 
 export const updateMember = (code: string, uid: string, patch: Partial<Member>) => updateDoc(memberRef(code, uid), patch)
@@ -102,10 +104,10 @@ export function watchMembers(code: string, cb: (members: Member[]) => void): Uns
 // Хост: игроки за столом — люди по порядку входа, затем боты; начать турнир.
 export async function startGame(room: Room, members: Member[]) {
   const players = [
-    ...members.map(m => ({ uid: m.uid, name: m.name, portrait: m.portrait })),
+    ...members.map(m => ({ uid: m.uid, name: m.name, portrait: m.portrait, lvl: m.lvl ?? 0 })),
     ...room.bots.map(b => ({ name: b.name, portrait: b.portrait, bot: b.level })),
   ]
-  const r = withRules(room.rules, players, true)
+  const r = withRules(room.rules, withAbil(players, room.abil), true)
   const state = create(r.players, Math.floor(Math.random() * 2 ** 31), room.medalsToWin, r.mods, room.sets)
   await updateRoom(room.code, { status: 'game', state: JSON.stringify(state), v: 1, open: false, startAt: null })
 }
@@ -136,11 +138,11 @@ export async function listOpenRooms(): Promise<Room[]> {
 }
 
 // Быстрая игра: войти в самую заполненную открытую комнату быстрой игры (или любую открытую), иначе создать новую.
-export async function quickMatch(uid: string, name: string, portrait: number): Promise<string> {
+export async function quickMatch(uid: string, name: string, portrait: number, lvl: number): Promise<string> {
   const rooms = await listOpenRooms()
   const pick = rooms.find(r => r.quick && r.host !== uid) ?? rooms.find(r => r.host !== uid)
   if (pick) {
-    try { await joinRoom(pick.code, uid, name, portrait); return pick.code } catch { /* заняли последнее место — создадим свою */ }
+    try { await joinRoom(pick.code, uid, name, portrait, lvl); return pick.code } catch { /* заняли последнее место — создадим свою */ }
   }
-  return createRoom(uid, name, portrait, { quick: true })
+  return createRoom(uid, name, portrait, lvl, { quick: true })
 }

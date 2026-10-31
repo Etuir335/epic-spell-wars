@@ -3,6 +3,7 @@
 // Сундук ждёт в одном из 4 слотов; открывается по одному за раз, по таймеру. Бесплатный сундук дня — без слота.
 import { ABILITIES, type Rarity } from './game/abilities.ts'
 import { rollChestEmote, type Emote } from './emotes.ts'
+import type { SetupPlayer } from './game/types.ts'
 
 export const STARTERS = [0, 1, 3, 5, 8, 12, 16, 23]
 export const WIZ_COUNT = ABILITIES.length
@@ -145,4 +146,20 @@ function fillChest(st: Progress, c: ChestSlot, rnd: () => number): Loot {
     if (e) { st.emotes = [...(st.emotes ?? []), e.id]; loot.emote = e }
   }
   return loot
+}
+
+// ---------- способности в режимах ----------
+// own — у людей свои уровни (из прокачки), боты по сложности; lvl3 — у всех ур. 3; off — без способностей. Боссам способности нет.
+export type AbilMode = 'own' | 'lvl3' | 'off'
+export const ABIL_MODES: { v: AbilMode; label: string; hint: string }[] = [
+  { v: 'own', label: '⭐ Свои уровни', hint: 'Каждый со своим уровнем колдуна из прокачки.' },
+  { v: 'lvl3', label: '⚖️ У всех ур. 3', hint: 'Честно: способности у всех на 3-м уровне.' },
+  { v: 'off', label: '🚫 Без способностей', hint: 'Как в настолке — только карты.' },
+]
+export function withAbil(players: SetupPlayer[], mode: AbilMode = 'own'): SetupPlayer[] {
+  return players.map(p => {
+    const { lvl, ...rest } = p
+    const l = p.boss || mode === 'off' ? 0 : mode === 'lvl3' ? 3 : lvl ?? (p.bot ? Math.min(MAX_LVL, 1 + p.bot) : 0)
+    return l > 0 ? { ...rest, lvl: l } : rest
+  })
 }

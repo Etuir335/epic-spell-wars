@@ -51,7 +51,12 @@ export function cupsFor(place: number, n: number, vsHumans: boolean) {
 
 // Бой на арене (против ботов): чем выше арена, тем умнее боты.
 const MODS = Object.keys(MOD_INFO) as Mod[]
-export function arenaFight(i: number, me: { name: string; portrait: number }): { setup: SetupPlayer[]; mods: Mod[]; sets?: CardSet[] } {
+// Уровень способности ботов — номер арены (не выше 5); у игрока — его уровень колдуна.
+export function arenaFight(i: number, me: SetupPlayer): { setup: SetupPlayer[]; mods: Mod[]; sets?: CardSet[] } {
+  const f = arenaSetup(i, me)
+  return { ...f, setup: f.setup.map(p => (p.bot && !p.boss ? { ...p, lvl: Math.min(5, i + 1) } : p)) }
+}
+function arenaSetup(i: number, me: SetupPlayer): { setup: SetupPlayer[]; mods: Mod[]; sets?: CardSet[] } {
   const r = (n: number) => Math.floor(Math.random() * n)
   // разные портреты, не как у игрока; ник — по портрету
   const used = new Set([me.portrait])

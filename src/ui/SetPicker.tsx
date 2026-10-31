@@ -2,6 +2,7 @@
 import { ARENAS, RULES, type Rules } from '../arenas'
 import type { CardSet } from '../game/types'
 import { useStatsData } from './useStats'
+import { ABIL_MODES, type AbilMode } from '../progression'
 
 const CHOICES: { sets: CardSet[]; label: string }[] = [
   { sets: ['base'], label: '🌋 Основа' },
@@ -46,6 +47,19 @@ export default function SetPicker({ value, onChange }: { value?: CardSet[]; onCh
         })}
       </div>
       {locked && <small className="hint">Дополнения открываются на аренах.</small>}
+    </div>
+  )
+}
+
+// Способности колдунов: свои уровни / у всех ур. 3 / без способностей
+export const abilLabel = (m?: AbilMode) => ABIL_MODES.find(x => x.v === (m ?? 'own'))!.label
+export function AbilPicker({ value, onChange }: { value?: AbilMode; onChange: (m: AbilMode) => void }) {
+  const v = value ?? 'own'
+  return (
+    <div className="set-pick">
+      <span>Способности:</span>
+      <div className="seg">{ABIL_MODES.map(m => <button key={m.v} className={v === m.v ? 'on' : ''} onClick={() => onChange(m.v)}>{m.label}</button>)}</div>
+      <small className="hint">{ABIL_MODES.find(m => m.v === v)!.hint}</small>
     </div>
   )
 }
