@@ -117,7 +117,8 @@ function evaluate(s: GameState, me: number, game: number): number {
   const foes = s.players.filter(q => q.id !== me)
   const live = foes.filter(q => q.alive)
   const avg = live.length ? live.reduce((a, q) => a + q.life, 0) / live.length : 0
-  const v = 0.5 + 0.022 * (p.life - avg) + 0.12 * (1 - live.length / Math.max(1, foes.length)) + 0.02 * p.treasures.length + 0.03 * (p.creatures?.length ?? 0)
+  // добить колдуна ценно: медаль ближе, а «Мародёр» и «Мародёрство» дают его сокровища
+  const v = 0.5 + 0.022 * (p.life - avg) + 0.2 * (1 - live.length / Math.max(1, foes.length)) + 0.05 * (p.ab?.kills ?? 0) + 0.02 * p.treasures.length + 0.03 * (p.creatures?.length ?? 0)
   return Math.max(0.06, Math.min(0.95, v))
 }
 

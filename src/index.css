@@ -605,3 +605,10 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .banner.mad b { font-size: 30px; color: #e6b3ff; text-shadow: 0 3px 0 #4a0f6a, 0 0 30px #b14dff; }
 .banner.mad small { max-width: 300px; font-size: 15px; }
 .boss-tag { color: #e6b3ff; font-weight: 700; }
+.ab-tag { display: inline-flex; align-items: center; gap: 1px; padding: 0 4px; border-radius: 8px; font-size: 12px; line-height: 16px; background: rgba(0,0,0,.45); border: 1px solid #8a8f99; }
+.ab-tag b { font-size: 11px; color: #fff; }
+.r-rare.ab-tag { border-color: #f0a030; } .r-epic.ab-tag { border-color: #c050ff; } .r-legend.ab-tag { border-color: #6ff; box-shadow: 0 0 6px rgba(102,255,255,.6); }
+.ab-line { margin: 6px 0 8px; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,.06); border-left: 4px solid #8a8f99; }
+.ab-line p { margin: 4px 0 0; font-size: 13px; }
+.ab-line small { opacity: .7; }
+.ab-line.r-rare { border-color: #f0a030; } .ab-line.r-epic { border-color: #c050ff; } .ab-line.r-legend { border-color: #6ff; }

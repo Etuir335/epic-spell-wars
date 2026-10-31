@@ -6,6 +6,7 @@ import { BOSS_INFO, MOD_INFO } from '../daily'
 import { DEAD, SPELLS, TREASURES } from '../data/cards'
 import { T } from '../game/core'
 import { waitingFor } from '../game/engine'
+import { ABILITIES, RARITY_NAME } from '../game/abilities'
 import type { Action, GameState, PlayerState } from '../game/types'
 import { think } from '../ai/mcts'
 import Arena from './Arena'
@@ -488,12 +489,21 @@ function Seat({ s, p, life, alive, casting, count, onClick }: {
       <div className="seat-info">
         {p.treasures.length > 0 && <span>💰{p.treasures.length}</span>}
         {!!p.creatures?.length && <span>🐾{p.creatures.length}</span>}
+        <AbTag p={p} />
         {p.boss && <span className="boss-tag" title={BOSS_INFO[p.boss].text}>{BOSS_INFO[p.boss].icon} босс{p.slimes ? ` · 🟢${p.slimes}` : ''}</span>}
         {alive && s.phase === 'build' && (p.spell ? <span className="ready">✓</span> : <span className="think">…</span>)}
         {n != null && <Backs n={n} />}
       </div>
     </button>
   )
+}
+
+// Способность колдуна на его месте (как метка босса)
+const abOf = (p: PlayerState) => (p.lvl && !p.boss ? ABILITIES[p.portrait] : null)
+function AbTag({ p }: { p: PlayerState }) {
+  const a = abOf(p)
+  if (!a) return null
+  return <span className={`ab-tag r-${a.rarity}`} title={`«${a.name}», ур. ${p.lvl}: ${a.text(p.lvl!)}`}>{a.icon}<b>{p.lvl}</b></span>
 }
 
 function MyBar({ s, p, life, alive, casting, onClick }: { s: GameState; p: PlayerState; life: number; alive: boolean; casting: boolean; onClick: () => void }) {
@@ -504,7 +514,7 @@ function MyBar({ s, p, life, alive, casting, onClick }: { s: GameState; p: Playe
         <span className="orb big">{alive ? life : '☠'}</span>
       </div>
       <div className="mybar-main" onClick={onClick}>
-        <b>{p.name}</b> {p.medals > 0 && '🏅'.repeat(p.medals)}
+        <b>{p.name}</b> <AbTag p={p} /> {p.medals > 0 && '🏅'.repeat(p.medals)}
         <small>{s.medalsToWin} 🏅 до победы</small>
       </div>
       <div className="mybar-tr">
@@ -525,6 +535,10 @@ function PlayerSheet({ s, p, onClose }: { s: GameState; p: PlayerState; onClose:
           <button className="ps-ava" onClick={() => setLook(true)} title="Посмотреть колдуна"><Portrait i={p.portrait} size={72} dead={!p.alive} /><span>🔍</span></button>
           <div><h3>{p.name}</h3>{p.alive ? `❤ ${p.life}` : '☠ дохлый'}{p.medals > 0 && ' · ' + '🏅'.repeat(p.medals)}<br /><small>Карт на руке: {p.hand.length}</small></div>
         </div>
+        {abOf(p) && <div className={`ab-line r-${abOf(p)!.rarity}`}>
+          <b>{abOf(p)!.icon} «{abOf(p)!.name}» · ур. {p.lvl}</b> <small>{RARITY_NAME[abOf(p)!.rarity]}</small>
+          <p>{abOf(p)!.text(p.lvl!)}</p>
+        </div>}
         <h4>Сокровища{!p.treasures.length && ': нет'}</h4>
         <div className="list-cards">{p.treasures.map(t => (
           <div key={t} className="lc"><Card c={{ deck: 'treasures', index: t }} size="s" caption={false} /><div><b>{TREASURES[t].name}</b><p>{TREASURES[t].text}</p></div></div>
