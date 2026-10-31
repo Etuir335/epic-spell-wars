@@ -3,7 +3,7 @@
 import { spellOf } from './game/core.ts'
 import type { Ev, GameState } from './game/types.ts'
 import { ARENAS, arenaOf, cupsFor } from './arenas.ts'
-import { rollChestEmote } from './emotes.ts'
+import { chestSlots, grantChest, type ChestSlot } from './progression.ts'
 
 export interface Stats {
   games: number // схваток сыграно
@@ -34,6 +34,9 @@ export interface Stats {
   emotes?: string[] // эмоции из сундуков (см. emotes.ts)
   wiz?: Record<number, { lvl: number; cards: number }> // колдуны: уровень и карточки (прогрессия)
   newEmote?: string // только что выпавшая эмоция — показать игроку
+  gold?: number
+  chests?: (ChestSlot | null)[] // 4 слота сундуков (progression.ts)
+  freeChestDay?: string
 }
 
 export const emptyStats = (): Stats => ({
@@ -45,8 +48,8 @@ export const emptyStats = (): Stats => ({
 // Обнуляем счётчики; рекорды, достижения, кубки и арены оставляем.
 export function fixStats(st: Stats): Stats {
   if ((st.sv ?? 1) >= 2) return st
-  const { bestHit, bestRoll, ach, cups, arena, arenaSkip, arenaSeen, winDay, dailyCupDay, emotes, wiz } = st
-  return { ...emptyStats(), bestHit, bestRoll, ach, cups, arena, arenaSkip, arenaSeen, winDay, dailyCupDay, emotes, wiz, at: Date.now() }
+  const { bestHit, bestRoll, ach, cups, arena, arenaSkip, arenaSeen, winDay, dailyCupDay, emotes, wiz, gold, chests, freeChestDay } = st
+  return { ...emptyStats(), bestHit, bestRoll, ach, cups, arena, arenaSkip, arenaSeen, winDay, dailyCupDay, emotes, wiz, gold, chests, freeChestDay, at: Date.now() }
 }
 
 // ---------- звания ----------
@@ -179,9 +182,11 @@ export function applyEvents(st: Stats, tr: Track, evs: Ev[], s: GameState, seat:
           const day = new Date().toDateString()
           if (e.winner === me && st.winDay !== day) {
             st.winDay = day; d += 50
-            // пока нет сундуков: первая победа дня приносит эмоцию из сундучного набора
-            const em = rollChestEmote(st)
-            if (em) { st.emotes = [...(st.emotes ?? []), em.id]; st.newEmote = em.id }
+          }
+          // сундук: за победу, за 2-е место среди 4+ — с шансом 50%. Слоты заняты — не дают
+          if (place === 1 || (place === 2 && n >= 4 && Math.random() < 0.5)) {
+            const i = grantChest(st)
+            got.push(i >= 0 ? `chest:${chestSlots(st)[i]!.kind}` : 'chest:full')
           }
           got.push(...addCups(st, d))
         }

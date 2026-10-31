@@ -84,7 +84,7 @@ export default function Arenas({ onPlay, onBack, onNet }: { onPlay: (s: GameStat
       </div>
       <button className="btn wide net-fight" onClick={onNet}>🌐 Бой с живыми людьми</button>
       <p className="hint center">На аренах ты бьёшься с ботами. С живыми людьми — во вкладке «По сети» (быстрая игра или комната с друзьями): там кубки тоже идут, и плюсы ×1,5.</p>
-      <p className="hint center">За каждую схватку: победа +40 🏆, поражение −5, по месту в бою на многих. Против живых ×1,5, первая победа за день +50, испытание дня +20. Ниже порога своей арены кубки не падают.</p>
+      <p className="hint center">За каждую схватку: победа +40 🏆, поражение −5, по месту в бою на многих. Против живых ×1,5, первая победа за день +50. За победу — сундук 🎁 с картами колдунов и золотом, за испытание дня — серебряный сундук. Ниже порога своей арены кубки не падают.</p>
       {!st.arenaSkip && ARENAS.some((a, i) => a.ready && i > cur) && (
         <button className={`skip-all${sure ? ' warn' : ''}`} onClick={() => {
           if (sure < SKIP_ASK.length) { setSure(sure + 1); return }

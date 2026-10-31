@@ -4,6 +4,7 @@ import type { GameState } from '../game/types'
 import { ARENAS } from '../arenas'
 import { ACHIEVEMENTS, addCups, applyEvents, emptyStats, fixStats, newTrack, type Seat, type Stats, type Track } from '../stats'
 import { cloudGet, cloudSet } from '../telegram'
+import { CHESTS, type ChestKind } from '../progression'
 
 const KEY = 'esw-stats', TRACKS = 'esw-stats-tracks', CLOUD_KEY = 'stats'
 
@@ -34,6 +35,8 @@ void cloudGet(CLOUD_KEY).then(v => {
 // Отметка → всплывашка: достижение, кубки или новая арена
 function toastOf(id: string): { id: string; icon: string; name: string; text: string } | null {
   if (id.startsWith('cups:')) { const d = Number(id.slice(5)); return { id, icon: '🏆', name: `${d >= 0 ? '+' : ''}${d} кубков`, text: `Всего: ${stats.cups} · арена «${ARENAS[stats.arena].name}»` } }
+  if (id === 'chest:full') return { id, icon: '📦', name: 'Сундук не влез', text: 'Все 4 слота заняты — открой какой-нибудь' }
+  if (id.startsWith('chest:')) { const c = CHESTS[id.slice(6) as ChestKind]; return { id, icon: c.icon, name: `${c.name} сундук!`, text: 'Лежит в слоте — открой на экране сундуков' } }
   if (id.startsWith('arena:')) { const a = ARENAS[Number(id.slice(6))]; return { id, icon: a.icon, name: `Новая арена: ${a.name}`, text: a.text } }
   return ACHIEVEMENTS.find(a => a.id === id) ?? null
 }

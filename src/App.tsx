@@ -15,10 +15,12 @@ import { tgStartRoom, useTelegramBack } from './telegram'
 import { useStatsData } from './ui/useStats'
 import { rankOf } from './stats'
 import { ARENAS } from './arenas'
+import { Chests, Wizards, chestBadge } from './ui/Treasury'
+import { canUpgrade, WIZ_COUNT } from './progression'
 
 const NetPlay = lazy(() => import('./ui/NetPlay')) // Firebase — отдельным куском, только для сетевой игры
 
-type Screen = 'menu' | 'setup' | 'game' | 'gallery' | 'net' | 'profile' | 'daily' | 'dailyGame' | 'arenas' | 'arenaGame'
+type Screen = 'menu' | 'setup' | 'game' | 'gallery' | 'net' | 'profile' | 'daily' | 'dailyGame' | 'arenas' | 'arenaGame' | 'chests' | 'wizards'
 const startRoom = tgStartRoom() // открыли по приглашению из Telegram
 
 export default function App() {
@@ -28,6 +30,7 @@ export default function App() {
   const [gen, setGen] = useState(0) // новая партия — новый store
   const [tut, setTut] = useState(false)
   const st = useStatsData(), rank = rankOf(st)
+  const badge = chestBadge(st), ups = Array.from({ length: WIZ_COUNT }, (_, w) => w).filter(w => canUpgrade(st, w)).length
   const [daily, setDaily] = useState<GameState | null>(null)
   const [arena, setArena] = useState<GameState | null>(null)
   const [dailyLast, setDailyLast] = useState<{ score: number; win: boolean } | null>(null)
@@ -38,6 +41,7 @@ export default function App() {
         <div className="screen menu" style={{ ['--bg-img' as string]: `url(${assetUrl('assets/ui/menu-bg.webp')})` }}>
           <div className="menu-top">
             <button className="chip cups" onClick={() => setScreen('arenas')}>🏆 {st.cups ?? 0}</button>
+            <button className="chip gold-chip" onClick={() => setScreen('wizards')}>🪙 {st.gold ?? 0}</button>
             <button className="chip" onClick={() => setScreen('profile')}>{rank.icon} {rank.name}</button>
           </div>
           <div className="menu-head">
@@ -50,6 +54,10 @@ export default function App() {
             <span className="mh-text"><small>Арена {(st.arena ?? 0) + 1}</small><b>{ARENAS[st.arena ?? 0].name}</b></span>
             <span className="mh-go">В БОЙ</span>
           </button>
+          <div className="menu-row">
+            <button className="menu-tile chest-tile" onClick={() => setScreen('chests')}><i>🎁</i>Сундуки{badge > 0 && <em className="tile-badge">{badge}</em>}</button>
+            <button className="menu-tile" onClick={() => setScreen('wizards')}><i>🧙</i>Колдуны{ups > 0 && <em className="tile-badge">{ups}</em>}</button>
+          </div>
           <div className="menu-row">
             {game && game.phase !== 'tournament'
               ? <button className="menu-tile gold" onClick={() => setScreen('game')}><i>▶️</i>Продолжить</button>
@@ -80,6 +88,8 @@ export default function App() {
         onFinish={s => setDailyLast(finishDaily(s, dailyOf()))} onExit={() => setScreen('daily')} />}
       {screen === 'arenas' && <Arenas onBack={() => setScreen('menu')} onNet={() => setScreen('net')} onPlay={s => { setArena(s); setGen(g => g + 1); setScreen('arenaGame') }} />}
       {screen === 'arenaGame' && arena && <LocalGame key={gen} initial={arena} storeKey={ARENA_KEY} ranked onExit={() => setScreen('arenas')} />}
+      {screen === 'chests' && <Chests onBack={() => setScreen('menu')} />}
+      {screen === 'wizards' && <Wizards onBack={() => setScreen('menu')} />}
       {screen === 'profile' && <Profile onBack={() => setScreen('menu')} />}
       {screen === 'gallery' && <Gallery onBack={() => setScreen('menu')} />}
       {screen === 'net' && <Suspense fallback={<div className="screen"><p className="hint">Загрузка…</p></div>}><NetPlay onBack={() => setScreen('menu')} startCode={startRoom} /></Suspense>}

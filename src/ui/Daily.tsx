@@ -7,7 +7,8 @@ import type { ScoreRow } from '../net/dailyBoard'
 import { tgUser } from '../telegram'
 import { Portrait } from './cards'
 import { clearLocal, loadLocal, saveLocal } from './store'
-import { getStats, grantCups, updateStats } from './useStats'
+import { getStats, updateStats } from './useStats'
+import { grantChest } from '../progression'
 
 export const DAILY_KEY = 'esw-daily-game'
 const netConfigured = () => !!import.meta.env.VITE_FB_API_KEY // без загрузки Firebase
@@ -29,7 +30,7 @@ export function finishDaily(s: GameState, d: Daily) {
   const { score, win } = dailyScore(s)
   const best = loadBest(d.key)
   // кубки за испытание — один раз в день, за участие
-  if (getStats().dailyCupDay !== d.key) { updateStats(st => { st.dailyCupDay = d.key }); grantCups(20) }
+  if (getStats().dailyCupDay !== d.key) updateStats(st => { st.dailyCupDay = d.key; grantChest(st, 'silver') })
   if (!best || score > best.score) try { localStorage.setItem(BEST, JSON.stringify({ key: d.key, score, win })) } catch { /* не важно */ }
   if (netConfigured()) {
     const me = s.players[0]
