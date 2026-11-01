@@ -37,7 +37,7 @@ export function recordMatch(s: GameState, me: number, mode: string) {
     else if (e.k === 'round') { m.r = e.n; m.a = -1 }
     else if (e.k === 'turn') { m.a = e.p; m.u++ }
     else if (e.k === 'reveal') push(`${s.players[e.p]?.name ?? '?'} открывает: ${e.cards.map(cardName).join(' + ') || 'ничего'}`, e.cards)
-    else if (e.k === 'log') push(e.t)
+    else if (e.k === 'log' && e.t !== m.entries[m.entries.length - 1]?.t + '.') push(e.t) // строка «открывает» уже есть от reveal
   }
   if (m.entries.length > MAX_ENTRIES) m.entries.splice(0, m.entries.length - MAX_ENTRIES)
   m.pos = end; m.upd = Date.now()
