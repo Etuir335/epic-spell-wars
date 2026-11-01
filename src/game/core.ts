@@ -264,8 +264,8 @@ export function chooseHandCard(ctx: Ctx, who: PlayerState, prompt: string, ids =
   })
   return v == null ? null : (v as number)
 }
-export function yesNo(ctx: Ctx, who: PlayerState, prompt: string, yes: string, no: string): boolean {
-  return ask(ctx, { player: who.id, prompt, options: [{ v: 1, label: yes }, { v: 0, label: no }] }) === 1
+export function yesNo(ctx: Ctx, who: PlayerState, prompt: string, yes: string, no: string, hint?: number): boolean {
+  return ask(ctx, { player: who.id, prompt, hint, options: [{ v: 1, label: yes }, { v: 0, label: no }] }) === 1
 }
 
 // ---------- жизни ----------

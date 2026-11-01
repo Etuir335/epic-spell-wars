@@ -564,7 +564,7 @@ function MyBar({ s, p, life, alive, casting, onClick, onEmote }: { s: GameState;
         <span className="orb big">{alive ? life : '☠'}</span>
       </div>
       <div className="mybar-main" onClick={onClick}>
-        <b>{p.name}</b> <AbTag p={p} /> <CastleTag s={s} p={p} /> <SchoolTag s={s} p={p} /> {p.medals > 0 && '🏅'.repeat(p.medals)}
+        <b>{p.name}</b> <AbTag p={p} /> <CastleTag s={s} p={p} /> <SchoolTag s={s} p={p} /> <PassionTag s={s} p={p} /> {p.medals > 0 && '🏅'.repeat(p.medals)}
         <small>{s.medalsToWin} 🏅 до победы</small>
       </div>
       {!p.bot && <EmoteButton pid={p.id} portrait={p.portrait} onSend={onEmote} />}
@@ -590,6 +590,15 @@ function PlayerSheet({ s, p, onClose }: { s: GameState; p: PlayerState; onClose:
           <b>{abOf(p)!.icon} «{abOf(p)!.name}» · ур. {p.lvl}</b> <small>{RARITY_NAME[abOf(p)!.rarity]}</small>
           <p>{abOf(p)!.text(p.lvl!)}</p>
         </div>}
+        {s.sets?.includes('school') && p.rank != null && p.alive && <p className="ps-line">{ROLES[p.rank]?.[0]} <b>Статус {p.rank}</b> — {ROLES[p.rank]?.[1]}</p>}
+        {s.sets?.includes('castle') && <p className="ps-line">🩸 <b>Кровь: {p.blood ?? 0} из 25</b>{s.castle === p.id && ' · 🏰 владеет замком'}</p>}
+        {s.sets?.includes('passion') && !s.sets.includes('castle') && s.castle === p.id && <p className="ps-line">🏰 <b>Владеет замком</b></p>}
+        {!!p.zp?.length && <>
+          <h4>ЗПМП</h4>
+          <div className="list-cards">{p.zp.map(z => (
+            <div key={z} className="lc"><img className="zp-img" src={assetUrl(`assets/zpmp/${z >> 1}.webp`)} alt="" /><div><b>{ZP[z >> 1][0]}</b><p>{ZP[z >> 1][1]}</p></div></div>
+          ))}</div>
+        </>}
         <h4>Сокровища{!p.treasures.length && ': нет'}</h4>
         <div className="list-cards">{p.treasures.map(t => (
           <div key={t} className="lc"><Card c={{ deck: 'treasures', index: t }} size="s" caption={false} /><div><b>{TREASURES[t].name}</b><p>{TREASURES[t].text}</p></div></div>

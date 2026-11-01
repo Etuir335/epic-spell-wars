@@ -83,6 +83,8 @@ html:has(.sheet-back), html:has(.zoom) { overflow: hidden; }
 .ps-head { display: flex; gap: 14px; align-items: center; font-size: 16px; }
 .list-cards .lc { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 10px; font-size: 15px; line-height: 1.35; }
 .list-cards .lc .card { width: 74px; flex: none; }
+.list-cards .lc .zp-img { width: 56px; height: 56px; object-fit: contain; flex: none; }
+.ps-line { margin: 6px 0; font-size: 15px; line-height: 1.35; }
 .list-cards p { margin: 4px 0; }
 
 /* ---------- карты ---------- */

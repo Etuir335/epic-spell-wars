@@ -104,10 +104,16 @@ function pass(ctx: Ctx, from: PlayerState, to: PlayerState | null, steal = false
   log(s, `💋 ${src.name} → ${dst.name}: ${zpName(z)}.`)
   take(ctx, dst, z, steal ? null : from)
 }
+// вред ЗПМП для подсказок (по видам)
+const ZP_BAD = [3, 4, 7, 0, 4, 2, 6, 5, 4, 8]
 function pickZp(ctx: Ctx, who: PlayerState, owner: PlayerState, prompt: string): number {
   const list = owner.zp ?? []
   if (list.length === 1) return list[0]
-  return ask(ctx, { player: who.id, prompt, options: list.map(z => ({ v: z, label: ZP[z >> 1][0] })) }) as number
+  // подсказка ботам: себе лечим / от себя отдаём самое вредное, у врага забираем наименее вредное
+  const worst = list.reduce((a, b) => (ZP_BAD[b >> 1] > ZP_BAD[a >> 1] ? b : a))
+  const least = list.reduce((a, b) => (ZP_BAD[b >> 1] < ZP_BAD[a >> 1] ? b : a))
+  const hint = owner.id === who.id ? worst : least
+  return ask(ctx, { player: who.id, prompt, hint, options: list.map(z => ({ v: z, label: ZP[z >> 1][0] })) }) as number
 }
 // Вылечить n своих ЗПМП (Infinity — все); возвращает число вылеченных
 export function cure(ctx: Ctx, p: PlayerState, n: number, who = p): number {
@@ -434,7 +440,7 @@ export function passionTurnStart(ctx: Ctx, p: PlayerState) {
   if (!passionOn(s)) return
   if (has(p, PT.dildo) && zc(p)) heal(ctx, p, 1)
   const pd = p.pd ?? []
-  if (pd.includes(PD.relief) && p.zp?.length && yesNo(ctx, p, '«Отходняк»: сбросить и вылечить одно ЗПМП?', 'Вылечить', 'Позже')) {
+  if (pd.includes(PD.relief) && p.zp?.length && yesNo(ctx, p, '«Отходняк»: сбросить и вылечить одно ЗПМП?', 'Вылечить', 'Позже', 1)) {
     pd.splice(pd.indexOf(PD.relief), 1)
     cure(ctx, p, 1)
   }
