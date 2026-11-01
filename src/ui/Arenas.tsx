@@ -46,7 +46,7 @@ export default function Arenas({ onPlay, onBack, onNet }: { onPlay: (s: GameStat
   const fight = (i: number) => {
     if (i > (st.arenaSeen ?? 0) && ARENAS[i].intro.length) { setIntro(i); return }
     const me = dailyMe(), l = wizLvl(st, me.portrait)
-    const f = arenaFight(i, l ? { ...me, lvl: l } : me)
+    const f = arenaFight(i, l ? { ...me, lvl: l } : me, st.streak ?? 0)
     const s = create(f.setup, (Math.random() * 2 ** 31) | 0, medals, f.mods, f.sets)
     saveLocal(s, ARENA_KEY)
     onPlay(s)

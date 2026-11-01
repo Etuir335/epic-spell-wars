@@ -148,7 +148,7 @@ export default function Game({ store, onExit, net, ranked }: { store: GameStore;
   const desk = useIsDesktop()
   const layout = useDeskLayout(DESK_PANELS)
   const canHover = typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches // на телефоне касание — не наведение
-  const dir = useDirector(s)
+  const dir = useDirector(s, viewer)
   useBots(s, store.dispatch, dir.done && (!net || net.isHost))
   useBotEmotes(s, dir.pos)
   useMatchRecorder(s, net ? net.seat : humans[0] ?? -1, net ? 'По сети' : ranked ? 'Арена' : s.mods?.length ? 'Испытание' : 'Турнир')
@@ -266,7 +266,7 @@ export default function Game({ store, onExit, net, ranked }: { store: GameStore;
     <div className={`game-wrap${desk ? ' desk' : ''}`} style={{ ['--bg-img' as string]: `url(${assetUrl('assets/ui/arena-bg.webp')})`, ...(desk ? { gridTemplateColumns: layout.cols } : {}) }}>
     {desk && layout.column('left', panels)}
     <EmoteLayer />
-    <TombLayer />
+    <TombLayer fast={dir.fast} onFast={() => dir.setFast(!dir.fast)} onSkip={dir.skipTombs} />
     {desk && layout.split('left')}
     <div className="game">
       <div className="top-bar">

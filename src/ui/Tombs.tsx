@@ -5,16 +5,22 @@ import { cardUrl } from '../assets'
 import { DEAD, SCHOOL_NAMES } from '../data/cards'
 import { SchoolIcon } from './cards'
 
-interface Tomb { key: number; c: number; name: string; i: number; n: number; dx: number; dy: number }
+interface Tomb { key: number; c: number; name: string; i: number; n: number; dx: number; dy: number; k: number }
 const EV = 'esw-tomb'
 let seq = 0
 
 // тайминги (мс): вылет → показ → горение → пепел
 export const TOMB_FLY = 650, TOMB_BURN = 2700, TOMB_BURN_LEN = 2100, TOMB_TOTAL = TOMB_BURN + TOMB_BURN_LEN + 300
 
-export function showTomb(pid: number, c: number, name: string, i: number, n: number) {
-  window.dispatchEvent(new CustomEvent(EV, { detail: { pid, c, name, i, n } }))
+// k — множитель времени (меньше 1 — быстрее)
+export function showTomb(pid: number, c: number, name: string, i: number, n: number, k = 1) {
+  window.dispatchEvent(new CustomEvent(EV, { detail: { pid, c, name, i, n, k } }))
 }
+
+// Настройка: показывать только свои карты дохлых колдунов (чужие — значком у портрета)
+const MINE_KEY = 'esw-tombs-mine'
+export function tombsMine(): boolean { try { return localStorage.getItem(MINE_KEY) === '1' } catch { return false } }
+function setTombsMine(v: boolean) { try { localStorage.setItem(MINE_KEY, v ? '1' : '0') } catch { /* не важно */ } }
 
 // что делает карта — коротко, крупно (полный текст ниже)
 const EFFECT: Record<number, string> = {
@@ -22,28 +28,35 @@ const EFFECT: Record<number, string> = {
   5: '🌀 «Шальная магия» на руку', 6: '❤ +2 жизни', 7: '💰 +1 сокровище', 11: '💰 Отжал сокровище', 12: '🃏 Колдунство и ещё карта',
 }
 
-export function TombLayer() {
+export function TombLayer({ fast, onFast, onSkip }: { fast: boolean; onFast: () => void; onSkip: () => void }) {
   const [list, setList] = useState<Tomb[]>([])
+  const [mine, setMine] = useState(tombsMine)
   useEffect(() => {
     const on = (e: Event) => {
-      const { pid, c, name, i, n } = (e as CustomEvent).detail as { pid: number; c: number; name: string; i: number; n: number }
+      const { pid, c, name, i, n, k } = (e as CustomEvent).detail as { pid: number; c: number; name: string; i: number; n: number; k: number }
       const r = document.querySelector(`.ava[data-pid="${pid}"]`)?.getBoundingClientRect()
-      const t: Tomb = { key: ++seq, c, name, i, n, dx: r ? r.left + r.width / 2 - innerWidth / 2 : 0, dy: r ? r.top + r.height / 2 - innerHeight / 2 : 0 }
+      const t: Tomb = { key: ++seq, c, name, i, n, k, dx: r ? r.left + r.width / 2 - innerWidth / 2 : 0, dy: r ? r.top + r.height / 2 - innerHeight / 2 : 0 }
       setList(l => [...l, t])
-      setTimeout(() => setList(l => l.filter(o => o.key !== t.key)), TOMB_TOTAL)
+      setTimeout(() => setList(l => l.filter(o => o.key !== t.key)), TOMB_TOTAL * k)
     }
     window.addEventListener(EV, on)
     return () => window.removeEventListener(EV, on)
   }, [])
   if (!list.length) return null
-  return <div className="tomb-layer">
+  const k = list[list.length - 1].k
+  return <div className="tomb-layer" style={{ '--tk': k } as React.CSSProperties}>
+    <div className="tomb-ctl">
+      <button onClick={onFast}>{fast ? '▶ Обычно' : '⏩ Быстрее'}</button>
+      <button onClick={() => { setList([]); onSkip() }}>⏭ Пропустить</button>
+      <button className={mine ? 'on' : ''} onClick={() => { setMine(!mine); setTombsMine(!mine) }} title="Показывать только твои карты дохлых колдунов">👁 Только мои</button>
+    </div>
     {list.map(t => {
       const d = DEAD[Math.floor(t.c / 10)]
       const sc = d.school ?? undefined
       return (
         <div key={t.key} className="tomb" style={{ '--dx': `${t.dx}px`, '--dy': `${t.dy}px` } as React.CSSProperties}>
           <div className="tomb-cap"><b>{t.name}</b>{t.n > 1 && <small>{t.i + 1} / {t.n}</small>}</div>
-          <BurningCard src={cardUrl('dead', Math.floor(t.c / 10))} />
+          <BurningCard src={cardUrl('dead', Math.floor(t.c / 10))} k={t.k} />
           <div className="tomb-eff">
             <b>{sc ? <><SchoolIcon s={sc} size={26} /> Знак «{SCHOOL_NAMES[sc]}» на всю игру</> : EFFECT[Math.floor(t.c / 10)] ?? d.name}</b>
             <small>{d.name} — {d.text}</small>
@@ -77,7 +90,7 @@ function noiseField(w: number, h: number) {
 
 interface Spark { x: number; y: number; vx: number; vy: number; life: number; max: number; r: number; smoke: boolean }
 
-function BurningCard({ src }: { src: string }) {
+function BurningCard({ src, k }: { src: string; k: number }) {
   const card = useRef<HTMLCanvasElement>(null), fx = useRef<HTMLCanvasElement>(null)
   useEffect(() => {
     const cv = card.current!, fc = fx.current!
@@ -105,13 +118,13 @@ function BurningCard({ src }: { src: string }) {
       }
       const frame = ctx.createImageData(W, H), px = frame.data
       const sparks: Spark[] = []
-      const t0 = born + TOMB_BURN
+      const t0 = born + TOMB_BURN * k
       let last = performance.now()
       const EMBER = .022, CHAR = .075, HEAT = .16
       const tick = (now: number) => {
         if (dead) return
         const dt = Math.min(50, now - last) / 1000; last = now
-        const p = (now - t0) / TOMB_BURN_LEN
+        const p = (now - t0) / (TOMB_BURN_LEN * k)
         if (p > 0) {
           const L = p * 1.08 - .04 // уровень огня: всё с порогом ниже — сгорело
           for (let i = 0, j = 0; i < th.length; i++, j += 4) {
@@ -165,7 +178,7 @@ function BurningCard({ src }: { src: string }) {
       raf = requestAnimationFrame(tick)
     }
     return () => { dead = true; cancelAnimationFrame(raf) }
-  }, [src])
+  }, [src, k])
   return <div className="tomb-card">
     <canvas ref={card} className="tomb-paper" />
     <canvas ref={fx} className="tomb-fx" />

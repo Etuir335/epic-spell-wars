@@ -27,6 +27,7 @@ export interface Stats {
   arena: number // самая высокая достигнутая арена (ниже её порога кубки не падают)
   arenaSkip?: boolean // «Я опытный»: все арены открыты
   arenaSeen: number // до какой арены показано вступление
+  streak?: number // серия на аренах: +n побед подряд, −n поражений подряд (подбор ботов)
   winDay?: string // день первой победы (бонус +50)
   dailyCupDay?: string // день, когда начислены кубки за испытание
   at: number // когда менялась (для выбора между устройством и облаком)
@@ -50,8 +51,8 @@ export const emptyStats = (): Stats => ({
 // Обнуляем счётчики; рекорды, достижения, кубки и арены оставляем.
 export function fixStats(st: Stats): Stats {
   if ((st.sv ?? 1) >= 2) return st
-  const { bestHit, bestRoll, ach, cups, arena, arenaSkip, arenaSeen, winDay, dailyCupDay, emotes, wiz, gold, chests, freeChestDay } = st
-  return { ...emptyStats(), bestHit, bestRoll, ach, cups, arena, arenaSkip, arenaSeen, winDay, dailyCupDay, emotes, wiz, gold, chests, freeChestDay, at: Date.now() }
+  const { bestHit, bestRoll, ach, cups, arena, arenaSkip, arenaSeen, streak, winDay, dailyCupDay, emotes, wiz, gold, chests, freeChestDay } = st
+  return { ...emptyStats(), bestHit, bestRoll, ach, cups, arena, arenaSkip, arenaSeen, streak, winDay, dailyCupDay, emotes, wiz, gold, chests, freeChestDay, at: Date.now() }
 }
 
 // ---------- звания ----------
@@ -191,6 +192,8 @@ export function applyEvents(st: Stats, tr: Track, evs: Ev[], s: GameState, seat:
             got.push(i >= 0 ? `chest:${chestSlots(st)[i]!.kind}` : 'chest:full')
           }
           got.push(...addCups(st, d))
+          const k = st.streak ?? 0
+          st.streak = e.winner === me ? Math.max(0, k) + 1 : Math.min(0, k) - 1
         }
         st.games++
         if (seat.vsHumans) st.netGames++

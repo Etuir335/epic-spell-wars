@@ -20,7 +20,7 @@ export function create(setup: SetupPlayer[], seed: number, medalsToWin = 2, mods
   const s: GameState = {
     rng: seed | 0, tid: seed | 0, ...(mods?.length ? { mods } : {}), ...(sets.join() !== 'base' ? { sets } : {}), phase: 'start', game: 0, round: 0, medalsToWin,
     players: setup.map((p, id) => ({
-      id, name: p.name, portrait: p.portrait, ...(p.bot ? { bot: p.bot } : {}), ...(p.uid ? { uid: p.uid } : {}), ...(p.boss ? { boss: p.boss } : {}), ...(p.lvl ? { lvl: p.lvl } : {}),
+      id, name: p.name, portrait: p.portrait, ...(p.bot ? { bot: p.bot } : {}), ...(p.uid ? { uid: p.uid } : {}), ...(p.boss ? { boss: p.boss } : {}), ...(p.lvl ? { lvl: p.lvl } : {}), ...(p.mercy != null ? { mercy: p.mercy } : {}),
       life: START_LIFE, alive: true, hand: [], treasures: [], deadCards: [], medals: 0,
       spell: null, acted: false, extraDice: 0,
     })),

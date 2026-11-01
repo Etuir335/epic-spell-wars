@@ -649,19 +649,22 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 /* карты дохлых колдунов в начале игры: вылет от колдуна → что даёт → сгорает от краёв к центру (canvas в Tombs.tsx).
    Длительности совпадают с TOMB_* в Tombs.tsx: вылет .65 с, горение с 2.7 до 4.8 с, всего 5.1 с */
 .tomb-layer { position: fixed; inset: 0; pointer-events: none; z-index: 60; display: grid; place-items: center; }
-.tomb-layer::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(20, 60, 90, .3), rgba(2, 4, 16, .8) 70%); animation: tomb-dim 5.1s ease forwards; }
-.tomb { grid-area: 1 / 1; position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; animation: tomb-fly .65s cubic-bezier(.2, .9, .3, 1.15) both; }
-.tomb-card { position: relative; width: min(46vw, 230px); animation: tomb-float 5.1s ease-in-out forwards; }
-.tomb-paper { display: block; width: 100%; height: auto; border-radius: 12px; animation: tomb-aura 5.1s ease forwards; }
-.tomb-paper.css-burn { animation: tomb-aura 5.1s ease forwards, tomb-css-burn 5.1s ease-in forwards; }
+.tomb-layer::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(20, 60, 90, .3), rgba(2, 4, 16, .8) 70%); animation: tomb-dim calc(5.1s * var(--tk, 1)) ease forwards; }
+.tomb { grid-area: 1 / 1; position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; animation: tomb-fly calc(.65s * var(--tk, 1)) cubic-bezier(.2, .9, .3, 1.15) both; }
+.tomb-card { position: relative; width: min(46vw, 230px); animation: tomb-float calc(5.1s * var(--tk, 1)) ease-in-out forwards; }
+.tomb-paper { display: block; width: 100%; height: auto; border-radius: 12px; animation: tomb-aura calc(5.1s * var(--tk, 1)) ease forwards; }
+.tomb-paper.css-burn { animation: tomb-aura calc(5.1s * var(--tk, 1)) ease forwards, tomb-css-burn calc(5.1s * var(--tk, 1)) ease-in forwards; }
 .tomb-fx { position: absolute; left: -45%; top: -45%; width: 190%; height: 190%; pointer-events: none; }
-.tomb-cap { font-weight: 800; color: #ffe7c2; text-shadow: 0 0 10px #4fc8ff, 0 2px 4px #000; text-align: center; font-size: 16px; animation: tomb-cap 5.1s ease forwards; }
+.tomb-cap { font-weight: 800; color: #ffe7c2; text-shadow: 0 0 10px #4fc8ff, 0 2px 4px #000; text-align: center; font-size: 16px; animation: tomb-cap calc(5.1s * var(--tk, 1)) ease forwards; }
 .tomb-cap small { display: block; font-size: 11px; opacity: .7; letter-spacing: 2px; }
 .tomb-eff { display: flex; flex-direction: column; align-items: center; gap: 4px; max-width: min(86vw, 360px); padding: 8px 14px; border-radius: 14px; text-align: center;
-  background: linear-gradient(#2a1830ee, #140a18ee); border: 2px solid #ffc531aa; box-shadow: 0 0 24px #ffb11f55, 0 6px 16px #000a; animation: tomb-eff 5.1s ease forwards; }
+  background: linear-gradient(#2a1830ee, #140a18ee); border: 2px solid #ffc531aa; box-shadow: 0 0 24px #ffb11f55, 0 6px 16px #000a; animation: tomb-eff calc(5.1s * var(--tk, 1)) ease forwards; }
 .tomb-eff b { display: flex; align-items: center; gap: 6px; font-size: 19px; color: #ffe07a; text-shadow: 0 2px 3px #000; }
 .tomb-eff small { font-size: 12px; line-height: 1.3; color: #e8dcc8; opacity: .85; }
-.tomb-sign { position: absolute; left: 50%; top: 50%; margin: -22px 0 0 -22px; filter: drop-shadow(0 0 10px #ffe07a) drop-shadow(0 0 22px #ffb11f); opacity: 0; animation: tomb-sign 5.1s cubic-bezier(.5, 0, .3, 1) forwards; }
+.tomb-sign { position: absolute; left: 50%; top: 50%; margin: -22px 0 0 -22px; filter: drop-shadow(0 0 10px #ffe07a) drop-shadow(0 0 22px #ffb11f); opacity: 0; animation: tomb-sign calc(5.1s * var(--tk, 1)) cubic-bezier(.5, 0, .3, 1) forwards; }
+.tomb-ctl { position: absolute; top: max(10px, env(safe-area-inset-top)); left: 0; right: 0; z-index: 2; display: flex; gap: 8px; justify-content: center; pointer-events: auto; }
+.tomb-ctl button { background: #0b1a2acc; border: 1px solid #6fd0ff55; border-radius: 10px; padding: 6px 12px; font-size: 14px; color: #dff4ff; }
+.tomb-ctl button.on { background: #1d5a86; border-color: #9fe8ff; }
 @keyframes tomb-dim { 0% { opacity: 0 } 8%, 88% { opacity: 1 } 100% { opacity: 0 } }
 @keyframes tomb-fly { 0% { transform: translate(var(--dx), var(--dy)) scale(.12) rotate(-25deg); opacity: 0 } 70% { transform: scale(1.06) rotate(2deg); opacity: 1 } 100% { transform: none } }
 @keyframes tomb-float { 0%, 13% { transform: none } 50% { transform: translateY(-4px) rotate(-.6deg) } 53% { transform: translateY(-4px) } 95%, 100% { transform: translateY(-26px) rotate(1.5deg) } }

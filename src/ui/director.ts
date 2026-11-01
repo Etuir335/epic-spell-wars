@@ -4,7 +4,7 @@ import { SPELLS, TREASURES, type School } from '../data/cards'
 import type { CardId, Ev, GameState } from '../game/types'
 import { SCHOOL_COLOR, floater, glow, projectile, shake } from './fx'
 import { sfx } from './sound'
-import { showTomb } from './Tombs'
+import { showTomb, tombsMine } from './Tombs'
 
 export interface SceneCard { key: string; id: CardId | null; up: boolean; on?: boolean; done?: boolean; flash?: number; added?: boolean }
 export interface Scene {
@@ -80,7 +80,11 @@ export function applyScene(sc: Scene, e: Ev, s: GameState): Scene {
 }
 
 // Длительность показа события (мс).
-function duration(e: Ev, sc: Scene): number {
+// чужая карта дохлого колдуна при настройке «только мои» — без сцены, значком у портрета
+const hideTomb = (e: Ev, me: number) => e.k === 'tomb' && me >= 0 && e.p !== me && tombsMine()
+
+function duration(e: Ev, sc: Scene, me = -1): number {
+  if (hideTomb(e, me)) return 500
   switch (e.k) {
     case 'log': return e.t.startsWith('✦') || e.t.startsWith('▶') || e.t.startsWith('🎲') ? 0 : 320
     case 'game': return 1600
@@ -108,7 +112,8 @@ function duration(e: Ev, sc: Scene): number {
 }
 
 // Звуки и эффекты события.
-function play(e: Ev, sc: Scene, s: GameState) {
+function play(e: Ev, sc: Scene, s: GameState, me = -1, fast = false) {
+  if (hideTomb(e, me)) { floater((e as { p: number }).p, '🪦', 'skull'); glow((e as { p: number }).p, '#6fd0ff'); return }
   const color = sc.school ? SCHOOL_COLOR[sc.school] : '#ffcf4a'
   switch (e.k) {
     case 'game': case 'round': sfx.round(); break
@@ -134,13 +139,16 @@ function play(e: Ev, sc: Scene, s: GameState) {
       break
     case 'lose': floater(e.p, '−💰', 'lose'); break
     case 'dead': floater(e.p, '🪦', 'skull'); break
-    case 'tomb': sfx.ghost(); showTomb(e.p, e.c, s.players[e.p].name, e.i, e.n); setTimeout(() => glow(e.p, '#ffd34a'), 2600); setTimeout(() => sfx.burn(), 2700); break
+    case 'tomb': {
+      const k = fast ? 0.35 : 1
+      sfx.ghost(); showTomb(e.p, e.c, s.players[e.p].name, e.i, e.n, k); setTimeout(() => glow(e.p, '#ffd34a'), 2600 * k); setTimeout(() => sfx.burn(), 2700 * k); break
+    }
     case 'over': sfx.fanfare(); break
     case 'mad': sfx.boom(); if (e.p != null) { glow(e.p, '#b14dff'); shake(e.p, 0, true) } break
   }
 }
 
-export function useDirector(s: GameState) {
+export function useDirector(s: GameState, me = -1) {
   const end = s.evBase + s.ev.length
   const [pos, setPos] = useState(end)
   const [scene, setScene] = useState<Scene>(emptyScene)
@@ -157,12 +165,12 @@ export function useDirector(s: GameState) {
     if (played.current !== p) { // каждое событие — один раз, даже если состояние обновилось во время показа
       played.current = p
       sc = applyScene(sc, e, s)
-      play(e, sc, s)
+      play(e, sc, s, me, fast)
       setScene(sc)
     }
-    const t = setTimeout(() => setPos(p + 1), duration(e, sc) * (fast ? 0.35 : 1))
+    const t = setTimeout(() => setPos(p + 1), duration(e, sc, me) * (fast ? 0.35 : 1))
     return () => clearTimeout(t)
-  }, [p, end, fast, s])
+  }, [p, end, fast, s, me])
 
   const skip = () => {
     let sc = sceneRef.current
@@ -170,10 +178,18 @@ export function useDirector(s: GameState) {
     setScene({ ...sc, banner: null })
     setPos(end)
   }
+  // пропустить только сцены могил (подряд идущие карты дохлых колдунов)
+  const skipTombs = () => {
+    let sc = sceneRef.current, i = p
+    for (; i < end; i++) { const e = s.ev[i - s.evBase]; if (e.k !== 'tomb' && e.k !== 'log') break; sc = applyScene(sc, e, s) }
+    played.current = i - 1
+    setScene(sc)
+    setPos(i)
+  }
   // впереди только строки журнала (например «X выкладывает заклинание») — это не анимация: интерфейс хода не прячем,
   // иначе у собирающего заклинание на миг пропадают ячейки и сбрасывается перетаскивание
   const done = p >= end || s.ev.slice(p - s.evBase).every(e => e.k === 'log')
-  return { pos: p, done, scene, skip, fast, setFast }
+  return { pos: p, done, scene, skip, skipTombs, fast, setFast }
 }
 
 // Колдуны «как на экране»: жизни, сокровища, карты дохлых и медали без ещё не показанных событий —

@@ -51,10 +51,24 @@ export function cupsFor(place: number, n: number, vsHumans: boolean) {
 
 // Бой на арене (против ботов): чем выше арена, тем умнее боты.
 const MODS = Object.keys(MOD_INFO) as Mod[]
-// Уровень способности ботов — номер арены (не выше 5); у игрока — его уровень колдуна.
-export function arenaFight(i: number, me: SetupPlayer): { setup: SetupPlayer[]; mods: Mod[]; sets?: CardSet[] } {
-  const f = arenaSetup(i, me)
-  return { ...f, setup: f.setup.map(p => (p.bot && !p.boss ? { ...p, lvl: Math.min(5, i + 1) } : p)) }
+// Подбор ботов. Настрой боя от −2 (передышка) до +2 (вызов): серия на аренах (streak: +побед / −поражений подряд)
+// и немного случая — то полегче, то потруднее. Уровень способности бота — около уровня колдуна игрока,
+// но не выше арены + 2. На лёгком настрое боты глупее и щадят игрока (mercy), на трудном — умнее.
+export function arenaMood(streak: number, rnd = Math.random()): number {
+  const m = (streak <= -3 ? -2 : streak <= -1 ? -1 : streak >= 4 ? 2 : streak >= 2 ? 1 : 0) + (rnd < 0.2 ? -1 : rnd > 0.85 ? 1 : 0)
+  return Math.max(-2, Math.min(2, m))
+}
+export function arenaFight(i: number, me: SetupPlayer, streak = 0): { setup: SetupPlayer[]; mods: Mod[]; sets?: CardSet[] } {
+  const f = arenaSetup(i, me), mood = arenaMood(streak)
+  const base = Math.max(1, me.lvl ?? 1), cap = Math.min(5, i + 2)
+  const mercy = mood <= -2 ? 0.8 : mood === -1 ? 0.5 : i === 0 && mood === 0 ? 0.3 : 0 // 0 — явно «не щадить» (иначе лёгкий бот щадит на 0,6)
+  const bot = mood <= -1 || (i === 0 && mood < 2) ? 1 : mood >= 2 && i >= 2 ? 3 : 2
+  return { ...f, setup: f.setup.map(p => {
+    if (!p.bot) return p
+    if (p.boss) return mercy ? { ...p, mercy } : p
+    const r = Math.random(), lvl = Math.max(mood <= -2 ? 0 : 1, Math.min(cap, base + mood + (r < 0.15 ? -1 : r > 0.85 ? 1 : 0)))
+    return { ...p, bot, lvl: lvl || undefined, mercy }
+  }) }
 }
 function arenaSetup(i: number, me: SetupPlayer): { setup: SetupPlayer[]; mods: Mod[]; sets?: CardSet[] } {
   const r = (n: number) => Math.floor(Math.random() * n)

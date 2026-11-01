@@ -51,6 +51,7 @@ export interface PlayerState {
   extraDraw?: number // «Текучий любимый кетчуп»: сколько лишних карт добрать
   // способность колдуна (src/game/abilities.ts)
   lvl?: number // 1..5 — уровень способности (нет — без способности)
+  mercy?: number // бот: 0..1 — насколько щадит живых игроков (лёгкие боты, серия поражений)
   ab?: Record<string, number> // счётчики способности на игру
   abR?: Record<string, number> // на раунд
   abT?: Record<string, number> // на турнир
@@ -144,7 +145,7 @@ export interface GameState {
   seq: number // номер изменения (для сети)
 }
 
-export interface SetupPlayer { name: string; portrait: number; bot?: number; uid?: string; boss?: BossKind; lvl?: number }
+export interface SetupPlayer { name: string; portrait: number; bot?: number; uid?: string; boss?: BossKind; lvl?: number; mercy?: number }
 
 export type Action =
   | { type: 'submit'; player: number; cards: { id: CardId; slot: Exclude<SpellType, 'wild'> }[]; goLast?: boolean }

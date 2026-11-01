@@ -124,14 +124,25 @@ function evaluate(s: GameState, me: number, game: number): number {
   const live = foes.filter(q => q.alive)
   const avg = live.length ? live.reduce((a, q) => a + q.life, 0) / live.length : 0
   // добить колдуна ценно: медаль ближе, а «Мародёр» и «Мародёрство» дают его сокровища
-  const v = 0.5 + 0.022 * (p.life - avg) + 0.2 * (1 - live.length / Math.max(1, foes.length)) + 0.05 * (p.ab?.kills ?? 0) + 0.02 * p.treasures.length + 0.03 * (p.creatures?.length ?? 0)
+  let v = 0.5 + 0.022 * (p.life - avg) + 0.2 * (1 - live.length / Math.max(1, foes.length)) + 0.05 * (p.ab?.kills ?? 0) + 0.02 * p.treasures.length + 0.03 * (p.creatures?.length ?? 0)
+  // пощада: урон и добивание живого игрока боту почти не выгодны (лёгкие боты; на арене — при серии поражений)
+  const w = mercyOf(p)
+  if (w) for (const q of foes) if (!q.bot && !q.boss) v += w * (q.alive ? (0.022 * q.life) / Math.max(1, live.length) : -0.2 / Math.max(1, foes.length))
   return Math.max(0.06, Math.min(0.95, v))
 }
 
 // Кандидаты: при выборе — все варианты; при сборе — лучшие по эвристике (+ пара случайных).
+const mercyOf = (p: GameState['players'][number]) => p.mercy ?? (p.bot === 1 ? 0.6 : 0)
 function candidates(s: GameState, me: number, level: number): Action[] {
   const all = legalActions(s, me)
-  if (s.pending || all.length <= TOP_SPELLS[level]) return all
+  // пощада: с вероятностью mercy бот выбирает жертвой кого угодно, только не живого игрока (если есть кого)
+  const pd = s.pending
+  if (pd && !pd.friendly && Math.random() < mercyOf(s.players[me])) {
+    const human = (a: Action) => { const q = a.type === 'choose' ? pd.options.find(o => o.v === a.value)?.player : null; return q != null && q !== me && !s.players[q].bot && !s.players[q].boss }
+    const rest = all.filter(a => !human(a))
+    if (rest.length && rest.length < all.length) return rest
+  }
+  if (pd || all.length <= TOP_SPELLS[level]) return all
   const scored = all.map(a => ({ a, v: a.type === 'submit' ? spellScore(a.cards) - (a.goLast ? 1.5 : 0) : 0 })).sort((x, y) => y.v - x.v)
   const top = scored.slice(0, TOP_SPELLS[level]).map(x => x.a)
   const rest = scored.slice(TOP_SPELLS[level]).map(x => x.a)
