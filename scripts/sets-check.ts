@@ -42,6 +42,12 @@ function rules(a: GameState, b: GameState, fresh: string[]) {
     if (!o.alive && o.life !== q.life && !q.alive) throw new Error(`дохлый ${q.name}: жизни ${o.life}→${q.life}`)
     if (!o.alive && q.alive) throw new Error(`${q.name} ожил посреди игры`)
     if (o.treasures.includes(PT.clav) && o.alive && !q.alive && fresh.some(l => l.startsWith(`💋 ${q.name}:`))) throw new Error(`Клавитара не удержала ${q.name}`)
+    // «Гепатит Ы»: после открытия выложенных карт (без добавленных и тварей) не больше 3 − жетонов
+    const hep = (q.zp ?? []).filter(z => z >> 1 === 7).length
+    if (hep && q.alive && a.turn?.actor === q.id && a.turn.stage === 'reveal' && b.turn?.actor === q.id && b.turn.stage !== 'reveal' && !b.pending) {
+      const laid = (q.spell ?? []).filter(c => c.id >= 0 && (!c.from || c.from === 'wild')).length
+      if (laid > Math.max(1, 3 - hep)) throw new Error(`Гепатит Ы: у ${q.name} ${laid} карт при ${hep} жетонах`)
+    }
     if (zk(q, 5) && b.turn?.actor === q.id && (q.spell ?? []).some(c => c.id >= 0 && c.on && spellOf(c.id).type === 'wild')) throw new Error(`Кракены: у ${q.name} шальная в заклинании`)
   }
 }
@@ -65,7 +71,10 @@ for (const sets of combos) for (let t = 0; t < N; t++) {
       const p = who[rnd(who.length)], acts = legalActions(s, p)
       if (!acts.length) throw new Error(`у ${p} нет ходов (фаза ${s.phase}, ${s.pending?.prompt ?? ''})`)
       const prev = s, k0 = all.length
-      s = reduce(s, acts[rnd(acts.length)]); grab()
+      const act = acts[rnd(acts.length)]
+      s = reduce(prev, act); grab()
+      // повтор шага (вопросы перезапускают шаг, сеть считает у каждого) должен давать то же самое
+      if (JSON.stringify(reduce(prev, act)) !== JSON.stringify(s)) throw new Error('шаг недетерминирован')
       rules(prev, s, all.slice(k0))
       check(s, n0, where)
     }
