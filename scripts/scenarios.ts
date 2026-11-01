@@ -112,7 +112,7 @@ console.log('Вопросы и ответы')
   const before = JSON.stringify(s)
   const a = choose(s, 2), b = choose(JSON.parse(before), 2)
   ok(JSON.stringify(a) === JSON.stringify(b), 'ответ детерминирован (одинаковый результат)')
-  ok(a.log.includes('И2 отхватывает 2 ур. (25→23).'), 'урон получил выбранный враг', a)
+  ok(a.log.some(l => l.startsWith('И2 отхватывает 2 ур.') && l.endsWith('(25→23).')), 'урон получил выбранный враг', a)
 }
 
 console.log('Смерть, медаль, следующая игра')

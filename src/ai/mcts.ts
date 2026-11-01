@@ -127,6 +127,8 @@ function evaluate(s: GameState, me: number, game: number): number {
   const avg = live.length ? live.reduce((a, q) => a + q.life, 0) / live.length : 0
   // добить колдуна ценно: медаль ближе, а «Мародёр» и «Мародёрство» дают его сокровища
   let v = 0.5 + 0.022 * (p.life - avg) + 0.2 * (1 - live.length / Math.max(1, foes.length)) + 0.05 * (p.ab?.kills ?? 0) + 0.02 * p.treasures.length + 0.03 * (p.creatures?.length ?? 0)
+  // давить лидера: урон не сходится на одном и том же колдуне
+  if (live.length > 1) v -= 0.006 * Math.max(...live.map(q => q.life))
   if (s.sets?.includes('castle')) v += 0.004 * (p.blood ?? 0) + (s.castle === me ? 0.02 : 0)
   // страсть: свои ЗПМП вредят (вечные гарпии и потеря жизней — сильнее), у врагов — на пользу; замок защищает от заражения
   if (s.sets?.includes('passion')) {

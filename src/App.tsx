@@ -62,7 +62,7 @@ export default function App() {
           </div>
           <div className="menu-row">
             {game && game.phase !== 'tournament'
-              ? <button className="menu-tile gold" onClick={() => setScreen('game')}><i>▶️</i>Продолжить</button>
+              ? <button className="menu-tile gold" onClick={() => { setGame(loadLocal() ?? game); setGen(g => g + 1); setScreen('game') }}><i>▶️</i>Продолжить</button>
               : <button className="menu-tile" onClick={() => setScreen('setup')}><i>🎲</i>Турнир</button>}
             <button className="menu-tile" onClick={() => setScreen('net')}><i>🌐</i>По сети</button>
             <button className="menu-tile fire" onClick={() => setScreen('daily')}><i>🔥</i>Испытание</button>

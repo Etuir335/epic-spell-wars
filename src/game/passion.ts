@@ -145,7 +145,7 @@ const uniq = (list: (PlayerState | null)[]) => [...new Set(list.filter((q): q is
 const foes = (e: E) => enemies(e.s, e.p)
 const chooseFoe = (e: Ctx & { p: PlayerState }, list = enemies(e.s, e.p), prompt = 'Выбери врага') => choosePlayer(e, e.p, list, prompt)
 const victims = (e: E, pick: () => (PlayerState | null)[]) => (e.card.type === 'delivery' && e.s.turn?.deliveryAll ? foes(e) : uniq(pick()))
-const castleAll = (e: E, pick: () => (PlayerState | null)[]) => victims(e, () => (holds(e.s, e.p) ? foes(e) : pick()))
+const castleAll = (e: E, pick: () => (PlayerState | null)[]) => victims(e, () => { if (!holds(e.s, e.p)) return pick(); log(e.s, `🏰 Замок у ${e.p.name}: жертвы — все враги.`); return foes(e) })
 const weaker = (e: E) => foes(e).filter(q => q.life < e.p.life)
 const tougher = (e: E) => foes(e).filter(q => q.life > e.p.life)
 function fromHand(ctx: Ctx, p: PlayerState, prompt: string, ok: (id: CardId) => boolean = () => true): CardId | null {

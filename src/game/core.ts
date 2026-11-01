@@ -292,7 +292,8 @@ export function damage(ctx: Ctx, p: PlayerState | null, n: number) {
   const before = p.life
   p.life -= n
   ev(ctx.s, { k: 'dmg', p: p.id, n, from: ctx.s.turn?.actor ?? null, before, after: Math.max(p.life, 0) })
-  log(ctx.s, `${p.name} отхватывает ${n} ур. (${before}→${Math.max(p.life, 0)}).`)
+  const by = from == null ? '' : from === p.id ? ' от своего же заклинания' : ` от ${ctx.s.players[from].name}`
+  log(ctx.s, `${p.name} отхватывает ${n} ур.${by} (${before}→${Math.max(p.life, 0)}).`)
   if (p.life <= 0) kill(ctx, p)
   else if (p.boss === 'slime' && n >= 5) {
     p.slimes = (p.slimes ?? 0) + 1
