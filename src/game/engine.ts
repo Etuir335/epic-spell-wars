@@ -9,6 +9,7 @@ import {
 import { addToSpell, cardInfo, replaceWild } from './effects.ts'
 import { applyCard, offers, treasureCreatures } from './swamp.ts'
 import { castleReveal, castleRoundEnd, castleStartGame, castleTie, castleTurnStart, castleWild } from './castle.ts'
+import { schoolInit, schoolReveal, schoolRound, schoolStartGame, schoolTurnStart } from './school.ts'
 import { abBuilt, abEndTurn, abReveal, abRound, abStartGame, abTurnStart, asTwo } from './abilities.ts'
 import { TRAP, type Action, type CardId, type CardSet, type GameState, type Mod, type PlayerState, type SetupPlayer, type SpellCard } from './types.ts'
 
@@ -83,8 +84,10 @@ function startGame(ctx: Ctx) {
     if (p.reservedWild) { p.hand.push(...p.reservedWild); p.reservedWild = undefined }
   }
   castleStartGame(ctx)
+  schoolStartGame(ctx)
   for (const p of s.players) { s.deadDiscard.push(...p.deadCards); p.deadCards = [] }
   abStartGame(ctx)
+  schoolRound(ctx)
   s.phase = 'build'
 }
 
@@ -102,13 +105,14 @@ function shuffleSpells(ctx: Ctx) {
 }
 
 // Ключ очерёдности: ранец «последним» → Нетерпеливый → меньше карт → больше инициатива → бросок кубика.
-function orderKey(p: PlayerState, reverse = false): number[] {
+function orderKey(s: GameState, p: PlayerState, reverse = false): number[] {
   const sp = p.spell ?? []
   const impatient = sp.some(c => c.id >= 0 && Math.floor(c.id / 10) === 25)
   const del = sp.find(c => c.slot === 'delivery')
   let init = del && del.id >= 0 && !isWild(del.id) ? spellOf(del.id).initiative ?? 0 : 0
   if (p.treasures.includes(T.jetpack)) init += 10
   if (p.treasures.includes(ST.purse)) init += 5
+  init += schoolInit(s, p)
   return [p.goLast ? 1 : 0, impatient ? 0 : 1, reverse ? -(asTwo(p) ? 2 : sp.length) : asTwo(p) ? 2 : sp.length, -init]
 }
 const cmp = (a: number[], b: number[]) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] - b[i]; return 0 }
@@ -118,8 +122,8 @@ function nextActor(ctx: Ctx): PlayerState | null {
   const cand = alive(s).filter(p => !p.acted && p.spell)
   if (!cand.length) return null
   const rev = hasMod(s, 'reverse')
-  cand.sort((a, b) => cmp(orderKey(a, rev), orderKey(b, rev)))
-  const top = cand.filter(p => cmp(orderKey(p, rev), orderKey(cand[0], rev)) === 0)
+  cand.sort((a, b) => cmp(orderKey(s, a, rev), orderKey(s, b, rev)))
+  const top = cand.filter(p => cmp(orderKey(s, p, rev), orderKey(s, cand[0], rev)) === 0)
   if (top.length === 1) return top[0]
   const worm = castleTie(s, top)
   if (worm) return worm
@@ -158,6 +162,7 @@ function endRound(ctx: Ctx) {
   log(s, `— Раунд ${s.round} —`)
   for (const p of alive(s)) if (p.treasures.includes(ST.fly)) heal(ctx, p, (p.creatures?.length ?? 0) + creatureTreasures(p).length)
   abRound(ctx)
+  schoolRound(ctx)
   roundMadness(ctx)
 }
 
@@ -216,6 +221,7 @@ function startTurn(ctx: Ctx, p: PlayerState) {
     }
   }
   castleTurnStart(ctx, p)
+  schoolTurnStart(ctx, p)
   abTurnStart(ctx, p)
   if (s.turn && s.turn.stage === 'start') s.turn.stage = 'reveal'
 }
@@ -240,6 +246,7 @@ function reveal(ctx: Ctx, p: PlayerState) {
     castleWild(ctx, p, c.slot)
   }
   castleReveal(ctx, p)
+  schoolReveal(ctx, p)
   abReveal(ctx, p)
   if (count <= 2 && p.treasures.includes(T.garters) && p.hand.length) {
     const id = p.hand[rand(s, p.hand.length)]

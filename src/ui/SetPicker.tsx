@@ -8,8 +8,9 @@ const CHOICES: { sets: CardSet[]; label: string }[] = [
   { sets: ['base'], label: '🌋 Основа' },
   { sets: ['swamp'], label: '🍄 Болото' },
   { sets: ['castle'], label: '🐙 Замок' },
+  { sets: ['school'], label: '🏫 Школа' },
   { sets: ['base', 'swamp'], label: '🌋+🍄 Вместе' },
-  { sets: ['base', 'swamp', 'castle'], label: '🌋+🍄+🐙 Всё' },
+  { sets: ['base', 'swamp', 'castle', 'school'], label: '🌋+🍄+🐙+🏫 Всё' },
 ]
 // Набор открыт, если открыта его арена (или нажато «я уже играл в настолку»)
 function useUnlocked(): (set: CardSet) => boolean {

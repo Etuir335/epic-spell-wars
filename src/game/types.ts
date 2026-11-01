@@ -18,7 +18,7 @@ export interface SpellCard {
 export type Mod = 'wild' | 'reverse' | 'blood' | 'swap' | 'dice' | 'zombie' | 'greedy' | 'fever' | 'mirror' | 'loot'
 export type BossKind = 'grandpa' | 'slime' | 'mirror'
 // Наборы карт: база «Битва на горе Черепламени» и дополнения
-export type CardSet = 'base' | 'swamp' | 'castle'
+export type CardSet = 'base' | 'swamp' | 'castle' | 'school'
 
 export interface PlayerState {
   id: number // место за столом по часовой стрелке; левый враг — следующий живой по возрастанию
@@ -55,6 +55,9 @@ export interface PlayerState {
   whip?: number // «Плётка госпожи»: +1 кубик к ближайшему броску твари
   storm?: boolean // «Грозовой беспредел»: верхняя карта колоды — в первое заклинание игры
   later?: number[] // сокровища, которые придут в начале следующей игры («От Знатного Кидалы»)
+  // «Лютый дебош в адской школе»
+  rank?: number // социальный статус 1..8 (планшет)
+  sd?: number[] // карты дохлых колдунов школы, действующие в этой игре (индексы 24–32)
   // способность колдуна (src/game/abilities.ts)
   lvl?: number // 1..5 — уровень способности (нет — без способности)
   mercy?: number // бот: 0..1 — насколько щадит живых игроков (лёгкие боты, серия поражений)
@@ -77,6 +80,7 @@ export interface TurnState {
   laser?: { t: number; n: number } // «Леди Лазерища»: +урон по цели в этот ход
   rolls?: number // могучих бросков в этот ход
   creatureDice?: number // «Йог-Ниггатот»: +кубики к броскам твоих тварей в этот ход
+  spal?: string // «Спалился»: знак, к могучим броскам с которым +1 кубик в этот ход
 }
 
 export interface QOption { v: number | string; label: string; card?: { deck: 'spells' | 'treasures' | 'dead'; index: number }; player?: number }
@@ -130,6 +134,8 @@ export interface GameState {
   firstDead?: number // кто подох первым в этой игре («Эрозия металла»)
   bets?: { p: number; q: number }[] // «Копейки судьбы»: кто на чью смерть поставил
   bounty?: boolean // «Их разыскивает милиция»: награда за первое убийство
+  head?: string // школа: знак старосты на этот раунд (+1 кубик к могучим броскам с ним)
+  deaths?: number[] // школа: порядок смертей в этой игре (для статуса в следующей)
   tid?: number // номер турнира (начальный seed) — чтобы статистика не считала одни события дважды
   // start — подготовка новой игры (карты дохлых колдунов), build — выкладывают заклинания,
   // resolve — ходы, gameover — игра окончена (ждём nextGame), tournament — турнир окончен

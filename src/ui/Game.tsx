@@ -11,6 +11,7 @@ import { DEAD, SCHOOL_NAMES, SPELLS, TREASURES } from '../data/cards'
 import { T } from '../game/core'
 import { waitingFor } from '../game/engine'
 import { ABILITIES, RARITY_NAME } from '../game/abilities'
+import { ROLES } from '../game/school'
 import type { Action, GameState, PlayerState } from '../game/types'
 import { think } from '../ai/mcts'
 import Arena from './Arena'
@@ -454,12 +455,19 @@ const CASTLE_MEMO: [string, string][] = [
   ['🏰 Замок', 'владелец получает 1 литр в конце каждого раунда; убил владельца — замок твой.'],
   ['💥 Нежданчик', 'подох раньше этой карты — сработает её эффект.'],
 ]
+const SCHOOL_MEMO: [string, string][] = [
+  ['📊 Статус', 'от 1 до 8, у всех разный. Повысил статус — занятые места сдвигаются вниз цепочкой.'],
+  ['🎖 Роли', 'в начале раунда: 8 староста (+1 кубик к знаку), 7 качок, 6 чирлидерша, 5 стерва, 3 торчок; 4 ботан и 2 изгой — свои свойства.'],
+  ['😈 Задира', 'срабатывает, только если статус врага ниже твоего.'],
+  ['💥 Нежданчик', 'подох раньше этой карты — убийце 2 урона за каждый её знак на твоих картах.'],
+]
 function MemoExtra({ s }: { s: GameState }) {
   const items: [string, string][] = [
     ...(s.mods ?? []).map(m => [`${MOD_INFO[m].icon} ${MOD_INFO[m].name}`, MOD_INFO[m].text] as [string, string]),
     ...[...new Set(s.players.filter(p => p.boss).map(p => p.boss!))].map(b => [`${BOSS_INFO[b].icon} ${BOSS_INFO[b].name}`, BOSS_INFO[b].text] as [string, string]),
     ...(s.sets?.includes('swamp') ? SWAMP_MEMO : []),
     ...(s.sets?.includes('castle') ? CASTLE_MEMO : []),
+    ...(s.sets?.includes('school') ? SCHOOL_MEMO : []),
   ]
   if (!items.length) return null
   return <ul className="memo-list">{items.map(([k, v]) => <li key={k}><b>{k}:</b> {v}</li>)}</ul>
@@ -499,6 +507,7 @@ function Seat({ s, p, life, alive, casting, count, onClick }: {
         {p.treasures.length > 0 && <span>💰{p.treasures.length}</span>}
         {!!p.creatures?.length && <span>🐾{p.creatures.length}</span>}
         <CastleTag s={s} p={p} />
+        <SchoolTag s={s} p={p} />
         <AbTag p={p} />
         {p.boss && <span className="boss-tag" title={BOSS_INFO[p.boss].text}>{BOSS_INFO[p.boss].icon} босс{p.slimes ? ` · 🟢${p.slimes}` : ''}</span>}
         {alive && s.phase === 'build' && (p.spell ? <span className="ready">✓</span> : <span className="think">…</span>)}
@@ -512,6 +521,13 @@ function Seat({ s, p, life, alive, casting, count, onClick }: {
 function CastleTag({ s, p }: { s: GameState; p: PlayerState }) {
   if (!s.sets?.includes('castle')) return null
   return <span className="castle-tag" title={`Литров крови: ${p.blood ?? 0} из 25${s.castle === p.id ? ' · владеет замком (+1 литр в конце раунда)' : ''}`}>{s.castle === p.id && '🏰'}🩸{p.blood ?? 0}</span>
+}
+
+// Адская школа: социальный статус и роль
+function SchoolTag({ s, p }: { s: GameState; p: PlayerState }) {
+  if (!s.sets?.includes('school') || p.rank == null || !p.alive) return null
+  const [icon, text] = ROLES[p.rank] ?? ['', '']
+  return <span className="castle-tag" title={`Социальный статус ${p.rank}. ${text}${s.head && p.rank === 8 ? ` · знак раунда: ${SCHOOL_NAMES[s.head as keyof typeof SCHOOL_NAMES]}` : ''}`}>{icon}{p.rank}</span>
 }
 
 // Способность колдуна на его месте (как метка босса)
@@ -531,7 +547,7 @@ function MyBar({ s, p, life, alive, casting, onClick, onEmote }: { s: GameState;
         <span className="orb big">{alive ? life : '☠'}</span>
       </div>
       <div className="mybar-main" onClick={onClick}>
-        <b>{p.name}</b> <AbTag p={p} /> <CastleTag s={s} p={p} /> {p.medals > 0 && '🏅'.repeat(p.medals)}
+        <b>{p.name}</b> <AbTag p={p} /> <CastleTag s={s} p={p} /> <SchoolTag s={s} p={p} /> {p.medals > 0 && '🏅'.repeat(p.medals)}
         <small>{s.medalsToWin} 🏅 до победы</small>
       </div>
       {!p.bot && <EmoteButton pid={p.id} portrait={p.portrait} onSend={onEmote} />}
