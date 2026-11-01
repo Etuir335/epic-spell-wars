@@ -5,7 +5,7 @@ import { ZoomProvider } from './ui/cards'
 import Game from './ui/Game'
 import Gallery from './ui/Gallery'
 import Profile from './ui/Profile'
-import MatchLog from './ui/MatchLog'
+import MatchLog, { Wish } from './ui/MatchLog'
 import Arenas, { ARENA_KEY } from './ui/Arenas'
 import DailyScreen, { DAILY_KEY, finishDaily } from './ui/Daily'
 import { dailyOf } from './daily'
@@ -30,6 +30,7 @@ export default function App() {
   const [game, setGame] = useState<GameState | null>(() => loadLocal())
   const [gen, setGen] = useState(0) // новая партия — новый store
   const [tut, setTut] = useState(false)
+  const [wish, setWish] = useState(false)
   const st = useStatsData(), rank = rankOf(st)
   const badge = chestBadge(st), ups = Array.from({ length: WIZ_COUNT }, (_, w) => w).filter(w => canUpgrade(st, w)).length
   const [daily, setDaily] = useState<GameState | null>(null)
@@ -72,7 +73,9 @@ export default function App() {
             <button onClick={() => setScreen('gallery')}><i>🃏</i>Карты</button>
             <button onClick={() => setScreen('history')}><i>📜</i>История</button>
             <button onClick={() => setTut(true)}><i>📖</i>Правила</button>
+            <button onClick={() => setWish(true)}><i>💡</i>Пожелания</button>
           </div>
+          {wish && <Wish onClose={() => setWish(false)} />}
         </div>
       )}
       {screen === 'history' && <MatchLog onBack={() => setScreen('menu')} />}

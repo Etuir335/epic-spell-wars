@@ -30,7 +30,7 @@ export default function MatchLog({ onBack, id: id0, ver }: { onBack: () => void;
           <small>игр: {Math.max(1, ...x.entries.map(e => e.g))} · строк журнала: {x.entries.length}</small>
         </button>
       ))}
-      {admin && <button className="btn wide" onClick={() => setShowReports(true)}>🛠 Жалобы игроков (админ)</button>}
+      {admin && <button className="btn wide" onClick={() => setShowReports(true)}>🛠 Жалобы и пожелания (админ)</button>}
     </div>
   )
 }
@@ -117,7 +117,38 @@ function MatchView({ m, onBack }: { m: Match; ver?: number; onBack: () => void }
   )
 }
 
-const KIND_TITLE = { round: 'Жалоба на раунд', card: 'Жалоба на карту', lines: 'Жалоба на ход' }
+const KIND_TITLE = { round: 'Жалоба на раунд', card: 'Жалоба на карту', lines: 'Жалоба на ход', wish: '💡 Пожелание' }
+
+// Пожелания к игре из главного меню: уходят туда же, где жалобы (читают админы)
+export function Wish({ onClose }: { onClose: () => void }) {
+  const [text, setText] = useState('')
+  const [state, setState] = useState<'' | 'send' | 'ok' | 'err' | 'off'>('')
+  const send = async () => {
+    setState('send')
+    try {
+      const r = await reports()
+      if (!r.reportsReady()) { setState('off'); return }
+      await r.sendReport({ kind: 'wish', tid: 0, game: 0, round: 0, text: text.trim(), lines: [], players: [], mode: 'пожелание', ver: `${location.host} ${navigator.userAgent.slice(0, 90)}` })
+      setState('ok'); setTimeout(onClose, 1200)
+    } catch { setState('err') }
+  }
+  return (
+    <div className="sheet-back" onClick={onClose}>
+      <div className="sheet ml-complaint" onClick={e => e.stopPropagation()}>
+        <h3>💡 Пожелания для игры</h3>
+        <p className="hint">Что добавить или поменять? Новые карты, режимы, удобство, баланс — пиши как есть.</p>
+        <textarea value={text} onChange={e => setText(e.target.value)} maxLength={1000} rows={5} placeholder="Например: хочу режим 2 на 2 с другом против ботов" autoFocus />
+        {state === 'ok' ? <p className="ml-ok">✅ Отправлено, спасибо!</p>
+          : state === 'err' ? <p className="ml-err">Не получилось отправить — нет связи? Попробуй ещё раз.</p>
+          : state === 'off' ? <p className="ml-err">Отправка в этой сборке не настроена.</p> : null}
+        <div className="row">
+          <button className="btn" onClick={onClose}>Отмена</button>
+          <button className="btn gold" disabled={!text.trim() || state === 'send' || state === 'ok'} onClick={() => void send()}>{state === 'send' ? 'Отправляю…' : 'Отправить'}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function Complaint({ m, t, onClose }: { m: Match; t: Target; onClose: (sent: boolean) => void }) {
   const [text, setText] = useState('')
@@ -164,13 +195,13 @@ function ReportsAdmin({ onBack }: { onBack: () => void }) {
   const del = async (id: string) => { await (await reports()).deleteReport(id); setList(l => l?.filter(x => x.id !== id) ?? null) }
   return (
     <div className="screen match-log">
-      <div className="top-bar"><button onClick={onBack}>←</button><h2>Жалобы</h2><span className="gold-chip">{list?.length ?? '…'}</span></div>
+      <div className="top-bar"><button onClick={onBack}>←</button><h2>Жалобы и пожелания</h2><span className="gold-chip">{list?.length ?? '…'}</span></div>
       {err && <p className="ml-err">Не удалось загрузить (нет прав или связи).</p>}
       {list?.map(x => (
         <div key={x.id} className="ml-report">
           <div className="ml-report-head" onClick={() => setOpen(o => o === x.id ? null : x.id!)}>
             <b>{KIND_TITLE[x.kind]}{x.cardName ? ` ${x.cardName}` : ''}</b>
-            <small>{when(x.at)} · {x.mode} · игра {x.game}, раунд {x.round}</small>
+            <small>{when(x.at)} · {x.mode}{x.kind !== 'wish' ? ` · игра ${x.game}, раунд ${x.round}` : ''}</small>
             <span>{x.text}</span>
           </div>
           {open === x.id && <>

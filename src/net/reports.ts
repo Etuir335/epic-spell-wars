@@ -1,4 +1,4 @@
-// Жалобы на спорные моменты: reports/<id> — кто, на что (раунд, карта, строки журнала), что не так и сам журнал.
+// Жалобы на спорные моменты и пожелания к игре (kind: 'wish'): reports/<id> — кто, на что (раунд, карта, строки журнала), что не так и сам журнал.
 // Отправить может любой вошедший (только от своего имени), читают и удаляют — админы.
 import { addDoc, collection, deleteDoc, doc, getDocs, limit, orderBy, query } from 'firebase/firestore'
 import { ensureUser, getDb, netConfigured } from './firebase'
@@ -6,7 +6,7 @@ import { isAdmin } from './library'
 
 export interface Report {
   id?: string; uid: string; at: number
-  kind: 'round' | 'card' | 'lines'
+  kind: 'round' | 'card' | 'lines' | 'wish'
   tid: number; game: number; round: number; card?: number; cardName?: string
   text: string; lines: string[]; players: string[]; mode: string; ver: string
 }

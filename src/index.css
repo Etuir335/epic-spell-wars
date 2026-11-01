@@ -593,7 +593,7 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .menu-tile.gold { background: linear-gradient(#ffe07a, #e07c0a); color: #2b1300; }
 .menu-tile.fire { background: linear-gradient(#d9461c, #8c1d10); border-color: #ffb11f88; }
 .menu-tile:active { transform: translateY(2px); box-shadow: 0 1px 0 #0008; }
-.menu-icons { display: flex; justify-content: center; gap: 18px; }
+.menu-icons { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 14px; }
 .menu-icons button { background: none; border: 0; color: #ffe2b0; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 2px; text-shadow: 0 1px 3px #000; }
 .menu-icons i { font-style: normal; font-size: 22px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #0b050cc8; border: 1px solid #ffc53155; }
 .set-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 8px 0; }
