@@ -5,7 +5,7 @@ import './castle.ts' // хуки замка ставятся раньше: шк�
 import './abilities.ts'
 import { SCHOOL_NAMES, SPELLS, TREASURES, type School } from '../data/cards.ts'
 import {
-  ab, alive, ask, cardName, choosePlayer, chooseHandCard, chooseTreasure, d6, damage, drawDead, drawSpell, enemies, gainTreasure,
+  ab, alive, ask, cardName, choosePlayer, chooseHandCard, chooseTreasure, d6, rand, damage, drawDead, drawSpell, enemies, gainTreasure,
   heal, hitAll, hooks, leftEnemy, log, loseTreasure, mightyRoll, rightEnemy, rollEv, signs, spellOf, strongest, tier, weakest, yesNo,
   type Ctx, type TreasureAct,
 } from './core.ts'
@@ -354,7 +354,7 @@ export function schoolStartGame(ctx: Ctx) {
   const fresh = s.game <= 1 || s.players.some(p => p.rank == null)
   let order: PlayerState[]
   if (fresh) {
-    const r = new Map(s.players.map(p => { const a = d6(s), b = d6(s); rollEv(s, p, [a, b], a + b, 'статус'); return [p, a + b + Math.random() / 10] }))
+    const r = new Map(s.players.map(p => { const a = d6(s), b = d6(s); rollEv(s, p, [a, b], a + b, 'статус'); return [p, a + b + rand(s, 1000) / 10000] }))
     order = [...s.players].sort((a, b) => r.get(b)! - r.get(a)!)
   } else {
     const dead = s.deaths ?? []

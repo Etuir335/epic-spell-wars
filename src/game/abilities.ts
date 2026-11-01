@@ -2,7 +2,7 @@
 // Нет p.lvl — способности нет. Счётчики: p.ab — на игру, p.abR — на раунд, p.abT — на турнир.
 import { LOOT_BAG } from '../data/extra.ts'
 import {
-  ab, alive, ask, choosePlayer, chooseHandCard, d6, damage, drawFrom, drawSpell, enemies, giveTreasure, hasMod, heal, isEternal,
+  ab, alive, ask, choosePlayer, chooseHandCard, d6, damage, drawFrom, drawSpell, enemies, giveTreasure, hasMod, heal, hooks, isEternal,
   log, madEv, T, maxLife, moveTreasure, rand, rollEv, spellOf, cardName, type Ctx,
 } from './core.ts'
 import { TREASURES } from '../data/cards.ts'
@@ -400,7 +400,7 @@ ab.save = (ctx, p) => {
   const box = l >= 5 ? (p.ab ??= {}) : (p.abT ??= {})
   if (box.needle) return false
   box.needle = 1
-  p.life = at(V.koschei, l)
+  p.life = hooks.noHeal?.(ctx, p) ? 1 : at(V.koschei, l) // Горгонорея: накрутить нельзя — на последнем издыхании
   banner(ctx.s, p, `Смерть в игле — остаётся с ${p.life} ❤.`)
   return true
 }

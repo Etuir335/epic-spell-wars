@@ -10,8 +10,8 @@ const MODS: Mod[] = ['wild', 'reverse', 'blood', 'swap', 'dice', 'zombie', 'gree
 const BOSSES: BossKind[] = ['grandpa', 'slime', 'mirror']
 let NS = 134, NT = 26
 function check(s: GameState, where: string) {
-  const spells = [...s.deck, ...s.discard, ...s.players.flatMap(p => [...p.hand, ...(p.spell ?? []).filter(c => c.id >= 0).map(c => c.id), ...(p.reservedWild ?? []), ...(p.creatures ?? [])])]
-  const tr = [...s.treasureDeck, ...s.treasureDiscard, ...s.players.flatMap(p => [...p.treasures, ...((p.spell ?? []).some(c => c.id === TRAP) ? [2] : [])])]
+  const spells = [...s.deck, ...s.discard, ...s.players.flatMap(p => [...p.hand, ...(p.spell ?? []).filter(c => c.id >= 0).map(c => c.id), ...(p.reservedWild ?? []), ...(p.creatures ?? []), ...(p.tucked != null ? [p.tucked] : [])])]
+  const tr = [...s.treasureDeck, ...s.treasureDiscard, ...s.players.flatMap(p => [...p.treasures, ...(p.later ?? []), ...((p.spell ?? []).some(c => c.id === TRAP) ? [2] : [])])]
   const bad = (name: string, a: number[], n: number) => { if (a.length !== n || new Set(a).size !== n) throw new Error(`${where}: ${name} ${a.length}/${new Set(a).size} вместо ${n}`) }
   bad('заклинаний', spells, NS); bad('сокровищ', tr, NT)
   for (const p of s.players) if (p.alive && p.life <= 0) throw new Error(`${where}: жизни ${p.name} = ${p.life}`)
@@ -25,7 +25,7 @@ for (let t = 0; t < N; t++) {
   const boss = t % 3 === 0 ? BOSSES[rnd(3)] : undefined
   const np = boss ? 2 : 2 + (t % 4)
   const setup = Array.from({ length: np }, (_, i) => ({ name: 'И' + i, portrait: rnd(41), ...(rnd(5) ? { lvl: 1 + rnd(5) } : {}), ...(boss && i === 1 ? { boss, bot: 3 } : {}) }))
-  const sets: CardSet[] = [['base'], ['swamp'], ['base', 'swamp']][t % 3] as CardSet[]
+  const sets: CardSet[] = [['base'], ['swamp'], ['base', 'swamp'], ['castle'], ['school'], ['passion'], ['base', 'swamp', 'castle', 'school', 'passion']][t % 7] as CardSet[]
   let s = create(setup, 9000 + t, 2, mods, sets)
   NS = s.deck.length + s.players.reduce((a, p) => a + p.hand.length, 0); NT = s.treasureDeck.length + s.treasureDiscard.length + s.players.reduce((a, p) => a + p.treasures.length, 0)
   let steps = 0

@@ -152,6 +152,9 @@ function endRound(ctx: Ctx) {
   castleRoundEnd(ctx)
   s.round++
   for (const p of s.players) {
+    // остатки заклинаний (у подохших не в свой ход и т.п.) — в сброс, а не в никуда
+    s.discard.push(...(p.spell ?? []).filter(c => c.id >= 0).map(c => c.id))
+    if ((p.spell ?? []).some(c => c.id === TRAP)) s.treasureDiscard.push(T.trap)
     Object.assign(p, { spell: null, acted: false, extraDice: 0, goLast: undefined, tieRoll: undefined })
     if (p.alive) {
       fillHand(s, p)

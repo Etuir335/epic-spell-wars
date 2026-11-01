@@ -40,7 +40,10 @@ const HARPY = 6
 const kind = (p: PlayerState, k: number) => (p.zp ?? []).filter(z => z >> 1 === k).length
 export const zc = (p: PlayerState) => (p.zp?.length ?? 0) + (p.treasures.includes(PT.seal) ? 1 : 0)
 const has = (p: PlayerState, t: number) => p.treasures.includes(t)
-const bag = (s: GameState) => (s.zpBag ??= Array.from({ length: 20 }, (_, i) => i).filter(z => !s.players.some(p => p.zp?.includes(z))))
+// мешонка заводится лениво: всё, что ни у кого не на руках и не отжато «Бритвой»
+const bag = (s: GameState) => (s.zpBag ??= Array.from({ length: 20 }, (_, i) => i).filter(z => !s.players.some(p => p.zp?.includes(z) || p.zpKeep?.includes(z))))
+// вернуть в мешонку (если её ещё не завели, жетон и так в неё попадёт)
+const toBag = (s: GameState, zs: number[]) => { const b = bag(s); for (const z of zs) if (!b.includes(z)) b.push(z) }
 const myTurn = (s: GameState, p: PlayerState) => s.turn?.actor === p.id
 
 
@@ -74,7 +77,7 @@ function take(ctx: Ctx, p: PlayerState, z: number, by: PlayerState | null) {
     ;(s.turn!.usedT ??= []).push(PT.sword)
     fromHand(ctx, by, '«Меч капитана Хрюка»: какую карту с руки добавить к заклинанию?')
   }
-  if (k === 3) { p.zp = p.zp!.filter(x => x !== z); bag(s).push(z); lose(ctx, p, 3, '«Трындецит»') }
+  if (k === 3) { p.zp = p.zp!.filter(x => x !== z); toBag(s, [z]); lose(ctx, p, 3, '«Трындецит»') }
 }
 // Заразить из мешонки; by — кто заражает (владельца замка враги заразить не могут)
 export function infect(ctx: Ctx, p: PlayerState | null, by: PlayerState | null, n = 1) {
@@ -113,7 +116,7 @@ export function cure(ctx: Ctx, p: PlayerState, n: number, who = p): number {
   while (done < n && p.zp?.length) {
     const z = n >= p.zp.length ? p.zp[0] : pickZp(ctx, who, p, 'Какое ЗПМП вылечить?')
     p.zp = p.zp.filter(x => x !== z)
-    bag(s).push(z)
+    toBag(s, [z])
     log(s, `💊 ${p.name} вылечивает ${zpName(z)}.`)
     done++
   }
@@ -398,7 +401,7 @@ hooks.died = (ctx, p, killer) => {
   prevDied?.(ctx, p, killer)
   if (!passionOn(ctx.s)) return
   const drop = (p.zp ?? []).filter(z => z >> 1 !== HARPY)
-  if (drop.length) { p.zp = p.zp!.filter(z => !drop.includes(z)); bag(ctx.s).push(...drop) }
+  if (drop.length) { p.zp = p.zp!.filter(z => !drop.includes(z)); toBag(ctx.s, drop) }
 }
 
 // ---------- начало игры ----------
@@ -415,7 +418,7 @@ export function passionStartGame(ctx: Ctx) {
   }
   s.zpBag = undefined
   for (const p of s.players) {
-    if (p.zpKeep?.length) { const b = bag(s); for (const z of p.zpKeep) { const i = b.indexOf(z); if (i >= 0) { b.splice(i, 1); take(ctx, p, z, null) } } }
+    for (const z of p.zpKeep ?? []) if (!s.players.some(q => q.zp?.includes(z))) take(ctx, p, z, null)
     p.zpKeep = undefined
     if (p.razor) { log(s, `🪒 ${p.name}: на ${p.razor} жизни меньше («Смертельная бритва»).`); p.life = Math.max(1, p.life - p.razor); p.razor = undefined }
   }
@@ -477,6 +480,7 @@ export function passionEndTurn(ctx: Ctx, p: PlayerState) {
 const prevHand = ab.hand
 ab.hand = p => (prevHand?.(p) ?? 0) - 2 * kind(p, 8)
 hooks.noHeal = (_ctx, p) => kind(p, 4) > 0
+hooks.noTreasure = p => kind(p, 1) > 0
 const prevGained = hooks.gained
 hooks.gained = (ctx, p, t) => {
   prevGained?.(ctx, p, t)

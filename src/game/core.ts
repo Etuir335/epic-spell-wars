@@ -45,6 +45,7 @@ export const hooks: {
   afterCard?: (ctx: Ctx, p: PlayerState, cur?: SpellCard) => void
   acts?: (s: GameState, p: PlayerState) => TreasureAct[]
   noHeal?: (ctx: Ctx, p: PlayerState) => boolean // нельзя накручивать жизни (Горгонорея)
+  noTreasure?: (p: PlayerState) => boolean // нельзя получать и отжимать сокровища (Гнилой пень)
 } = {}
 // Хуки способностей колдунов (ставит abilities.ts)
 export const ab: {
@@ -147,6 +148,7 @@ export function gainTreasure(ctx: Ctx, p: PlayerState) {
   hooks.gained?.(ctx, p, t)
 }
 export function giveTreasure(s: GameState, p: PlayerState, t: number) {
+  if (hooks.noTreasure?.(p)) { s.treasureDiscard.push(t); log(s, `🍄 ${p.name} не может получить ${treasureName(t)} — оно уходит в сброс.`); return }
   p.treasures.push(t)
   ev(s, { k: 'treasure', p: p.id, t })
   log(s, `${p.name} получает сокровище ${treasureName(t)}.`)
@@ -161,6 +163,7 @@ export function loseTreasure(s: GameState, p: PlayerState, t: number) {
   ev(s, { k: 'lose', p: p.id, t })
 }
 export function moveTreasure(s: GameState, from: PlayerState, to: PlayerState, t: number) {
+  if (hooks.noTreasure?.(to)) return log(s, `🍄 ${to.name} не может отжать ${treasureName(t)}.`)
   from.treasures = from.treasures.filter(x => x !== t)
   to.treasures.push(t)
   ev(s, { k: 'treasure', p: to.id, t, from: from.id })
