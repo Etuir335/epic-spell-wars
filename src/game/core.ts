@@ -24,6 +24,7 @@ export const ST = {
   poe: 46, purse: 47, marley: 48, timecar: 49, afterlife: 50,
 } as const
 export const SD = { brain: 8, abort: 9, teeth: 10, shitq: 11, tomb: 12, wolf: 13, bottom: 14, tentacles: 15 } as const
+export const ZP_SIGN: School[] = ['haze', 'grass', 'dark', 'fire', 'dark', 'grass', 'fire', 'haze', 'hex', 'hex']
 export const isEternal = (t: number) => !!TREASURES[t].eternal
 // Твари игрока: карты в игре и сокровища-твари
 export const creatureTreasures = (p: PlayerState) => p.treasures.filter(t => TREASURES[t].creature)
@@ -43,6 +44,7 @@ export const hooks: {
   rolled?: (ctx: Ctx, p: PlayerState, total: number) => void
   afterCard?: (ctx: Ctx, p: PlayerState, cur?: SpellCard) => void
   acts?: (s: GameState, p: PlayerState) => TreasureAct[]
+  noHeal?: (ctx: Ctx, p: PlayerState) => boolean // нельзя накручивать жизни (Горгонорея)
 } = {}
 // Хуки способностей колдунов (ставит abilities.ts)
 export const ab: {
@@ -265,7 +267,7 @@ export function yesNo(ctx: Ctx, who: PlayerState, prompt: string, yes: string, n
 
 // ---------- жизни ----------
 export function heal(ctx: Ctx, p: PlayerState | null, n: number) {
-  if (!p || !p.alive || n <= 0) return
+  if (!p || !p.alive || n <= 0 || hooks.noHeal?.(ctx, p)) return
   const before = p.life
   p.life = Math.min(maxLife(p), p.life + n)
   if (p.life > before) ev(ctx.s, { k: 'heal', p: p.id, n: p.life - before, before, after: p.life })
@@ -382,6 +384,8 @@ export function signs(p: PlayerState): Record<School, number> {
     if (sc) r[sc]++
   }
   for (const sc of p.deadSigns ?? []) r[sc]++
+  // ЗПМП страсти: знак жетона — компонент
+  for (const z of p.zp ?? []) r[ZP_SIGN[z >> 1]]++
   // «Рыгалия Живоглота» (сокровище 61): знак подложенной карты
   if (p.tucked != null && p.treasures.includes(61)) { const c = spellOf(p.tucked); if (c.school) r[c.school]++; if (c.school2) r[c.school2]++ }
   return r

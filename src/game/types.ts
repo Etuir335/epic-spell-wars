@@ -18,7 +18,7 @@ export interface SpellCard {
 export type Mod = 'wild' | 'reverse' | 'blood' | 'swap' | 'dice' | 'zombie' | 'greedy' | 'fever' | 'mirror' | 'loot'
 export type BossKind = 'grandpa' | 'slime' | 'mirror'
 // Наборы карт: база «Битва на горе Черепламени» и дополнения
-export type CardSet = 'base' | 'swamp' | 'castle' | 'school'
+export type CardSet = 'base' | 'swamp' | 'castle' | 'school' | 'passion'
 
 export interface PlayerState {
   id: number // место за столом по часовой стрелке; левый враг — следующий живой по возрастанию
@@ -57,6 +57,11 @@ export interface PlayerState {
   later?: number[] // сокровища, которые придут в начале следующей игры («От Знатного Кидалы»)
   // «Лютый дебош в адской школе»
   rank?: number // социальный статус 1..8 (планшет)
+  zp?: number[] // ЗПМП (жетоны 0–19, вид = id>>1)
+  zpKeep?: number[] // ЗПМП, отжатые «Смертельной бритвой»: с ними начинается следующая игра
+  razor?: number // на столько жизней меньше в начале следующей игры
+  necro?: boolean // «Некроконтроль»: держит замок до следующей игры
+  pd?: number[] // карты дохлых колдунов страсти, действующие в этой игре
   sd?: number[] // карты дохлых колдунов школы, действующие в этой игре (индексы 24–32)
   // способность колдуна (src/game/abilities.ts)
   lvl?: number // 1..5 — уровень способности (нет — без способности)
@@ -73,6 +78,8 @@ export interface TurnState {
   deliveryAll: boolean // «Шерочка с Машерочкой»: жертвы прихода — все враги
   allStay?: boolean // «От Рюмкенштильцхена»: все твари в этот ход получают «СТОЯТЬ!»
   usedT?: number[] // сокровища «раз в свой ход», уже применённые
+  plus1?: boolean // «Шлюхопряд»: +1 к своим броскам
+  one?: number // «Ведьмины бородавки»: id того, кого уже задела текущая карта
   sorcHand?: string // рука, при которой колдунство уже предлагали
   first?: boolean // ходит первым в раунде
   creaturesDone?: boolean // сокровища-твари уже сработали
@@ -130,6 +137,7 @@ export interface GameState {
   hits?: number // «Отражающий щит»: счётчик ударов
   mirrorOf?: { index: number; slot: string }[] // «Зеркальный ты»: прошлое заклинание человека
   sets?: CardSet[] // наборы карт (нет — только база)
+  zpBag?: number[] // мешонка ЗПМП
   castle?: number | null // замок: у кого (номер игрока), null — ничей
   firstDead?: number // кто подох первым в этой игре («Эрозия металла»)
   bets?: { p: number; q: number }[] // «Копейки судьбы»: кто на чью смерть поставил

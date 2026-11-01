@@ -8,7 +8,7 @@ export interface SpellData {
   index: number; type: SpellType; name: string; school: School | null; initiative: number | null
   copies: number; promo: boolean
   text?: string; victim?: string; mighty?: MightyTier[]
-  set?: 'swamp' | 'castle' | 'school' // дополнение (нет — база)
+  set?: 'swamp' | 'castle' | 'school' | 'passion' // дополнение (нет — база)
   school2?: School // второй знак (приходы болота)
   creature?: boolean // тварь: «СТОЯТЬ!» оставляет её в игре
   sorcery?: 'source' | 'quality' | 'delivery' // колдунство: сбрось 2 карты этого типа — и карта с руки идёт в заклинание
@@ -17,10 +17,10 @@ export interface SpellData {
 }
 export interface TreasureData {
   index: number; name: string; promo: boolean; text: string; school: School | null
-  set?: 'swamp' | 'castle' | 'school'; eternal?: boolean // вечное: не сбрасывается в конце игры и при смерти
+  set?: 'swamp' | 'castle' | 'school' | 'passion'; eternal?: boolean // вечное: не сбрасывается в конце игры и при смерти
   creature?: School; victim?: string; mighty?: MightyTier[] // сокровище-тварь
 }
-export interface DeadData { index: number; copies: number; name: string; text: string; set?: 'swamp' | 'castle' | 'school'; school?: School | null }
+export interface DeadData { index: number; copies: number; name: string; text: string; set?: 'swamp' | 'castle' | 'school' | 'passion'; school?: School | null }
 
 export const SCHOOL_NAMES: Record<School, string> = { grass: 'Трава', hex: 'Порча', haze: 'Кумар', dark: 'Мрак', fire: 'Угар' }
 export const TYPE_NAMES: Record<SpellType, string> = { source: 'Заводила', quality: 'Наворот', delivery: 'Приход', wild: 'Шальная магия' }
@@ -4022,6 +4022,766 @@ export const SPELLS: SpellData[] = [
   "promo": false,
   "set": "school",
   "text": "Нанеси 2 урона врагу по твоему выбору, у которого 10 жизней или меньше. Задира: если у этого врага социальный статус ниже, чем у тебя, он убирает 1 карту из своего заклинания."
+ },
+ {
+  "index": 229,
+  "type": "source",
+  "name": "От Железной Бабищи",
+  "school": "dark",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Вытяни 2 ЗПМП из мешонки. Одно передай любому врагу, вторым заразись сам."
+ },
+ {
+  "index": 230,
+  "type": "quality",
+  "name": "Нажопистый",
+  "school": "hex",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Нанеси 1 урон каждому врагу, уже сходившему в этом раунде, за каждый уникальный знак в твоём заклинании."
+ },
+ {
+  "index": 231,
+  "type": "quality",
+  "name": "Мерзопакостный",
+  "school": "dark",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "surprise": true,
+  "text": "Нанеси 4 урона каждому колдуну, у которого есть 2 или больше ЗПМП (включая тебя). Нежданчик: если ты подох до применения эффектов этой карты, вылечи все свои ЗПМП и накрути столько же жизней."
+ },
+ {
+  "index": 232,
+  "type": "quality",
+  "name": "Целибатный",
+  "school": "dark",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Нанеси 1 урон каждому колдуну, у которого нет ЗПМП (включая тебя), за каждый уникальный знак в твоём заклинании."
+ },
+ {
+  "index": 233,
+  "type": "quality",
+  "name": "Трупоядный",
+  "school": "dark",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Враг по твоему выбору заражается одним ЗПМП за каждого дохлого колдуна. Если дохлых нет, вместо этого нанеси ему 3 урона."
+ },
+ {
+  "index": 234,
+  "type": "quality",
+  "name": "Волнительный",
+  "school": "hex",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "surprise": true,
+  "text": "Добавь к своему заклинанию 1 карту с руки. Если у тебя нет ЗПМП, то добавь ещё одну. Нежданчик: если ты подох до применения эффектов этой карты, вылечи все свои ЗПМП и накрути столько же жизней."
+ },
+ {
+  "index": 235,
+  "type": "quality",
+  "name": "Шаловливый",
+  "school": "haze",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Открой 1 карту с верха колоды заклинаний за каждое твоё ЗПМП. Найди среди них навороты и добавь к заклинанию. Остальные сбрось."
+ },
+ {
+  "index": 236,
+  "type": "quality",
+  "name": "Трахторный",
+  "school": "fire",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "surprise": true,
+  "text": "Нанеси любому врагу 2 урона. Если у тебя нет ЗПМП, вместо этого нанеси 2 урона каждому врагу. Нежданчик: если ты подох до применения эффектов этой карты, вылечи все свои ЗПМП и накрути столько же жизней."
+ },
+ {
+  "index": 237,
+  "type": "quality",
+  "name": "Бомбический",
+  "school": "fire",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Нанеси 3 урона колдуну с замком. Если ни у кого нет замка, вместо этого нанеси 1 урон каждому врагу."
+ },
+ {
+  "index": 238,
+  "type": "quality",
+  "name": "Струнный",
+  "school": "fire",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Нанеси 1 урон самому хилому врагу за каждое его ЗПМП. Если у него их нет, он заражается одним ЗПМП."
+ },
+ {
+  "index": 239,
+  "type": "quality",
+  "name": "Поддатенький",
+  "school": "grass",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "surprise": true,
+  "text": "Накрути 3 жизни. Если у тебя нет ЗПМП, захвати замок. Нежданчик: если ты подох до применения эффектов этой карты, вылечи все свои ЗПМП и накрути столько же жизней."
+ },
+ {
+  "index": 240,
+  "type": "quality",
+  "name": "Рукокрючный",
+  "school": "grass",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Колдун с замком ставит замок в центр стола и затем заражается одним ЗПМП."
+ },
+ {
+  "index": 241,
+  "type": "quality",
+  "name": "Рукастый",
+  "school": "haze",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "surprise": true,
+  "text": "Добавь к своему заклинанию тварь с руки. Если у тебя нет ЗПМП, в этот ход она получает команду «СТОЯТЬ!». Нежданчик: если ты подох до применения эффектов этой карты, вылечи все свои ЗПМП и накрути столько же жизней."
+ },
+ {
+  "index": 242,
+  "type": "quality",
+  "name": "Слямзенный",
+  "school": "haze",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Захвати замок. Убери из заклинания прежнего владельца любую карту, лежащую лицевой стороной вниз (если есть)."
+ },
+ {
+  "index": 243,
+  "type": "quality",
+  "name": "Приматерный",
+  "school": "grass",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Нанеси 1 урон правому и левому врагам за каждое твоё ЗПМП. Замок: затем передай одно твоё ЗПМП одному из них."
+ },
+ {
+  "index": 244,
+  "type": "delivery",
+  "name": "Аналгилятор",
+  "school": "hex",
+  "initiative": 11,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "victim": "Жертва: левый враг.",
+  "mighty": [
+   {
+    "from": 1,
+    "to": 4,
+    "text": "2 урона."
+   },
+   {
+    "from": 5,
+    "to": 9,
+    "text": "3 урона, а ты берёшь 1 сокровище."
+   },
+   {
+    "from": 10,
+    "to": null,
+    "text": "2 урона за каждое твоё ЗПМП."
+   }
+  ]
+ },
+ {
+  "index": 245,
+  "type": "delivery",
+  "name": "Пылкий оргазм",
+  "school": "fire",
+  "initiative": 15,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "victim": "Жертва: правый враг. Замок: жертвами становятся все враги.",
+  "mighty": [
+   {
+    "from": 1,
+    "to": 4,
+    "text": "2 урона."
+   },
+   {
+    "from": 5,
+    "to": 9,
+    "text": "3 урона."
+   },
+   {
+    "from": 10,
+    "to": null,
+    "text": "2 урона, 1 ЗПМП."
+   }
+  ]
+ },
+ {
+  "index": 246,
+  "type": "delivery",
+  "name": "Потрошок за пятачок",
+  "school": "dark",
+  "initiative": 6,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "victim": "Жертва: враг хилее тебя. Замок: все враги.",
+  "mighty": [
+   {
+    "from": 1,
+    "to": 4,
+    "text": "2 урона, а ты заражаешься одним ЗПМП."
+   },
+   {
+    "from": 5,
+    "to": 9,
+    "text": "1 ЗПМП."
+   },
+   {
+    "from": 10,
+    "to": null,
+    "text": "2 урона за каждое твоё ЗПМП."
+   }
+  ]
+ },
+ {
+  "index": 247,
+  "type": "delivery",
+  "name": "Злак-маньяк",
+  "school": "dark",
+  "initiative": 12,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "creature": true,
+  "victim": "Жертва: каждый враг.",
+  "mighty": [
+   {
+    "from": 1,
+    "to": 4,
+    "text": "ты отхватываешь 2 урона."
+   },
+   {
+    "from": 5,
+    "to": 9,
+    "text": "2 урона."
+   },
+   {
+    "from": 10,
+    "to": null,
+    "text": "1 ЗПМП. СТОЯТЬ!."
+   }
+  ]
+ },
+ {
+  "index": 248,
+  "type": "delivery",
+  "name": "Членоморф",
+  "school": "dark",
+  "initiative": 4,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "victim": "Жертва: правый враг.",
+  "mighty": [
+   {
+    "from": 1,
+    "to": 4,
+    "text": "1 ЗПМП."
+   },
+   {
+    "from": 5,
+    "to": 9,
+    "text": "2 урона."
+   },
+   {
+    "from": 10,
+    "to": null,
+    "text": "2 ЗПМП."
+   }
+  ]
+ },
+ {
+  "index": 249,
+  "type": "delivery",
+  "name": "Елдовзрыв",
+  "school": "haze",
+  "initiative": 10,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "victim": "Жертва: левый враг.",
+  "mighty": [
+   {
+    "from": 1,
+    "to": 4,
+    "text": "1 урон."
+   },
+   {
+    "from": 5,
+    "to": 9,
+    "text": "1 урон, 1 ЗПМП."
+   },
+   {
+    "from": 10,
+    "to": null,
+    "text": "2 урона за каждое твоё ЗПМП."
+   }
+  ]
+ },
+ {
+  "index": 250,
+  "type": "delivery",
+  "name": "Эрогриль",
+  "school": "fire",
+  "initiative": 9,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "victim": "Жертва: левый враг.",
+  "mighty": [
+   {
+    "from": 1,
+    "to": 4,
+    "text": "ты берёшь 1 сокровище."
+   },
+   {
+    "from": 5,
+    "to": 9,
+    "text": "2 урона."
+   },
+   {
+    "from": 10,
+    "to": null,
+    "text": "2 урона за каждое твоё ЗПМП."
+   }
+  ]
+ },
+ {
+  "index": 251,
+  "type": "delivery",
+  "name": "Раскулятор",
+  "school": "haze",
+  "initiative": 19,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "victim": "Жертва: каждый враг с 10 жизнями или больше. Замок: все враги.",
+  "mighty": [
+   {
+    "from": 1,
+    "to": 4,
+    "text": "1 урон."
+   },
+   {
+    "from": 5,
+    "to": 9,
+    "text": "2 урона."
+   },
+   {
+    "from": 10,
+    "to": null,
+    "text": "2 урона, 1 ЗПМП."
+   }
+  ]
+ },
+ {
+  "index": 252,
+  "type": "delivery",
+  "name": "Чревонегодник",
+  "school": "fire",
+  "initiative": 5,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "creature": true,
+  "victim": "Жертва: каждый враг с 10 жизнями или меньше.",
+  "mighty": [
+   {
+    "from": 1,
+    "to": 4,
+    "text": "СТОЯТЬ!."
+   },
+   {
+    "from": 5,
+    "to": 9,
+    "text": "2 урона."
+   },
+   {
+    "from": 10,
+    "to": null,
+    "text": "2 урона, 1 ЗПМП."
+   }
+  ]
+ },
+ {
+  "index": 253,
+  "type": "delivery",
+  "name": "Гигацып",
+  "school": "grass",
+  "initiative": 2,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "creature": true,
+  "victim": "Жертва: правый враг.",
+  "mighty": [
+   {
+    "from": 1,
+    "to": 4,
+    "text": "2 урона."
+   },
+   {
+    "from": 5,
+    "to": 9,
+    "text": "2 ЗПМП."
+   },
+   {
+    "from": 10,
+    "to": null,
+    "text": "3 урона. СТОЯТЬ!."
+   }
+  ]
+ },
+ {
+  "index": 254,
+  "type": "delivery",
+  "name": "Котоклизм",
+  "school": "grass",
+  "initiative": 17,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "victim": "Жертва: ты сам.",
+  "mighty": [
+   {
+    "from": 1,
+    "to": 4,
+    "text": "вылечи 1 своё ЗПМП."
+   },
+   {
+    "from": 5,
+    "to": 9,
+    "text": "накрути 3 жизни."
+   },
+   {
+    "from": 10,
+    "to": null,
+    "text": "вылечи все свои ЗПМП."
+   }
+  ]
+ },
+ {
+  "index": 255,
+  "type": "delivery",
+  "name": "Токсичный дождик",
+  "school": "haze",
+  "initiative": 13,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "creature": true,
+  "victim": "Жертва: каждый враг, ещё не сходивший в этом раунде.",
+  "mighty": [
+   {
+    "from": 1,
+    "to": 4,
+    "text": "1 урон."
+   },
+   {
+    "from": 5,
+    "to": 9,
+    "text": "1 ЗПМП. СТОЯТЬ!."
+   },
+   {
+    "from": 10,
+    "to": null,
+    "text": "3 урона."
+   }
+  ]
+ },
+ {
+  "index": 256,
+  "type": "delivery",
+  "name": "Золотой душ",
+  "school": "grass",
+  "initiative": 8,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "victim": "Жертва: враг живучее тебя. Замок: все враги.",
+  "mighty": [
+   {
+    "from": 1,
+    "to": 4,
+    "text": "1 ЗПМП."
+   },
+   {
+    "from": 5,
+    "to": 9,
+    "text": "3 урона."
+   },
+   {
+    "from": 10,
+    "to": null,
+    "text": "3 урона, 1 ЗПМП."
+   }
+  ]
+ },
+ {
+  "index": 257,
+  "type": "delivery",
+  "name": "Гетерогенератор",
+  "school": "hex",
+  "initiative": 7,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "creature": true,
+  "victim": "Жертва: самый живучий враг.",
+  "mighty": [
+   {
+    "from": 1,
+    "to": 4,
+    "text": "2 урона."
+   },
+   {
+    "from": 5,
+    "to": 9,
+    "text": "3 урона, 1 ЗПМП."
+   },
+   {
+    "from": 10,
+    "to": null,
+    "text": "3 урона. СТОЯТЬ!."
+   }
+  ]
+ },
+ {
+  "index": 258,
+  "type": "delivery",
+  "name": "Досуг с асфиксией",
+  "school": "hex",
+  "initiative": 14,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "victim": "Жертва: враг с сокровищем. Замок: все враги.",
+  "mighty": [
+   {
+    "from": 1,
+    "to": 4,
+    "text": "захвати замок."
+   },
+   {
+    "from": 5,
+    "to": 9,
+    "text": "2 урона."
+   },
+   {
+    "from": 10,
+    "to": null,
+    "text": "2 урона, 1 ЗПМП."
+   }
+  ]
+ },
+ {
+  "index": 259,
+  "type": "source",
+  "name": "От Членовредителя",
+  "school": "grass",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Вылечи 2 своих ЗПМП. Если лечить было нечего, накрути 3 жизни."
+ },
+ {
+  "index": 260,
+  "type": "source",
+  "name": "От Лобкороля и его киски",
+  "school": "grass",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Нанеси колдуну с замком 1 урон за каждый уникальный знак в твоём заклинании. Если ни у кого нет замка, накрути 2 жизни."
+ },
+ {
+  "index": 261,
+  "type": "quality",
+  "name": "Алчущий",
+  "school": "hex",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Возьми 1 сокровище. Замок: возьми ещё 1 сокровище."
+ },
+ {
+  "index": 262,
+  "type": "source",
+  "name": "От Шнобгоблина",
+  "school": "fire",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Нанеси одному врагу живучее тебя 1 урон за каждый уникальный знак в твоём заклинании. Замок: затем нанеси 2 урона одному врагу хилее тебя."
+ },
+ {
+  "index": 263,
+  "type": "source",
+  "name": "От Гондуяна Ребристого",
+  "school": "haze",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Передай одно своё ЗПМП правому или левому врагу. Затем, если у тебя нет ЗПМП, возьми 1 сокровище."
+ },
+ {
+  "index": 264,
+  "type": "source",
+  "name": "От Бельчонка с мешонкой",
+  "school": "grass",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Захвати замок. Накрути 2 жизни за каждое твоё ЗПМП."
+ },
+ {
+  "index": 265,
+  "type": "source",
+  "name": "От Сенатора Сыченгтона",
+  "school": "haze",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Открой 1 карту с верха колоды заклинаний за каждый уникальный знак в твоём заклинании. Найди среди них заводил и добавь к заклинанию. Остальные сбрось."
+ },
+ {
+  "index": 266,
+  "type": "source",
+  "name": "От Мага-консерватора",
+  "school": "haze",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Выбери колдуна (можешь и себя). Этот колдун заражается одним ЗПМП. Замок: отожми у любого врага 1 сокровище."
+ },
+ {
+  "index": 267,
+  "type": "source",
+  "name": "От Инколдуньи",
+  "school": "fire",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Каждый враг заражается одним ЗПМП за каждое своё сокровище. Если ни у кого нет сокровищ, возьми 1 сокровище."
+ },
+ {
+  "index": 268,
+  "type": "source",
+  "name": "От Отсос-они",
+  "school": "dark",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Забери ЗПМП у любого врага и заразись им сам. Затем нанеси этому врагу 2 урона за каждое твоё ЗПМП."
+ },
+ {
+  "index": 269,
+  "type": "source",
+  "name": "От Нефертитьки",
+  "school": "hex",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Вылечи одно своё ЗПМП. Если вылечил, возьми 1 сокровище."
+ },
+ {
+  "index": 270,
+  "type": "source",
+  "name": "От Набухшего Херомантa",
+  "school": "hex",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Захвати замок. Передай прежнему владельцу замка (если такой был) одно из своих ЗПМП."
+ },
+ {
+  "index": 271,
+  "type": "source",
+  "name": "От Шлюхопряда",
+  "school": "hex",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "На этом ходу добавляй 1 к результатам своих бросков. Каждый игрок бросает кубик. Игрок(и) с наименьшим результатом заражается(ются) одним ЗПМП."
+ },
+ {
+  "index": 272,
+  "type": "source",
+  "name": "От Фистингового Прыща",
+  "school": "dark",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Нанеси 2 урона каждому колдуну, включая себя. Замок: если ты от этого не подох, накрути 4 жизни."
+ },
+ {
+  "index": 273,
+  "type": "source",
+  "name": "От Воспалённого Нарывочника",
+  "school": "fire",
+  "initiative": null,
+  "copies": 2,
+  "promo": false,
+  "set": "passion",
+  "text": "Вылечи одно своё ЗПМП. Затем, если у тебя нет ЗПМП, нанеси 2 урона каждому врагу."
  }
 ]
 
@@ -4925,6 +5685,211 @@ export const TREASURES: TreasureData[] = [
   "school": null,
   "set": "school",
   "eternal": true
+ },
+ {
+  "index": 101,
+  "name": "Йог-Гондот",
+  "promo": false,
+  "text": "Один раз в каждый свой ход можешь заразиться одним ЗПМП. Если заразился, выбери не более двух врагов. Каждый из них тоже заражается одним ЗПМП.",
+  "school": null,
+  "set": "passion"
+ },
+ {
+  "index": 102,
+  "name": "Садомазожезл",
+  "promo": false,
+  "text": "В свой ход можешь сбросить это сокровище и выбрать врага. Этот враг применяет эффект своих ЗПМП, как если бы сейчас был конец его хода.",
+  "school": null,
+  "set": "passion"
+ },
+ {
+  "index": 103,
+  "name": "Говнодавы",
+  "promo": false,
+  "text": "В свой ход можешь сбросить это сокровище, чтобы накрутить 5 жизней.",
+  "school": null,
+  "set": "passion"
+ },
+ {
+  "index": 104,
+  "name": "Вершина бытия",
+  "promo": false,
+  "text": "Один раз в каждый свой ход можешь заразиться одним ЗПМП. Если заразился, нанеси 3 урона любому врагу.",
+  "school": null,
+  "set": "passion"
+ },
+ {
+  "index": 105,
+  "name": "Острые ножки",
+  "promo": false,
+  "text": "Один раз в каждый свой ход бери карту из колоды заклинаний за каждое твоё ЗПМП и добавляй одну из взятых карт к своему заклинанию.",
+  "school": null,
+  "set": "passion"
+ },
+ {
+  "index": 106,
+  "name": "Око окуня",
+  "promo": false,
+  "text": "Каждый раз, когда ты заражаешься или когда тебе передают ЗПМП, накручивай 1 жизнь. Вечное.",
+  "school": null,
+  "set": "passion",
+  "eternal": true
+ },
+ {
+  "index": 107,
+  "name": "Иммунодилдо",
+  "promo": false,
+  "text": "Один раз в каждый свой ход накрути 1 жизнь, если у тебя есть хотя бы одно ЗПМП. Вечное.",
+  "school": null,
+  "set": "passion",
+  "eternal": true
+ },
+ {
+  "index": 108,
+  "name": "Внеземное яичко",
+  "promo": false,
+  "text": "В свой ход можешь сбросить это сокровище. Если сбросил, открывай карты из колоды заклинаний, пока не откроешь тварь. Добавь её к своему заклинанию, а остальные сбрось.",
+  "school": null,
+  "set": "passion"
+ },
+ {
+  "index": 109,
+  "name": "Крысошапка",
+  "promo": false,
+  "text": "В свой ход можешь сбросить это сокровище, чтобы захватить замок и накрутить 2 жизни.",
+  "school": null,
+  "set": "passion"
+ },
+ {
+  "index": 110,
+  "name": "Золотая клавитара",
+  "promo": false,
+  "text": "Эффекты твоих ЗПМП не могут опустить твои жизни ниже 1. Вечное.",
+  "school": null,
+  "set": "passion",
+  "eternal": true
+ },
+ {
+  "index": 111,
+  "name": "Петушилка",
+  "promo": false,
+  "text": "В свой ход можешь сбросить это сокровище, чтобы вылечить все свои ЗПМП.",
+  "school": null,
+  "set": "passion"
+ },
+ {
+  "index": 112,
+  "name": "Печать Главного Засранца",
+  "promo": false,
+  "text": "Считается как одно ЗПМП. Вечное.",
+  "school": null,
+  "set": "passion",
+  "eternal": true
+ },
+ {
+  "index": 113,
+  "name": "Отжигалка",
+  "promo": false,
+  "text": "Каждый раз, когда ты захватываешь замок у врага или с середины стола, наноси 2 урона любому врагу. Вечное.",
+  "school": null,
+  "set": "passion",
+  "eternal": true
+ },
+ {
+  "index": 114,
+  "name": "Храбрая печень",
+  "promo": false,
+  "text": "Каждый раз, когда ты в свой ход вылечиваешь одно или несколько своих ЗПМП, добавляй карту с руки к твоему заклинанию.",
+  "school": null,
+  "set": "passion"
+ },
+ {
+  "index": 115,
+  "name": "Дубина в колено",
+  "promo": false,
+  "text": "Один раз за каждый свой ход отожми случайную карту с руки врага, у которого есть такое же ЗПМП, как у тебя, и добавь её к своему заклинанию.",
+  "school": null,
+  "set": "passion"
+ },
+ {
+  "index": 116,
+  "name": "Колонополия",
+  "promo": false,
+  "text": "Один раз за каждый свой ход можешь вылечить ЗПМП врага. Если вылечил, этот враг добавляет карту со своей руки к твоему заклинанию.",
+  "school": null,
+  "set": "passion"
+ },
+ {
+  "index": 117,
+  "name": "Меч капитана Хрюка",
+  "promo": false,
+  "text": "Когда ты первый раз за каждый свой ход заставляешь врага заразиться ЗПМП, добавляй карту с руки к твоему заклинанию.",
+  "school": null,
+  "set": "passion"
+ },
+ {
+  "index": 118,
+  "name": "Трах-тарарах",
+  "promo": false,
+  "text": "Один раз в каждый свой ход можешь сбросить 1 своё сокровище, чтобы вылечить два своих ЗПМП. Если вылечил хотя бы одно, накрути 5 жизней.",
+  "school": null,
+  "set": "passion"
+ },
+ {
+  "index": 119,
+  "name": "Девка озера",
+  "promo": false,
+  "text": "Один раз в каждый свой ход можешь заразиться одним ЗПМП. Если заразился, захвати замок.",
+  "school": null,
+  "set": "passion"
+ },
+ {
+  "index": 120,
+  "name": "Мохнатая пещерка",
+  "promo": false,
+  "text": "Один раз в каждый свой ход можешь заразиться одним ЗПМП. Если заразился, в этот ход одна твоя тварь получает команду «СТОЯТЬ!».",
+  "school": null,
+  "set": "passion"
+ },
+ {
+  "index": 121,
+  "name": "Ложе исцеления",
+  "promo": false,
+  "text": "Один раз в каждый свой ход можешь заразиться одним ЗПМП. Если заразился, накрути 4 жизни.",
+  "school": null,
+  "set": "passion"
+ },
+ {
+  "index": 122,
+  "name": "Прыщедавка",
+  "promo": false,
+  "text": "Один раз в каждый свой ход можешь сбросить заводилу с руки, чтобы вылечить одно своё ЗПМП. Если вылечил, нанеси 2 урона любому врагу.",
+  "school": null,
+  "set": "passion"
+ },
+ {
+  "index": 123,
+  "name": "Шприцушка",
+  "promo": false,
+  "text": "Один раз в каждый свой ход можешь сбросить наворот с руки, чтобы вылечить одно своё ЗПМП. Если вылечил, нанеси 2 урона любому врагу.",
+  "school": null,
+  "set": "passion"
+ },
+ {
+  "index": 124,
+  "name": "Ракета «Фалло-2»",
+  "promo": false,
+  "text": "Один раз в каждый свой ход можешь сбросить приход с руки, чтобы вылечить одно своё ЗПМП. Если вылечил, нанеси 2 урона любому врагу.",
+  "school": null,
+  "set": "passion"
+ },
+ {
+  "index": 125,
+  "name": "Бюстострел",
+  "promo": false,
+  "text": "Один раз в каждый свой ход можешь сбросить «Шальную магию» с руки, чтобы вылечить одно своё ЗПМП. Если вылечил, нанеси 4 урона любому врагу.",
+  "school": null,
+  "set": "passion"
  }
 ]
 
@@ -5159,5 +6124,61 @@ export const DEAD: DeadData[] = [
   "name": "Довыступался",
   "text": "Во время одного из своих ходов в следующей игре понизь свой социальный статус на 1–3 (сколько выберешь). Затем нанеси 2 урона каждому врагу с более высоким социальным статусом.",
   "set": "school"
+ },
+ {
+  "index": 33,
+  "copies": 3,
+  "name": "Отходняк",
+  "text": "Во время одного из своих ходов в следующей игре сбрось эту карту, чтобы вылечить одно своё ЗПМП.",
+  "set": "passion"
+ },
+ {
+  "index": 34,
+  "copies": 3,
+  "name": "Склеил палки",
+  "text": "В начале следующей игры выбери колдуна (можно и себя). Этот колдун заражается одним ЗПМП.",
+  "set": "passion"
+ },
+ {
+  "index": 35,
+  "copies": 3,
+  "name": "Культовый срез",
+  "text": "Прямо сейчас: выбери живого колдуна. Нанеси ему 1 урон за каждое его ЗПМП.",
+  "set": "passion"
+ },
+ {
+  "index": 36,
+  "copies": 3,
+  "name": "Смертельная бритва",
+  "text": "Прямо сейчас: отожми ЗПМП у любого живого колдуна. Ты начинаешь следующую игру с этим ЗПМП, а у этого врага в начале игры будет на 4 жизни меньше.",
+  "set": "passion"
+ },
+ {
+  "index": 37,
+  "copies": 3,
+  "name": "Лебединая песнь",
+  "text": "Прямо сейчас: нанеси 2 урона каждому живому колдуну без ЗПМП.",
+  "set": "passion"
+ },
+ {
+  "index": 38,
+  "copies": 3,
+  "name": "Некроконтроль",
+  "text": "Прямо сейчас: захвати замок. Если ты его не потеряешь до начала следующей игры, ты начинаешь игру с замком и накручиваешь 3 жизни.",
+  "set": "passion"
+ },
+ {
+  "index": 39,
+  "copies": 3,
+  "name": "Запечёнка",
+  "text": "Во время одного из своих ходов в следующей игре сбрось эту карту, чтобы передать ЗПМП от одного любого врага другому.",
+  "set": "passion"
+ },
+ {
+  "index": 40,
+  "copies": 4,
+  "name": "Запредельная жопа",
+  "text": "Прямо сейчас: выбери живого колдуна. Он заражается одним ЗПМП.",
+  "set": "passion"
  }
 ]

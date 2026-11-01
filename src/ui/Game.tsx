@@ -12,6 +12,7 @@ import { T } from '../game/core'
 import { waitingFor } from '../game/engine'
 import { ABILITIES, RARITY_NAME } from '../game/abilities'
 import { ROLES } from '../game/school'
+import { ZP, zc } from '../game/passion'
 import type { Action, GameState, PlayerState } from '../game/types'
 import { think } from '../ai/mcts'
 import Arena from './Arena'
@@ -461,6 +462,11 @@ const SCHOOL_MEMO: [string, string][] = [
   ['😈 Задира', 'срабатывает, только если статус врага ниже твоего.'],
   ['💥 Нежданчик', 'подох раньше этой карты — убийце 2 урона за каждый её знак на твоих картах.'],
 ]
+const PASSION_MEMO: [string, string][] = [
+  ['💋 ЗПМП', 'жутко передающиеся магические приколы: заражаешься из мешонки, у каждого свой вредный эффект (наведи на 💋). Подох — все, кроме «Гарпий», возвращаются в мешонку.'],
+  ['🏰 Замок', 'карты захватывают его и дают бонусы «Замок:». Врагам нельзя заразить или передать ЗПМП владельцу замка.'],
+  ['💥 Нежданчик', 'подох раньше этой карты — вылечи все ЗПМП и накрути столько же жизней.'],
+]
 function MemoExtra({ s }: { s: GameState }) {
   const items: [string, string][] = [
     ...(s.mods ?? []).map(m => [`${MOD_INFO[m].icon} ${MOD_INFO[m].name}`, MOD_INFO[m].text] as [string, string]),
@@ -468,6 +474,7 @@ function MemoExtra({ s }: { s: GameState }) {
     ...(s.sets?.includes('swamp') ? SWAMP_MEMO : []),
     ...(s.sets?.includes('castle') ? CASTLE_MEMO : []),
     ...(s.sets?.includes('school') ? SCHOOL_MEMO : []),
+    ...(s.sets?.includes('passion') ? PASSION_MEMO : []),
   ]
   if (!items.length) return null
   return <ul className="memo-list">{items.map(([k, v]) => <li key={k}><b>{k}:</b> {v}</li>)}</ul>
@@ -508,6 +515,7 @@ function Seat({ s, p, life, alive, casting, count, onClick }: {
         {!!p.creatures?.length && <span>🐾{p.creatures.length}</span>}
         <CastleTag s={s} p={p} />
         <SchoolTag s={s} p={p} />
+        <PassionTag s={s} p={p} />
         <AbTag p={p} />
         {p.boss && <span className="boss-tag" title={BOSS_INFO[p.boss].text}>{BOSS_INFO[p.boss].icon} босс{p.slimes ? ` · 🟢${p.slimes}` : ''}</span>}
         {alive && s.phase === 'build' && (p.spell ? <span className="ready">✓</span> : <span className="think">…</span>)}
@@ -528,6 +536,15 @@ function SchoolTag({ s, p }: { s: GameState; p: PlayerState }) {
   if (!s.sets?.includes('school') || p.rank == null || !p.alive) return null
   const [icon, text] = ROLES[p.rank] ?? ['', '']
   return <span className="castle-tag" title={`Социальный статус ${p.rank}. ${text}${s.head && p.rank === 8 ? ` · знак раунда: ${SCHOOL_NAMES[s.head as keyof typeof SCHOOL_NAMES]}` : ''}`}>{icon}{p.rank}</span>
+}
+
+// Хоромы страсти: замок и ЗПМП
+function PassionTag({ s, p }: { s: GameState; p: PlayerState }) {
+  if (!s.sets?.includes('passion')) return null
+  const own = s.castle === p.id && !s.sets.includes('castle') // при Спрутобойне замок уже показан в CastleTag
+  const n = zc(p), list = (p.zp ?? []).map(z => `${ZP[z >> 1][0]} — ${ZP[z >> 1][1]}`)
+  if (!n && !own) return null
+  return <span className="castle-tag" title={[s.castle === p.id ? 'Владеет замком' : '', ...list].filter(Boolean).join(' · ') || 'ЗПМП'}>{own && '🏰'}{n > 0 && `💋${n}`}</span>
 }
 
 // Способность колдуна на его месте (как метка босса)

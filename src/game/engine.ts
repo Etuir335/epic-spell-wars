@@ -10,6 +10,7 @@ import { addToSpell, cardInfo, replaceWild } from './effects.ts'
 import { applyCard, offers, treasureCreatures } from './swamp.ts'
 import { castleReveal, castleRoundEnd, castleStartGame, castleTie, castleTurnStart, castleWild } from './castle.ts'
 import { schoolInit, schoolReveal, schoolRound, schoolStartGame, schoolTurnStart } from './school.ts'
+import { passionEndTurn, passionPreReveal, passionReveal, passionStartGame, passionTurnStart } from './passion.ts'
 import { abBuilt, abEndTurn, abReveal, abRound, abStartGame, abTurnStart, asTwo } from './abilities.ts'
 import { TRAP, type Action, type CardId, type CardSet, type GameState, type Mod, type PlayerState, type SetupPlayer, type SpellCard } from './types.ts'
 
@@ -85,6 +86,7 @@ function startGame(ctx: Ctx) {
   }
   castleStartGame(ctx)
   schoolStartGame(ctx)
+  passionStartGame(ctx)
   for (const p of s.players) { s.deadDiscard.push(...p.deadCards); p.deadCards = [] }
   abStartGame(ctx)
   schoolRound(ctx)
@@ -222,12 +224,14 @@ function startTurn(ctx: Ctx, p: PlayerState) {
   }
   castleTurnStart(ctx, p)
   schoolTurnStart(ctx, p)
+  passionTurnStart(ctx, p)
   abTurnStart(ctx, p)
   if (s.turn && s.turn.stage === 'start') s.turn.stage = 'reveal'
 }
 
 function reveal(ctx: Ctx, p: PlayerState) {
   const { s } = ctx
+  passionPreReveal(ctx, p)
   const turn = s.turn!
   const sp = p.spell!
   const count = sp.length
@@ -247,6 +251,7 @@ function reveal(ctx: Ctx, p: PlayerState) {
   }
   castleReveal(ctx, p)
   schoolReveal(ctx, p)
+  passionReveal(ctx, p)
   abReveal(ctx, p)
   if (count <= 2 && p.treasures.includes(T.garters) && p.hand.length) {
     const id = p.hand[rand(s, p.hand.length)]
@@ -329,6 +334,7 @@ function resolveNext(ctx: Ctx, p: PlayerState) {
 
 function endTurn(ctx: Ctx, p: PlayerState) {
   const { s } = ctx
+  if (p.alive) passionEndTurn(ctx, p)
   const rec = s.turns.at(-1)
   if (rec && rec.actor === p.id && p.spell?.length) rec.cards = p.spell.map(c => c.id) // с добавленными картами
   // твари со «СТОЯТЬ!» остаются в игре
