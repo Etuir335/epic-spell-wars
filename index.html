@@ -29,15 +29,29 @@
           box.lastChild.textContent = lines.join('\n') + '\n\n' + navigator.userAgent;
         }
         window.__eswStarted = function () { started = true; };
+        // вышла новая версия, а открыта старая: её куски (assets/…) уже удалены — перезагрузить один раз
+        function stale(src) {
+          if (!started || !/\/assets\/.+\.js/.test(String(src))) return false;
+          try {
+            var last = +sessionStorage.getItem('esw-reload') || 0;
+            if (Date.now() - last < 60000) return false;
+            sessionStorage.setItem('esw-reload', String(Date.now()));
+          } catch (_) { return false; }
+          var q = location.search.replace(/[?&]v=[^&]*/g, '').replace(/^&/, '?');
+          location.replace(location.pathname + q + (q ? '&' : '?') + 'v=' + Date.now() + location.hash); // мимо кэша Telegram
+          return true;
+        }
         window.addEventListener('error', function (e) {
           var t = e.target;
           if (t && t !== window && (t.tagName === 'SCRIPT' || t.tagName === 'LINK')) {
             var src = t.src || t.href || t.getAttribute('data-src');
             files[src] = 'ошибка';
+            if (stale(src)) return;
             show('Не загрузился файл: ' + src);
             return;
           }
           if (t && t !== window) return; // картинки и звуки — не страшно
+          if (/SystemJS|dynamically imported module/.test(String(e.message)) && stale(e.message)) return;
           show('Ошибка: ' + (e.message || e.error) + '\n  ' + (e.filename || '?') + ':' + (e.lineno || 0) + ':' + (e.colno || 0));
         }, true);
         window.addEventListener('load', function (e) {
@@ -46,6 +60,8 @@
         }, true);
         window.addEventListener('unhandledrejection', function (e) {
           var r = e.reason;
+          var m = String(r && (r.message || r));
+          if (/dynamically imported module|Failed to fetch|Importing a module script failed|SystemJS|assets\/.+\.js/.test(m) && stale(m)) return;
           show('Ошибка (promise): ' + (r && (r.stack || r.message) || r));
         });
         // через 10 с экран пуст — какие скрипты загрузились, а какие нет
