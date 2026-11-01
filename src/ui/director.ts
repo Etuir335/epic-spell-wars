@@ -40,7 +40,7 @@ export function applyScene(sc: Scene, e: Ev, s: GameState): Scene {
   const name = (p: number) => s.players[p]?.name ?? '?'
   switch (e.k) {
     case 'log': return { ...sc, ticker: e.t }
-    case 'game': return { ...emptyScene(), banner: { text: `Игра ${e.n}`, sub: s.sets?.includes('swamp') ? 'Мессиво на грибучем болоте' : 'Турнир на горе Черепламени', key: Math.random(), kind: 'game' } }
+    case 'game': return { ...emptyScene(), banner: { text: `Игра ${e.n}`, sub: s.sets?.length === 1 && s.sets[0] === 'castle' ? 'Бесчинство в замке Спрутобойни' : s.sets?.includes('swamp') ? 'Мессиво на грибучем болоте' : 'Турнир на горе Черепламени', key: Math.random(), kind: 'game' } }
     case 'round': return { ...emptyScene(), banner: { text: `Раунд ${e.n}`, sub: 'Собирайте заклинания!', key: Math.random(), kind: 'round' } }
     case 'built': return { ...sc, counts: e.counts, banner: { text: 'Заклинания выложены!', sub: 'Кто быстрее — тот первый', key: Math.random(), kind: 'built' } }
     case 'turn': return {

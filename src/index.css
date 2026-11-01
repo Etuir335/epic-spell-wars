@@ -178,6 +178,7 @@ html:has(.sheet-back), html:has(.zoom) { overflow: hidden; }
 .seat-info { display: flex; gap: 4px; align-items: center; font-size: 13px; min-height: 18px; }
 .seat-info .ready { color: var(--grass); font-weight: 800; }
 .seat-info .think { color: var(--dim); animation: blink 1.2s infinite; }
+.castle-tag { color: #ff6b6b; font-weight: 700; white-space: nowrap; }
 @keyframes blink { 50% { opacity: .3; } }
 .seat.casting .ava .portrait, .mybar.casting .ava .portrait { box-shadow: 0 0 0 3px var(--gold), 0 0 22px 6px #ff9a1fcc; }
 .seat.dead { opacity: .65; }

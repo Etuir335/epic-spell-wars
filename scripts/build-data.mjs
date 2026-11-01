@@ -66,6 +66,23 @@ for (const [n, c, name, text] of rows('transcript/swamp-dead.md')) {
     school: SIGN_OF[(text.match(/считается картой со знаком (\S+) в каждом/) || [])[1]] ?? null })
 }
 
+// ---------- «Бесчинство в замке Спрутобойни»: кровь, замок, твари ----------
+const CO = { spells: 124, treasures: 51, dead: 16 }
+for (const [n, t, name, sc, ini, text] of rows('transcript/castle-spells.md')) {
+  const md = mighty(text)
+  spells.push({
+    index: CO.spells + +n, type: TYPE[t.replace('*', '')], name, school: SIGN[sc],
+    initiative: ini === '—' ? null : +ini, copies: 2, promo: false, set: 'castle',
+    ...(t.includes('*') ? { creature: true } : {}),
+    ...(text.includes('Нежданчик:') ? { surprise: true } : {}),
+    ...(md ? { victim: md.victim, mighty: md.tiers } : { text }),
+  })
+}
+for (const [n, name, text] of rows('transcript/castle-treasures.md'))
+  treasures.push({ index: CO.treasures + +n, name, promo: false, text, school: null, set: 'castle' })
+for (const [n, c, name, text] of rows('transcript/castle-dead.md'))
+  dead.push({ index: CO.dead + +n, copies: +c, name, text, set: 'castle' })
+
 const out = `// СГЕНЕРИРОВАНО scripts/build-data.mjs из transcript/*.md — правьте расшифровку и перезапускайте.
 // Картинка карты: assets/cards/<колода>/<index>.webp
 
@@ -76,7 +93,7 @@ export interface SpellData {
   index: number; type: SpellType; name: string; school: School | null; initiative: number | null
   copies: number; promo: boolean
   text?: string; victim?: string; mighty?: MightyTier[]
-  set?: 'swamp' // дополнение (нет — база)
+  set?: 'swamp' | 'castle' // дополнение (нет — база)
   school2?: School // второй знак (приходы болота)
   creature?: boolean // тварь: «СТОЯТЬ!» оставляет её в игре
   sorcery?: 'source' | 'quality' | 'delivery' // колдунство: сбрось 2 карты этого типа — и карта с руки идёт в заклинание
@@ -85,10 +102,10 @@ export interface SpellData {
 }
 export interface TreasureData {
   index: number; name: string; promo: boolean; text: string; school: School | null
-  set?: 'swamp'; eternal?: boolean // вечное: не сбрасывается в конце игры и при смерти
+  set?: 'swamp' | 'castle'; eternal?: boolean // вечное: не сбрасывается в конце игры и при смерти
   creature?: School; victim?: string; mighty?: MightyTier[] // сокровище-тварь
 }
-export interface DeadData { index: number; copies: number; name: string; text: string; set?: 'swamp'; school?: School | null }
+export interface DeadData { index: number; copies: number; name: string; text: string; set?: 'swamp' | 'castle'; school?: School | null }
 
 export const SCHOOL_NAMES: Record<School, string> = { grass: 'Трава', hex: 'Порча', haze: 'Кумар', dark: 'Мрак', fire: 'Угар' }
 export const TYPE_NAMES: Record<SpellType, string> = { source: 'Заводила', quality: 'Наворот', delivery: 'Приход', wild: 'Шальная магия' }

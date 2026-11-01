@@ -7,7 +7,9 @@ import { ABIL_MODES, type AbilMode } from '../progression'
 const CHOICES: { sets: CardSet[]; label: string }[] = [
   { sets: ['base'], label: '🌋 Основа' },
   { sets: ['swamp'], label: '🍄 Болото' },
+  { sets: ['castle'], label: '🐙 Замок' },
   { sets: ['base', 'swamp'], label: '🌋+🍄 Вместе' },
+  { sets: ['base', 'swamp', 'castle'], label: '🌋+🍄+🐙 Всё' },
 ]
 // Набор открыт, если открыта его арена (или нажато «я уже играл в настолку»)
 function useUnlocked(): (set: CardSet) => boolean {

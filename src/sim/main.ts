@@ -9,7 +9,7 @@ import { BOSS_INFO, MOD_INFO } from '../daily'
 const MODS: Mod[] = ['wild', 'reverse', 'blood', 'swap', 'dice', 'zombie', 'greedy', 'fever', 'mirror']
 const BOSSES: BossKind[] = ['grandpa', 'slime', 'mirror']
 const TRIG = ['🪞', '🩸', '🌕', '🔄', '💰', '🧟', '👴', '🟢', '🐾', '✨', '🍄', '💥', '🛡']
-const SETS: Record<string, CardSet[][]> = { mix: [['base'], ['swamp'], ['base', 'swamp']], base: [['base']], swamp: [['swamp']], both: [['base', 'swamp']] }
+const SETS: Record<string, CardSet[][]> = { mix: [['base'], ['swamp'], ['base', 'swamp']], base: [['base']], swamp: [['swamp']], both: [['base', 'swamp']], castle: [['castle']], all: [['base', 'swamp', 'castle']] }
 const pick = <X>(a: X[]) => a[Math.floor(Math.random() * a.length)]
 
 interface Table { s: GameState; ns: number; nt: number; label: string; life: number[]; flash: number[]; seen: number; burst: number }

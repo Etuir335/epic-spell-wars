@@ -125,6 +125,7 @@ function evaluate(s: GameState, me: number, game: number): number {
   const avg = live.length ? live.reduce((a, q) => a + q.life, 0) / live.length : 0
   // добить колдуна ценно: медаль ближе, а «Мародёр» и «Мародёрство» дают его сокровища
   let v = 0.5 + 0.022 * (p.life - avg) + 0.2 * (1 - live.length / Math.max(1, foes.length)) + 0.05 * (p.ab?.kills ?? 0) + 0.02 * p.treasures.length + 0.03 * (p.creatures?.length ?? 0)
+  if (s.sets?.includes('castle')) v += 0.004 * (p.blood ?? 0) + (s.castle === me ? 0.02 : 0)
   // пощада: урон и добивание живого игрока боту почти не выгодны (лёгкие боты; на арене — при серии поражений)
   const w = mercyOf(p)
   if (w) for (const q of foes) if (!q.bot && !q.boss) v += w * (q.alive ? (0.022 * q.life) / Math.max(1, live.length) : -0.2 / Math.max(1, foes.length))

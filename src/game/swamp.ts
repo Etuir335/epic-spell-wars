@@ -5,7 +5,7 @@ import { SPELLS, TREASURES, type School, type SpellType } from '../data/cards.ts
 import {
   ST, SD, T, alive, hitAll, ask, cardName, choosePlayer, chooseHandCard, chooseTreasure, creatureTreasures, d6, damage, drawDead, drawSpell,
   enemies, ev, gainTreasure, heal, hooks, isWild, leftEnemy, log, loseTreasure, mightyRoll, moveTreasure, rand, randomEnemy,
-  rightEnemy, rollEv, signs, spellOf, strongest, tier, treasureName, uniqueSigns, weakest, yesNo, type Ctx,
+  rightEnemy, rollEv, signs, spellOf, strongest, tier, treasureName, uniqueSigns, weakest, yesNo, type Ctx, type TreasureAct,
 } from './core.ts'
 import { EFFECTS, addToSpell, cardInfo, type E } from './effects.ts'
 import { TRAP, type CardId, type PlayerState, type SpellCard } from './types.ts'
@@ -310,6 +310,7 @@ export function applyCard(ctx: Ctx, p: PlayerState, id: CardId, cur?: SpellCard)
     log(ctx.s, `🍄 Пережор! ${cardName(id)} — ещё раз.`)
     f?.(e)
   }
+  hooks.afterCard?.(ctx, p, cur)
 }
 
 // ---------- колдунство ----------
@@ -334,7 +335,7 @@ function playSorcery(ctx: Ctx, p: PlayerState, id: CardId, now: boolean) {
 }
 
 // ---------- сокровища «раз в свой ход» ----------
-interface Act { t: number; label: string; run: (e: Ctx, p: PlayerState) => void }
+type Act = TreasureAct
 const withSign = (p: PlayerState, sc: School) => p.hand.filter(id => cardSchools(id).includes(sc))
 function discardSign(e: Ctx, p: PlayerState, sc: School | 'wild') {
   const list = sc === 'wild' ? p.hand.filter(isWild) : withSign(p, sc)
@@ -353,6 +354,7 @@ function treasureActs(s: Ctx['s'], p: PlayerState): Act[] {
   if (has(ST.marley) && withSign(p, 'grass').length && p.life < 25) out.push({ t: ST.marley, label: 'Сбросить карту травы → накрутить 1 жизнь', run: (e, p) => { discardSign(e, p, 'grass'); heal(e, p, 1) } })
   if (tri && has(ST.nipple)) out.push({ t: ST.nipple, label: `Взять ${tri} карт.`, run: (e, p) => draw(e, p, tri) })
   if (tri && has(ST.piglets) && p.life < 25) out.push({ t: ST.piglets, label: `Накрутить ${tri} ж.`, run: (e, p) => heal(e, p, tri) })
+  for (const a of hooks.acts?.(s, p) ?? []) if (has(a.t)) out.push(a)
   if (tri && has(ST.bandit)) out.push({ t: ST.bandit, label: `${tri} урона врагу по выбору`, run: (e, p) => damage(e, choosePlayer(e, p, enemies(e.s, p), 'Кому?'), tri) })
   return out
 }

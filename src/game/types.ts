@@ -18,7 +18,7 @@ export interface SpellCard {
 export type Mod = 'wild' | 'reverse' | 'blood' | 'swap' | 'dice' | 'zombie' | 'greedy' | 'fever' | 'mirror' | 'loot'
 export type BossKind = 'grandpa' | 'slime' | 'mirror'
 // Наборы карт: база «Битва на горе Черепламени» и дополнения
-export type CardSet = 'base' | 'swamp'
+export type CardSet = 'base' | 'swamp' | 'castle'
 
 export interface PlayerState {
   id: number // место за столом по часовой стрелке; левый враг — следующий живой по возрастанию
@@ -49,6 +49,12 @@ export interface PlayerState {
   deadSigns?: School[] // знаки с карт дохлых колдунов прошлой игры
   keep?: number[] // сокровища, которые не сбрасываются в конце этой игры («Дерьмо вопрос»)
   extraDraw?: number // «Текучий любимый кетчуп»: сколько лишних карт добрать
+  // «Бесчинство в замке Спрутобойни»
+  blood?: number // литры крови (0..25), копятся весь турнир, и мёртвым тоже
+  tucked?: CardId // «Рыгалия Живоглота»: подложенная карта (её знак считается)
+  whip?: number // «Плётка госпожи»: +1 кубик к ближайшему броску твари
+  storm?: boolean // «Грозовой беспредел»: верхняя карта колоды — в первое заклинание игры
+  later?: number[] // сокровища, которые придут в начале следующей игры («От Знатного Кидалы»)
   // способность колдуна (src/game/abilities.ts)
   lvl?: number // 1..5 — уровень способности (нет — без способности)
   mercy?: number // бот: 0..1 — насколько щадит живых игроков (лёгкие боты, серия поражений)
@@ -70,6 +76,7 @@ export interface TurnState {
   aoe?: boolean // сейчас бьёт карта «по всем» (несколько целей)
   laser?: { t: number; n: number } // «Леди Лазерища»: +урон по цели в этот ход
   rolls?: number // могучих бросков в этот ход
+  creatureDice?: number // «Йог-Ниггатот»: +кубики к броскам твоих тварей в этот ход
 }
 
 export interface QOption { v: number | string; label: string; card?: { deck: 'spells' | 'treasures' | 'dead'; index: number }; player?: number }
@@ -119,6 +126,10 @@ export interface GameState {
   hits?: number // «Отражающий щит»: счётчик ударов
   mirrorOf?: { index: number; slot: string }[] // «Зеркальный ты»: прошлое заклинание человека
   sets?: CardSet[] // наборы карт (нет — только база)
+  castle?: number | null // замок: у кого (номер игрока), null — ничей
+  firstDead?: number // кто подох первым в этой игре («Эрозия металла»)
+  bets?: { p: number; q: number }[] // «Копейки судьбы»: кто на чью смерть поставил
+  bounty?: boolean // «Их разыскивает милиция»: награда за первое убийство
   tid?: number // номер турнира (начальный seed) — чтобы статистика не считала одни события дважды
   // start — подготовка новой игры (карты дохлых колдунов), build — выкладывают заклинания,
   // resolve — ходы, gameover — игра окончена (ждём nextGame), tournament — турнир окончен

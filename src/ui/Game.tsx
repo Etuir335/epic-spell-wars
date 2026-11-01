@@ -449,11 +449,17 @@ const SWAMP_MEMO: [string, string][] = [
   ['🍄 Пережор', '4+ разных знака — эффект ещё раз.'],
   ['💥 Нежданчик', 'подох раньше этой карты — сыграй колдунства с руки.'],
 ]
+const CASTLE_MEMO: [string, string][] = [
+  ['🩸 Кровь', 'за каждое убийство 3 литра (максимум 25), копится весь турнир. «Слей N» — потрать литры ради усиления.'],
+  ['🏰 Замок', 'владелец получает 1 литр в конце каждого раунда; убил владельца — замок твой.'],
+  ['💥 Нежданчик', 'подох раньше этой карты — сработает её эффект.'],
+]
 function MemoExtra({ s }: { s: GameState }) {
   const items: [string, string][] = [
     ...(s.mods ?? []).map(m => [`${MOD_INFO[m].icon} ${MOD_INFO[m].name}`, MOD_INFO[m].text] as [string, string]),
     ...[...new Set(s.players.filter(p => p.boss).map(p => p.boss!))].map(b => [`${BOSS_INFO[b].icon} ${BOSS_INFO[b].name}`, BOSS_INFO[b].text] as [string, string]),
     ...(s.sets?.includes('swamp') ? SWAMP_MEMO : []),
+    ...(s.sets?.includes('castle') ? CASTLE_MEMO : []),
   ]
   if (!items.length) return null
   return <ul className="memo-list">{items.map(([k, v]) => <li key={k}><b>{k}:</b> {v}</li>)}</ul>
@@ -492,6 +498,7 @@ function Seat({ s, p, life, alive, casting, count, onClick }: {
       <div className="seat-info">
         {p.treasures.length > 0 && <span>💰{p.treasures.length}</span>}
         {!!p.creatures?.length && <span>🐾{p.creatures.length}</span>}
+        <CastleTag s={s} p={p} />
         <AbTag p={p} />
         {p.boss && <span className="boss-tag" title={BOSS_INFO[p.boss].text}>{BOSS_INFO[p.boss].icon} босс{p.slimes ? ` · 🟢${p.slimes}` : ''}</span>}
         {alive && s.phase === 'build' && (p.spell ? <span className="ready">✓</span> : <span className="think">…</span>)}
@@ -499,6 +506,12 @@ function Seat({ s, p, life, alive, casting, count, onClick }: {
       </div>
     </button>
   )
+}
+
+// Замок Спрутобойни: литры крови и владелец замка
+function CastleTag({ s, p }: { s: GameState; p: PlayerState }) {
+  if (!s.sets?.includes('castle')) return null
+  return <span className="castle-tag" title={`Литров крови: ${p.blood ?? 0} из 25${s.castle === p.id ? ' · владеет замком (+1 литр в конце раунда)' : ''}`}>{s.castle === p.id && '🏰'}🩸{p.blood ?? 0}</span>
 }
 
 // Способность колдуна на его месте (как метка босса)
@@ -518,7 +531,7 @@ function MyBar({ s, p, life, alive, casting, onClick, onEmote }: { s: GameState;
         <span className="orb big">{alive ? life : '☠'}</span>
       </div>
       <div className="mybar-main" onClick={onClick}>
-        <b>{p.name}</b> <AbTag p={p} /> {p.medals > 0 && '🏅'.repeat(p.medals)}
+        <b>{p.name}</b> <AbTag p={p} /> <CastleTag s={s} p={p} /> {p.medals > 0 && '🏅'.repeat(p.medals)}
         <small>{s.medalsToWin} 🏅 до победы</small>
       </div>
       {!p.bot && <EmoteButton pid={p.id} portrait={p.portrait} onSend={onEmote} />}

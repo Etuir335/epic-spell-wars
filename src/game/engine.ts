@@ -8,6 +8,7 @@ import {
 } from './core.ts'
 import { addToSpell, cardInfo, replaceWild } from './effects.ts'
 import { applyCard, offers, treasureCreatures } from './swamp.ts'
+import { castleReveal, castleRoundEnd, castleStartGame, castleTie, castleTurnStart, castleWild } from './castle.ts'
 import { abBuilt, abEndTurn, abReveal, abRound, abStartGame, abTurnStart, asTwo } from './abilities.ts'
 import { TRAP, type Action, type CardId, type CardSet, type GameState, type Mod, type PlayerState, type SetupPlayer, type SpellCard } from './types.ts'
 
@@ -81,6 +82,7 @@ function startGame(ctx: Ctx) {
     p.life = Math.min(p.life, p.boss ? 99 : 25)
     if (p.reservedWild) { p.hand.push(...p.reservedWild); p.reservedWild = undefined }
   }
+  castleStartGame(ctx)
   for (const p of s.players) { s.deadDiscard.push(...p.deadCards); p.deadCards = [] }
   abStartGame(ctx)
   s.phase = 'build'
@@ -119,6 +121,8 @@ function nextActor(ctx: Ctx): PlayerState | null {
   cand.sort((a, b) => cmp(orderKey(a, rev), orderKey(b, rev)))
   const top = cand.filter(p => cmp(orderKey(p, rev), orderKey(cand[0], rev)) === 0)
   if (top.length === 1) return top[0]
+  const worm = castleTie(s, top)
+  if (worm) return worm
   for (;;) {
     for (const p of top) if (p.tieRoll == null) { p.tieRoll = d6(s); rollEv(s, p, [p.tieRoll], p.tieRoll, 'очерёдность') }
     const max = Math.max(...top.map(p => p.tieRoll!))
@@ -139,6 +143,7 @@ function endRound(ctx: Ctx) {
     if (w.treasures.includes(ST.pinata)) heal(ctx, w, 2)
     if (w.treasures.includes(ST.tale)) for (const q of enemies(s, w)) damage(ctx, q, 1)
   }
+  castleRoundEnd(ctx)
   s.round++
   for (const p of s.players) {
     Object.assign(p, { spell: null, acted: false, extraDice: 0, goLast: undefined, tieRoll: undefined })
@@ -210,6 +215,7 @@ function startTurn(ctx: Ctx, p: PlayerState) {
       log(s, `${q.name} сбрасывает карту.`)
     }
   }
+  castleTurnStart(ctx, p)
   abTurnStart(ctx, p)
   if (s.turn && s.turn.stage === 'start') s.turn.stage = 'reveal'
 }
@@ -231,7 +237,9 @@ function reveal(ctx: Ctx, p: PlayerState) {
     if (c.id === TRAP) p.treasures.push(T.trap)
     else s.discard.push(c.id)
     replaceWild(ctx, p, c.slot, c.id)
+    castleWild(ctx, p, c.slot)
   }
+  castleReveal(ctx, p)
   abReveal(ctx, p)
   if (count <= 2 && p.treasures.includes(T.garters) && p.hand.length) {
     const id = p.hand[rand(s, p.hand.length)]
