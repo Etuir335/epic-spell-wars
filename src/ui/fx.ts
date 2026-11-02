@@ -99,3 +99,28 @@ export function shakeEl(el: HTMLElement | null, power = 8) {
     { transform: `translate(${power / 2}px,${power / 2}px)` }, { transform: 'translate(0,0)' },
   ], { duration: 380 })
 }
+
+// Заслон: карта твари выпрыгивает перед хозяином, снаряд врага бьёт в неё, она трескается и падает. Возвращает время до удара.
+export function guardFx(from: number, to: number, img: string, color: string): number {
+  const c = center(to)
+  if (!c) return 0
+  const card = spawn('fx-guard', c.x, c.y, `<img src="${img}" alt="">`)
+  card.animate([
+    { transform: 'translate(-50%,-50%) scale(.2) rotate(-25deg)', opacity: 0 },
+    { transform: 'translate(-50%,-62%) scale(1.15) rotate(6deg)', opacity: 1, offset: 0.6 },
+    { transform: 'translate(-50%,-55%) scale(1) rotate(0)', opacity: 1 },
+  ], { duration: 450, easing: 'cubic-bezier(.2,1.6,.4,1)', fill: 'forwards' })
+  const hit = 450 + projectile(from, to, color, 450)
+  later(hit, () => {
+    card.classList.add('hit')
+    floater(to, '🛡', 'skull')
+    card.animate([
+      { transform: 'translate(-50%,-55%) scale(1)', filter: 'brightness(3)' },
+      { transform: 'translate(-46%,-55%) scale(1.08) rotate(4deg)', filter: 'brightness(1.6) saturate(2)', offset: 0.15 },
+      { transform: 'translate(-54%,-55%) scale(1.04) rotate(-5deg)', filter: 'brightness(1.2) grayscale(.4)', offset: 0.3 },
+      { transform: 'translate(-50%,-40%) scale(.95) rotate(-12deg)', filter: 'grayscale(1) brightness(.6)', opacity: 1, offset: 0.55 },
+      { transform: 'translate(-30%,60%) scale(.7) rotate(-70deg)', filter: 'grayscale(1) brightness(.3)', opacity: 0 },
+    ], { duration: 1100, easing: 'ease-in', fill: 'forwards' }).onfinish = () => card.remove()
+  })
+  return hit
+}

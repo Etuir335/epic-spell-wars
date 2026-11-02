@@ -154,7 +154,9 @@ function Complaint({ m, t, onClose }: { m: Match; t: Target; onClose: (sent: boo
   const [text, setText] = useState('')
   const [state, setState] = useState<'' | 'send' | 'ok' | 'err' | 'off'>('')
   const line = (e: Entry) => `[И${e.g} Р${e.r}${e.a >= 0 ? ` ход: ${m.names[e.a]}` : ''}] ${e.t}`
-  const lines = t.idx ? t.idx.map(i => line(m.entries[i])) : m.entries.filter(e => e.g === t.g && e.r === t.r).map(line)
+  // для разбора нужен ход целиком: прошлый и этот раунд, отмеченные строки — с ▶
+  const rMax = Math.max(t.r, ...(t.idx ?? []).map(i => m.entries[i].g === t.g ? m.entries[i].r : t.r))
+  const lines = m.entries.flatMap((e, i) => e.g === t.g && e.r >= t.r - 1 && e.r <= rMax ? [(t.idx?.includes(i) ? '▶ ' : '') + line(e)] : [])
   const send = async () => {
     setState('send')
     try {

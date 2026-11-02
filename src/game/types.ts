@@ -119,6 +119,7 @@ export type Ev =
   | { k: 'dmg'; p: number; n: number; from: number | null; before: number; after: number }
   | { k: 'heal'; p: number; n: number; before: number; after: number }
   | { k: 'death'; p: number }
+  | { k: 'guard'; p: number; from: number; n: number; deck: 'spells' | 'treasures'; index: number } // тварь закрывает хозяина собой
   | { k: 'treasure'; p: number; t: number; from?: number }
   | { k: 'lose'; p: number; t: number }
   | { k: 'dead'; p: number; c: CardId }

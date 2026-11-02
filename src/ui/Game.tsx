@@ -280,8 +280,9 @@ export default function Game({ store, onExit, net, ranked }: { store: GameStore;
         <button onClick={() => setSheet('log')}>📜</button>
       </div>
 
-      {(s.mods?.length || s.players.some(p => p.slimes && p.alive)) ? (
+      {(s.mods?.length || s.bounty || s.players.some(p => p.slimes && p.alive)) ? (
         <div className="mods-bar">
+          {s.bounty && <button onClick={() => { setToast('«Их разыскивает милиция»: первый, кто убьёт врага, получит 3 литра крови.'); setTimeout(() => setToast(null), 3500) }}>🚨 Награда за убийство</button>}
           {s.mods?.map(m => <button key={m} onClick={() => { setToast(MOD_INFO[m].text); setTimeout(() => setToast(null), 3500) }}>{MOD_INFO[m].icon} {MOD_INFO[m].name}</button>)}
           {s.players.filter(p => p.slimes && p.alive).map(p => <span key={p.id}>🟢 ×{p.slimes}</span>)}
         </div>

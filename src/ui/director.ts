@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { SPELLS, TREASURES, type School } from '../data/cards'
 import type { CardId, Ev, GameState } from '../game/types'
-import { SCHOOL_COLOR, floater, glow, projectile, shake } from './fx'
+import { SCHOOL_COLOR, floater, glow, guardFx, projectile, shake } from './fx'
+import { cardUrl } from '../assets'
 import { sfx } from './sound'
 import { showTomb, tombsMine } from './Tombs'
 
@@ -70,6 +71,7 @@ export function applyScene(sc: Scene, e: Ev, s: GameState): Scene {
     }
     case 'roll': return { ...sc, roll: { ...e, key: Math.random() } }
     case 'end': return { ...sc, cards: sc.cards.map(c => ({ ...c, on: false, done: true })), roll: null }
+    case 'guard': return { ...sc, banner: { text: '🛡 Тварь заслоняет!', sub: `«${e.deck === 'spells' ? SPELLS[e.index].name : TREASURES[e.index].name}» принимает ${e.n} ур. за ${name(e.p)} и погибает`, key: Math.random(), kind: 'guard' } }
     case 'mad': return { ...sc, banner: { text: `${e.icon} ${e.title}`, sub: e.sub, key: Math.random(), kind: 'mad' } }
     case 'over': {
       const w = e.winner >= 0 ? name(e.winner) : null
@@ -97,6 +99,7 @@ function duration(e: Ev, sc: Scene, me = -1): number {
     case 'card': return 950
     case 'roll': return e.card != null ? 1900 : 1000
     case 'dmg': return e.from != null && e.from !== e.p ? 750 : 600
+    case 'guard': return 2300
     case 'heal': return 650
     case 'death': return 1400
     case 'treasure': return 700
@@ -129,6 +132,13 @@ function play(e: Ev, sc: Scene, s: GameState, me = -1, fast = false) {
       const t = fly ? projectile(e.from!, e.p, color, 0) : 0
       if (fly) sfx.zap()
       setTimeout(() => { sfx.hit(); shake(e.p, 0, e.n >= 4); floater(e.p, `−${e.n}`, e.n >= 5 ? 'big dmg' : 'dmg') }, t)
+      break
+    }
+    case 'guard': {
+      sfx.place()
+      const t = guardFx(e.from, e.p, cardUrl(e.deck, e.index), color)
+      setTimeout(sfx.zap, 450)
+      setTimeout(() => { sfx.shield(); glow(e.p, '#6fd0ff') }, t)
       break
     }
     case 'heal': sfx.heal(); floater(e.p, `+${e.n}`, 'heal'); glow(e.p, '#5be35b'); break

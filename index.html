@@ -52,6 +52,8 @@
           }
           if (t && t !== window) return; // картинки и звуки — не страшно
           if (/SystemJS|dynamically imported module/.test(String(e.message)) && stale(e.message)) return;
+          // «Script error.» без файла — чужой скрипт (Telegram при сворачивании), подробностей нет и игре не мешает
+          if (/^Script error\.?$/.test(String(e.message)) && !e.filename) return;
           show('Ошибка: ' + (e.message || e.error) + '\n  ' + (e.filename || '?') + ':' + (e.lineno || 0) + ':' + (e.colno || 0));
         }, true);
         window.addEventListener('load', function (e) {

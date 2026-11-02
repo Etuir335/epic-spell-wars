@@ -177,7 +177,7 @@ export function moveTreasure(s: GameState, from: PlayerState, to: PlayerState, t
 export function drawDead(ctx: Ctx, p: PlayerState) {
   const { s } = ctx
   const c = drawFrom(s, s.deadDeck, s.deadDiscard)
-  if (c == null) return
+  if (c == null) return log(s, `${p.name}: карты дохлых колдунов закончились.`)
   ev(s, { k: 'dead', p: p.id, c })
   log(s, `${p.name} берёт карту дохлого колдуна «${deadOf(c).name}».`)
   // «Прямо сейчас» — применить и сбросить
@@ -281,10 +281,14 @@ export function damage(ctx: Ctx, p: PlayerState | null, n: number) {
   if (!p || !p.alive || p.life <= 0 || n <= 0) return
   const from = ctx.s.turn?.actor ?? null
   const foe = from != null && from !== p.id ? ctx.s.players[from] : null
-  if (foe && ab.dmg) n = ab.dmg(ctx, foe, p, n)
+  if (foe && ab.dmg) {
+    n = ab.dmg(ctx, foe, p, n)
+    // иначе кажется, что карта «забыла» про этого колдуна
+    if (n <= 0 && p.alive) log(ctx.s, `🛡 ${p.name}: урон погашен способностью или ЗПМП.`)
+  }
   if (n <= 0) return
   if (foe && hooks.redirect && !ctx.s.turn?.aoe) p = hooks.redirect(ctx, foe, p, n) ?? p
-  if (foe && guard(ctx, p, n)) return
+  if (foe && guard(ctx, p, n, foe.id)) return
   if (hasMod(ctx.s, 'mirror') && from != null && from !== p.id) {
     ctx.s.hits = (ctx.s.hits ?? 0) + 1
     const att = ctx.s.players[from]
@@ -317,7 +321,7 @@ export function hitAll(ctx: Ctx, list: PlayerState[], n: number) {
   aoe(ctx, () => { for (const q of list) damage(ctx, q, n) })
 }
 // Тварь заслоняет хозяина от урона врага (сбрасывается). Возвращает true, если урон поглощён.
-function guard(ctx: Ctx, p: PlayerState, n: number): boolean {
+function guard(ctx: Ctx, p: PlayerState, n: number, from: number): boolean {
   const own = p.creatures ?? [], tr = creatureTreasures(p)
   if (!own.length && !tr.length) return false
   const v = ask(ctx, {
@@ -328,9 +332,11 @@ function guard(ctx: Ctx, p: PlayerState, n: number): boolean {
     ],
   })
   if (v == null) return false
+  if (typeof v === 'string') ev(ctx.s, { k: 'guard', p: p.id, from, n, deck: 'treasures', index: +v.slice(1) })
+  else ev(ctx.s, { k: 'guard', p: p.id, from, n, deck: 'spells', index: Math.floor(v / 10) })
   if (typeof v === 'string') loseTreasure(ctx.s, p, +v.slice(1))
   else { p.creatures = own.filter(x => x !== v); ctx.s.discard.push(v) }
-  log(ctx.s, `🛡 Тварь заслоняет ${p.name} от ${n} ур. и погибает.`)
+  log(ctx.s, `🛡 Тварь закрывает ${p.name} — принимает ${n} ур. на себя и погибает.`)
   return true
 }
 export function kill(ctx: Ctx, p: PlayerState) {
