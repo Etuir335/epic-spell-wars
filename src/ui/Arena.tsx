@@ -85,6 +85,14 @@ const Arena = forwardRef<HTMLDivElement, { s: GameState; scene: Scene; idle: str
 
       {scene.banner && (
         <div className={`banner ${scene.banner.kind}`} key={scene.banner.key}>
+          {scene.banner.portrait != null && (
+            <div className="ab-hero">
+              <i className="ab-rays" />
+              <Portrait i={scene.banner.portrait} size={110} />
+              <em>{scene.banner.icon}</em>
+            </div>
+          )}
+          {scene.banner.name && <span className="ab-who">{scene.banner.name}</span>}
           <b>{scene.banner.text}</b>
           {scene.banner.sub && <small>{scene.banner.sub}</small>}
         </div>

@@ -99,8 +99,8 @@ export function rollEv(s: GameState, p: PlayerState, dice: number[], total: numb
 }
 
 // Трюк босса / безумное правило: баннер на экране + строка журнала
-export function madEv(s: GameState, icon: string, title: string, sub: string, p?: number) {
-  ev(s, { k: 'mad', icon, title, sub, ...(p != null ? { p } : {}) })
+export function madEv(s: GameState, icon: string, title: string, sub: string, p?: number, ab?: number) {
+  ev(s, { k: 'mad', icon, title, sub, ...(p != null ? { p } : {}), ...(ab != null ? { ab } : {}) })
   log(s, `${icon} ${title} ${sub}`)
 }
 export function log(s: GameState, text: string) {

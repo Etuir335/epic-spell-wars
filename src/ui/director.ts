@@ -4,6 +4,9 @@ import { SPELLS, TREASURES, type School } from '../data/cards'
 import type { CardId, Ev, GameState } from '../game/types'
 import { SCHOOL_COLOR, floater, glow, guardFx, projectile, shake } from './fx'
 import { cardUrl } from '../assets'
+import { ABILITIES, type Rarity } from '../game/abilities'
+
+const RARITY_COLOR: Record<Rarity, string> = { common: '#9fd0ff', rare: '#4fb2ff', epic: '#c86bff', legend: '#ffc531' }
 import { sfx } from './sound'
 import { showTomb, tombsMine } from './Tombs'
 
@@ -14,7 +17,7 @@ export interface Scene {
   title: string | null
   titleKey: number
   roll: (Extract<Ev, { k: 'roll' }> & { key: number }) | null
-  banner: { text: string; sub?: string; key: number; kind: string } | null
+  banner: { text: string; sub?: string; key: number; kind: string; portrait?: number; icon?: string; name?: string } | null
   ticker: string
   school: School | null
   counts: number[] | null
@@ -72,7 +75,11 @@ export function applyScene(sc: Scene, e: Ev, s: GameState): Scene {
     case 'roll': return { ...sc, roll: { ...e, key: Math.random() } }
     case 'end': return { ...sc, cards: sc.cards.map(c => ({ ...c, on: false, done: true })), roll: null }
     case 'guard': return { ...sc, banner: { text: '🛡 Тварь заслоняет!', sub: `«${e.deck === 'spells' ? SPELLS[e.index].name : TREASURES[e.index].name}» принимает ${e.n} ур. за ${name(e.p)} и погибает`, key: Math.random(), kind: 'guard' } }
-    case 'mad': return { ...sc, banner: { text: `${e.icon} ${e.title}`, sub: e.sub, key: Math.random(), kind: 'mad' } }
+    case 'mad': {
+      if (e.ab == null) return { ...sc, banner: { text: `${e.icon} ${e.title}`, sub: e.sub, key: Math.random(), kind: 'mad' } }
+      const a = ABILITIES[e.ab]
+      return { ...sc, banner: { text: a.name, sub: e.sub, key: Math.random(), kind: `ability ${a.rarity}`, portrait: e.ab, icon: a.icon, name: e.p != null ? name(e.p) : '' } }
+    }
     case 'over': {
       const w = e.winner >= 0 ? name(e.winner) : null
       return { ...sc, banner: { text: w ? `${w} — недобитый колдун!` : 'Все сдохли!', sub: e.champion ? 'Победа в турнире!' : '🏅', key: Math.random(), kind: 'over' } }
@@ -108,7 +115,7 @@ function duration(e: Ev, sc: Scene, me = -1): number {
     case 'tomb': return 4700
     case 'end': return 450
     case 'over': return 1800
-    case 'mad': return 1900
+    case 'mad': return e.ab != null ? 2400 : 1900
   }
   void sc
   return 300
@@ -154,7 +161,14 @@ function play(e: Ev, sc: Scene, s: GameState, me = -1, fast = false) {
       sfx.ghost(); showTomb(e.p, e.c, s.players[e.p].name, e.i, e.n, k); setTimeout(() => glow(e.p, '#ffd34a'), 2600 * k); setTimeout(() => sfx.burn(), 2700 * k); break
     }
     case 'over': sfx.fanfare(); break
-    case 'mad': sfx.boom(); if (e.p != null) { glow(e.p, '#b14dff'); shake(e.p, 0, true) } break
+    case 'mad':
+      if (e.ab != null) {
+        const r = ABILITIES[e.ab].rarity
+        sfx.ability(r)
+        if (e.p != null) { glow(e.p, RARITY_COLOR[r]); floater(e.p, ABILITIES[e.ab].icon, 'skull', 500); glow(e.p, RARITY_COLOR[r], 900) }
+        break
+      }
+      sfx.boom(); if (e.p != null) { glow(e.p, '#b14dff'); shake(e.p, 0, true) } break
   }
 }
 

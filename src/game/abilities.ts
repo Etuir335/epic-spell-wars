@@ -108,7 +108,7 @@ const lv = (p: PlayerState, w: number) => (p.lvl && p.portrait === w && !p.boss 
 const cnt = (p: PlayerState, k: string) => p.ab?.[k] ?? 0
 const inc = (p: PlayerState, k: string, n = 1) => { (p.ab ??= {})[k] = cnt(p, k) + n }
 const left = (p: PlayerState, k: string, max: number) => cnt(p, k) < max
-const banner = (s: GameState, p: PlayerState, sub: string) => { const a = ABILITIES[p.portrait]; madEv(s, a.icon, `${p.name}: «${a.name}»!`, sub, p.id) }
+const banner = (s: GameState, p: PlayerState, sub: string) => { const a = ABILITIES[p.portrait]; madEv(s, a.icon, `${p.name}: «${a.name}»!`, sub, p.id, p.portrait) }
 const opt = (v: number | string, label: string) => ({ v, label })
 
 // Взять take сокровищ из from верхних (остальные — под низ колоды)

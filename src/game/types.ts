@@ -125,7 +125,7 @@ export type Ev =
   | { k: 'dead'; p: number; c: CardId }
   | { k: 'tomb'; p: number; c: CardId; i: number; n: number } // в начале игры срабатывает карта дохлого колдуна (i из n)
   | { k: 'end'; p: number }
-  | { k: 'mad'; icon: string; title: string; sub: string; p?: number } // трюк босса или безумное правило — баннер
+  | { k: 'mad'; icon: string; title: string; sub: string; p?: number; ab?: number } // трюк босса или безумное правило — баннер; ab — портрет колдуна, чья способность
   | { k: 'over'; winner: number; champion: boolean; tr?: number[][] } // tr — сокровища до сброса в конце игры (для показа)
 
 export interface TurnRecord { game: number; round: number; actor: number; cards: CardId[]; at: number }
