@@ -522,6 +522,22 @@ input, textarea { -webkit-user-select: text; user-select: text; }
 .board i { font-style: normal; width: 22px; text-align: right; color: var(--dim); }
 .board span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .board b { color: #ffe2b0; }
+.leaders-board > div { display: block; cursor: pointer; }
+.lb-row { display: flex; align-items: center; gap: 10px; }
+.lb-row span { display: flex; flex-direction: column; }
+.lb-row small { font-size: 11px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; }
+.lb-row em { font-style: normal; font-size: 13px; color: var(--dim); }
+.lb-more { margin-top: 8px; padding-top: 8px; border-top: 1px solid #ffffff14; font-size: 13px; }
+.lb-more p { margin: 0 0 6px; color: var(--dim); }
+.lb-more h4 { margin: 8px 0 4px; font-size: 14px; }
+.lb-more h4 small { color: var(--dim); font-weight: normal; }
+.lb-wiz, .lb-ach { display: flex; flex-wrap: wrap; gap: 6px; }
+.lb-more span { flex: none; overflow: visible; }
+.lb-wiz span { position: relative; }
+.lb-wiz span b { position: absolute; right: -4px; bottom: -4px; min-width: 16px; padding: 0 3px; border-radius: 8px; background: #241529; border: 1px solid #ffc53188; font-size: 11px; text-align: center; }
+.lb-wiz span.max b { background: #b8860b; color: #fff; }
+.lb-ach span { font-size: 22px; opacity: .3; filter: grayscale(1); }
+.lb-ach span.got { opacity: 1; filter: none; }
 .mods-bar { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 2px 8px 4px; }
 .mods-bar > * { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: #5a1414cc; border: 1px solid #ff9d3a66; color: #ffe2b0; }
 

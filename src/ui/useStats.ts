@@ -22,7 +22,24 @@ function commit() {
   notify()
   clearTimeout(cloudTimer)
   cloudTimer = window.setTimeout(() => void cloudSet(CLOUD_KEY, JSON.stringify(stats)), 1500)
+  schedulePublish()
 }
+// Витрина в таблице лидеров: после изменений, раз в несколько секунд и только если что-то поменялось
+const PUB = 'esw-leaders-pub'
+let pubTimer = 0
+function schedulePublish(ms = 5000) {
+  if (!import.meta.env.VITE_FB_API_KEY) return
+  clearTimeout(pubTimer)
+  pubTimer = window.setTimeout(() => void import('../net/leaders').then(async m => {
+    const row = m.rowOf(stats)
+    if (!row.games && !row.cups) return
+    const j = JSON.stringify(row)
+    if (localStorage.getItem(PUB) === j) return
+    await m.publishProfile(row)
+    localStorage.setItem(PUB, j)
+  }).catch(() => {}), ms)
+}
+schedulePublish(8000) // старые игроки тоже попадают в таблицу
 // при старте: в облаке свежее (другое устройство) — берём его
 void cloudGet(CLOUD_KEY).then(v => {
   if (!v) return

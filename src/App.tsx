@@ -5,6 +5,7 @@ import { ZoomProvider } from './ui/cards'
 import Game from './ui/Game'
 import Gallery from './ui/Gallery'
 import Profile from './ui/Profile'
+import Leaders from './ui/Leaders'
 import MatchLog, { Wish } from './ui/MatchLog'
 import Arenas, { ARENA_KEY } from './ui/Arenas'
 import DailyScreen, { DAILY_KEY, finishDaily } from './ui/Daily'
@@ -21,7 +22,7 @@ import { canUpgrade, roadReady, WIZ_COUNT } from './progression'
 
 const NetPlay = lazy(() => import('./ui/NetPlay')) // Firebase — отдельным куском, только для сетевой игры
 
-type Screen = 'menu' | 'setup' | 'game' | 'gallery' | 'net' | 'profile' | 'daily' | 'dailyGame' | 'arenas' | 'arenaGame' | 'chests' | 'wizards' | 'history'
+type Screen = 'menu' | 'setup' | 'game' | 'gallery' | 'net' | 'profile' | 'daily' | 'dailyGame' | 'arenas' | 'arenaGame' | 'chests' | 'wizards' | 'history' | 'leaders'
 const startRoom = tgStartRoom() // открыли по приглашению из Telegram
 
 export default function App() {
@@ -70,6 +71,7 @@ export default function App() {
           <div className="menu-icons">
             {game && game.phase !== 'tournament' && <button onClick={() => setScreen('setup')}><i>🎲</i>Новый турнир</button>}
             <button onClick={() => setScreen('profile')}><i>👤</i>Профиль</button>
+            <button onClick={() => setScreen('leaders')}><i>🏆</i>Лидеры</button>
             <button onClick={() => setScreen('gallery')}><i>🃏</i>Карты</button>
             <button onClick={() => setScreen('history')}><i>📜</i>История</button>
             <button onClick={() => setTut(true)}><i>📖</i>Правила</button>
@@ -97,6 +99,7 @@ export default function App() {
       {screen === 'chests' && <Chests onBack={() => setScreen('menu')} />}
       {screen === 'wizards' && <Wizards onBack={() => setScreen('menu')} />}
       {screen === 'profile' && <Profile onBack={() => setScreen('menu')} />}
+      {screen === 'leaders' && <Leaders onBack={() => setScreen('menu')} />}
       {screen === 'gallery' && <Gallery onBack={() => setScreen('menu')} />}
       {screen === 'net' && <Suspense fallback={<div className="screen"><p className="hint">Загрузка…</p></div>}><NetPlay onBack={() => setScreen('menu')} startCode={startRoom} /></Suspense>}
     </ZoomProvider>
