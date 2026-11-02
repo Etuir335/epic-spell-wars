@@ -577,7 +577,7 @@ export function castleStartGame(ctx: Ctx) {
   for (const p of s.players) {
     if (p.tucked != null && !has(p, CT.regalia)) { s.discard.push(p.tucked); p.tucked = undefined }
     p.storm = undefined
-    for (const t of p.later ?? []) { giveTreasure(s, p, t); hooks.gained?.(ctx, p, t) }
+    for (const t of p.later ?? []) if (giveTreasure(s, p, t)) hooks.gained?.(ctx, p, t)
     p.later = undefined
     for (const c of p.deadCards) {
       const k = Math.floor(c / 10)

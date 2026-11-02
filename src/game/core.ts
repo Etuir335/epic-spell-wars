@@ -143,12 +143,12 @@ export function gainTreasure(ctx: Ctx, p: PlayerState) {
   if (!p.alive) return
   const t = drawFrom(s, s.treasureDeck, s.treasureDiscard)
   if (t == null) return log(s, `${p.name}: сокровищ не осталось.`)
-  giveTreasure(s, p, t)
+  if (!giveTreasure(s, p, t)) return // «Гнилой пень»: ушло в сброс, эффекты получения не срабатывают
   ab.gain?.(ctx, p)
   hooks.gained?.(ctx, p, t)
 }
-export function giveTreasure(s: GameState, p: PlayerState, t: number) {
-  if (hooks.noTreasure?.(p)) { s.treasureDiscard.push(t); log(s, `🍄 ${p.name} не может получить ${treasureName(t)} — оно уходит в сброс.`); return }
+export function giveTreasure(s: GameState, p: PlayerState, t: number): boolean {
+  if (hooks.noTreasure?.(p)) { s.treasureDiscard.push(t); log(s, `🍄 ${p.name} не может получить ${treasureName(t)} — оно уходит в сброс.`); return false }
   p.treasures.push(t)
   ev(s, { k: 'treasure', p: p.id, t })
   log(s, `${p.name} получает сокровище ${treasureName(t)}.`)
@@ -156,6 +156,7 @@ export function giveTreasure(s: GameState, p: PlayerState, t: number) {
     const c = drawSpell(s)
     if (c != null) p.hand.push(c)
   }
+  return true
 }
 export function loseTreasure(s: GameState, p: PlayerState, t: number) {
   p.treasures = p.treasures.filter(x => x !== t)
