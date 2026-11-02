@@ -48,8 +48,11 @@ function rules(a: GameState, b: GameState, fresh: string[]) {
       const laid = (q.spell ?? []).filter(c => c.id >= 0 && (!c.from || c.from === 'wild')).length
       if (laid > Math.max(1, 3 - hep)) throw new Error(`Гепатит Ы: у ${q.name} ${laid} карт при ${hep} жетонах`)
     }
-    // «Гномошонка»: добор в начале раунда — до предела руки, сниженного на 2 (сверху — отложенные шальные, «Кетчуп» Болота, Староста и Качок Школы)
+    // «Гномошонка»: добор в начале раунда — до предела руки, сниженного на 2 (сверху — отложенные шальные, «Кетчуп» Болота, Староста и Качок Школы, «Расслабон», «Многозначный»)
+    // в том же шаге карты законно приходят в руку: «Расслабон» возвращает заклинание, «Многозначный» добирает за знаки
     const extra = fresh.filter(l => l.startsWith(`🎖 Староста ${q.name}:`) || l.endsWith(`качку ${q.name}.`)).length
+      + (fresh.some(l => l.startsWith(`🛋 ${q.name}: «Расслабон»`)) ? (o.spell ?? []).length : 0)
+      + fresh.filter(l => l === `✦ ${q.name}: «Многозначный».`).length * 6
     if (zk(q, 8) && q.alive && a.phase !== 'build' && b.phase === 'build' && q.hand.length > Math.max(o.hand.length + (o.reservedWild?.length ?? 0), handSize(q)) + (o.treasures.some(t => TREASURES[t].name === 'Текучий любимый кетчуп') ? 2 : 0) + extra) throw new Error(`Гномошонка: у ${q.name} ${q.hand.length} карт при пределе ${handSize(q)} (было ${o.hand.length})`)
     if (zk(q, 5) && b.turn?.actor === q.id && (q.spell ?? []).some(c => c.id >= 0 && c.on && spellOf(c.id).type === 'wild')) throw new Error(`Кракены: у ${q.name} шальная в заклинании`)
   }

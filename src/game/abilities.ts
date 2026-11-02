@@ -201,9 +201,11 @@ export function abTurnStart(ctx: Ctx, p: PlayerState) {
   const l = p.lvl ?? 0, w = p.portrait
   if (!l || p.boss || !p.alive) return
   const foes = enemies(s, p)
-  const target = (k: string, uses: number, prompt: string, list = foes, friendly = false) => {
+  // подсказка ботам: по умолчанию — самого слабого врага (своих боты выбирают сами)
+  const target = (k: string, uses: number, prompt: string, list = foes, friendly = false, by: ((q: PlayerState) => number) | null = friendly ? null : q => q.life) => {
     if (!left(p, k, uses) || !list.length) return null
-    const v = ask(ctx, { player: p.id, prompt, optional: true, friendly, options: list.map(q => ({ v: q.id, label: q.name, player: q.id })) })
+    const hint = by ? list.reduce((a, b) => by(b) < by(a) ? b : a).id : undefined
+    const v = ask(ctx, { player: p.id, prompt, optional: true, friendly, hint, options: list.map(q => ({ v: q.id, label: q.name, player: q.id })) })
     if (v == null) return null
     inc(p, k)
     return s.players[v as number]
@@ -239,7 +241,7 @@ export function abTurnStart(ctx: Ctx, p: PlayerState) {
   }
   if (w === 18) {
     const list = foes.filter(q => !q.acted && q.spell?.some(c => c.id >= 0))
-    const q = target('use', at(V.eye.uses, l), '«Всевидящее»: чьё заклинание подсмотреть?', list)
+    const q = target('use', at(V.eye.uses, l), '«Всевидящее»: чьё заклинание подсмотреть?', list, false, null)
     if (q) {
       const cards = q.spell!.filter(c => c.id >= 0)
       const id = l >= 2 ? chooseHandCard(ctx, p, `Заклинание ${q.name}. Какую карту выбить?`, cards.map(c => c.id))! : cards[rand(s, cards.length)].id
@@ -250,7 +252,7 @@ export function abTurnStart(ctx: Ctx, p: PlayerState) {
     }
   }
   if (w === 25) {
-    const q = target('use', at(V.tickle.uses, l), `«Щекотка»: кто сбросит ${at(V.tickle.n, l)} карт(ы)?`, foes.filter(q => q.hand.length))
+    const q = target('use', at(V.tickle.uses, l), `«Щекотка»: кто сбросит ${at(V.tickle.n, l)} карт(ы)?`, foes.filter(q => q.hand.length), false, q => -q.hand.length)
     if (q) {
       for (let i = 0; i < at(V.tickle.n, l) && q.hand.length; i++) s.discard.push(q.hand.splice(rand(s, q.hand.length), 1)[0])
       banner(s, p, `${q.name} хохочет и роняет карты.`)
@@ -286,8 +288,14 @@ export function abReveal(ctx: Ctx, p: PlayerState) {
   const l = p.lvl ?? 0
   if (!l || p.boss || !p.spell) return
   const cards = p.spell.filter(c => c.id >= 0 && !c.done)
+  // подсказка ботам: менять карту, выбивающуюся из главной школы заклинания
+  const sch = (id: number) => [spellOf(id).school, spellOf(id).school2].filter(Boolean) as string[]
+  const all = cards.flatMap(c => sch(c.id))
+  const main = all.reduce<string | null>((a, x) => a && all.filter(y => y === a).length >= all.filter(y => y === x).length ? a : x, null)
+  const odd = (ids: number[]) => ids.find(id => !sch(id).includes(main!)) ?? null
+  const fits = (ids: number[]) => ids.find(id => sch(id).includes(main!)) ?? ids[0]
   if (p.portrait === 12 && cards.length && left(p, 'use', at(V.vera.uses, l))) {
-    const v = chooseHandCard(ctx, p, '«Небрежность»: какую карту заклинания заменить картой того же типа из колоды?', cards.map(c => c.id), true)
+    const v = chooseHandCard(ctx, p, '«Небрежность»: какую карту заклинания заменить картой того же типа из колоды?', cards.map(c => c.id), true, odd(cards.map(c => c.id)))
     if (v != null) {
       const c = p.spell.find(c => c.id === v)!
       const idx: number[] = []
@@ -296,7 +304,7 @@ export function abReveal(ctx: Ctx, p: PlayerState) {
         inc(p, 'use')
         const got = idx.map(i => s.deck[i])
         for (const i of idx) s.deck.splice(i, 1) // индексы по убыванию
-        const pick = got.length > 1 ? chooseHandCard(ctx, p, 'Какую карту взять в заклинание?', got)! : got[0]
+        const pick = got.length > 1 ? chooseHandCard(ctx, p, 'Какую карту взять в заклинание?', got, false, fits(got))! : got[0]
         s.deck.unshift(...got.filter(x => x !== pick))
         s.discard.push(c.id)
         banner(s, p, `${cardName(c.id)} → ${cardName(pick)}.`)
@@ -308,11 +316,11 @@ export function abReveal(ctx: Ctx, p: PlayerState) {
     const slots = cards.filter(c => l >= 4 || c.slot === 'delivery')
     const fit = (slot: string) => p.hand.filter(id => spellOf(id).type === slot)
     const can = slots.filter(c => fit(c.slot).length)
-    const v = can.length ? chooseHandCard(ctx, p, '«Сюрприз»: какую карту заклинания поменять на карту с руки?', can.map(c => c.id), true) : null
+    const v = can.length ? chooseHandCard(ctx, p, '«Сюрприз»: какую карту заклинания поменять на карту с руки?', can.map(c => c.id), true, can.find(c => !sch(c.id).includes(main!) && fit(c.slot).some(id => sch(id).includes(main!)))?.id ?? null) : null
     if (v != null) {
       const c = p.spell.find(c => c.id === v)!
       const hand = fit(c.slot)
-      const pick = l >= 2 ? chooseHandCard(ctx, p, 'Какую карту с руки положить?', hand)! : hand[rand(s, hand.length)]
+      const pick = l >= 2 ? chooseHandCard(ctx, p, 'Какую карту с руки положить?', hand, false, fits(hand))! : hand[rand(s, hand.length)]
       inc(p, 'use')
       p.hand = p.hand.filter(x => x !== pick); p.hand.push(c.id)
       banner(s, p, `${cardName(c.id)} → ${cardName(pick)}.`)

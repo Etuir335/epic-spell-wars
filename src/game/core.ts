@@ -256,10 +256,10 @@ export function chooseTreasure(ctx: Ctx, who: PlayerState, owner: PlayerState, p
   })
   return v == null ? null : (v as number)
 }
-export function chooseHandCard(ctx: Ctx, who: PlayerState, prompt: string, ids = who.hand, optional = false): CardId | null {
+export function chooseHandCard(ctx: Ctx, who: PlayerState, prompt: string, ids = who.hand, optional = false, hint?: CardId | null): CardId | null {
   if (!ids.length) return null
   const v = ask(ctx, {
-    player: who.id, prompt, optional,
+    player: who.id, prompt, optional, hint,
     options: ids.map(id => ({ v: id, label: spellOf(id).name, card: { deck: 'spells', index: Math.floor(id / 10) } })),
   })
   return v == null ? null : (v as number)
